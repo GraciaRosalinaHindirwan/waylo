@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:waylo/components/infoChip.dart';
+import 'package:waylo/components/favoriteButton.dart';
 import 'package:waylo/theme/appColors.dart';
 
 void main() {
@@ -16,11 +16,11 @@ class MyApp extends StatelessWidget {
       title: 'Flutter Demo', 
       home: Scaffold(
         body: Center(
-          child: 
-          Infochip(
-  value: 'Cultural',
-  textColor: AppColors.secondary,
-)
+          child: FavoriteButton(
+  onChanged: (isFavorite) {
+    print('Favorite: $isFavorite');
+  },
+),
         ),
       )
     );
