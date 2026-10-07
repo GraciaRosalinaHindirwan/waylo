@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:waylo/components/favoriteButton.dart';
-import 'package:waylo/theme/appColors.dart';
+import 'package:waylo/components/favoriteCard.dart';
+import 'package:waylo/dummy/favoriteDummy.dart';
 
 void main() {
   runApp(const MyApp());
@@ -9,20 +9,28 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo', 
+      debugShowCheckedModeBanner: false,
       home: Scaffold(
-        body: Center(
-          child: FavoriteButton(
-  onChanged: (isFavorite) {
-    print('Favorite: $isFavorite');
-  },
-),
+        backgroundColor: const Color(0xFFFFF8E8),
+        body: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              children: favoriteDummy.map((destination) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 20),
+                  child: FavoriteCard(
+                    destination: destination,
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
         ),
-      )
+      ),
     );
-  } 
+  }
 }
