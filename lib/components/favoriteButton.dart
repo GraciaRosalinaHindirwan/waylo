@@ -78,3 +78,11 @@ class _FavoriteButtonState extends State<FavoriteButton> {
     );
   }
 }
+
+//cara pakai sebelum ada database 
+// FavoriteButton(
+//   onChanged: (isFavorite) {
+//     print('Favorite: $isFavorite');
+//   },
+// )
+
