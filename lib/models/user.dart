@@ -1,10 +1,12 @@
+import 'package:waylo/models/category.dart';
+
 class User{
   final int id; 
   final String fullname; 
   final String username;
   final String password; 
   final List<String> destinations; 
-  final List<String> categories;
+   final List<Category> categories;
   final DateTime createdAt;
   final DateTime updatedAt;
 
