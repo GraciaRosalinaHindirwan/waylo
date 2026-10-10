@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:waylo/components/currencySelector.dart';
-import 'package:waylo/dummy/currencyDummy.dart';
-import 'package:waylo/models/currency.dart';
+import 'package:timezone/data/latest.dart' as tzdata;
 import 'package:waylo/currencyTest.dart';
 
+
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  tzdata.initializeTimeZones();
   runApp(const MyApp());
 }
 
@@ -15,7 +16,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: CurrencyPage(),
+      home: TimezoneTest(),
     );
   }
 }

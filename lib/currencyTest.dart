@@ -1,41 +1,38 @@
 
 import 'package:flutter/material.dart';
-import 'package:waylo/components/currencySelector.dart';
-import 'package:waylo/dummy/currencyDummy.dart';
-import 'package:waylo/models/currency.dart';
+import 'package:waylo/components/timezoneCard.dart';
+import 'package:waylo/dummy/timezoneDummy.dart';
+import 'package:waylo/models/timezone.dart';
 
-class CurrencyPage extends StatefulWidget {
-  const CurrencyPage({super.key});
+class TimezoneTest extends StatefulWidget {
+  const TimezoneTest({super.key});
 
   @override
-  State<CurrencyPage> createState() =>
-      _CurrencyPageState();
+  State<TimezoneTest> createState() => _TimezoneTestState();
 }
 
-class _CurrencyPageState extends State<CurrencyPage> {
-  late Currency selectedCurrency;
+class _TimezoneTestState extends State<TimezoneTest> {
+  late Timezone selectedTimezone;
 
   @override
   void initState() {
     super.initState();
-    selectedCurrency = currencyDummy.first;
+    selectedTimezone = timezoneDummy[1];
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFFFF8E8),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 24,
-            vertical: 16,
-          ),
-          child: CurrencySelector(
-            currencies: currencyDummy,
-            selectedCurrency: selectedCurrency,
-            onChanged: (currency) {
+          padding: const EdgeInsets.all(24),
+          child: TimezoneCard(
+            timezones: timezoneDummy,
+            selectedTimezone: selectedTimezone,
+            onChanged: (timezone) {
               setState(() {
-                selectedCurrency = currency;
+                selectedTimezone = timezone;
               });
             },
           ),
