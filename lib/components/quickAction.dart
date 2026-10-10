@@ -1,23 +1,27 @@
-import 'package:flutter/material.dart';
 import 'package:waylo/theme/appColors.dart';
+import 'package:flutter/material.dart';
 
-
-class CategoryItem extends StatelessWidget {
+class QuickAction extends StatelessWidget {
   final String label;
   final String icon;
-  final VoidCallback? onTap;
+  final Widget page;
 
-  const CategoryItem({
+  const QuickAction({
     super.key,
     required this.label,
     required this.icon,
-    this.onTap,
+    required this.page,
   });
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => page),
+        );
+      },
       child: SizedBox(
         width: 50,
         child: Column(
