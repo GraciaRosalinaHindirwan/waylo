@@ -8,6 +8,8 @@ class UserRepositoryImpl implements UserRepository {
       fullname: 'Andi Pratama',
       username: 'andi',
       password: 'andi123',
+      destinations: ['Japan', 'China'],
+      categories: ['Beach', 'Cultural'],
       createdAt: DateTime(2026, 1, 1),
       updatedAt: DateTime(2026, 1, 1),
     ),
@@ -16,6 +18,8 @@ class UserRepositoryImpl implements UserRepository {
       fullname: 'Budi Santoso',
       username: 'budi',
       password: 'budi123',
+      destinations: ['Indonesia'],
+      categories: ['Mountain', 'Nature'],
       createdAt: DateTime(2026, 1, 2),
       updatedAt: DateTime(2026, 1, 2),
     ),
@@ -24,6 +28,8 @@ class UserRepositoryImpl implements UserRepository {
       fullname: 'Citra Lestari',
       username: 'citra',
       password: 'citra123',
+      destinations: ['South Korea', 'Japan'],
+      categories: ['Historical', 'Cultural'],
       createdAt: DateTime(2026, 1, 3),
       updatedAt: DateTime(2026, 1, 3),
     ),
@@ -32,6 +38,8 @@ class UserRepositoryImpl implements UserRepository {
       fullname: 'Dewi Anggraini',
       username: 'dewi',
       password: 'dewi123',
+      destinations: ['Thailand'],
+      categories: ['Beach', 'Adventure'],
       createdAt: DateTime(2026, 1, 4),
       updatedAt: DateTime(2026, 1, 4),
     ),
@@ -40,6 +48,8 @@ class UserRepositoryImpl implements UserRepository {
       fullname: 'Eko Saputra',
       username: 'eko',
       password: 'eko123',
+      destinations: ['China'],
+      categories: ['Nature', 'Historical'],
       createdAt: DateTime(2026, 1, 5),
       updatedAt: DateTime(2026, 1, 5),
     ),
@@ -64,13 +74,8 @@ class UserRepositoryImpl implements UserRepository {
 
   @override
   Future<User?> getUserByEmail(String email) async {
-    // Model User saat ini belum memiliki field email.
+    // Model User belum memiliki field email.
     return null;
-  }
-
-  @override
-  Future<void> deleteUser(int id) async {
-    _users.removeWhere((user) => user.id == id);
   }
 
   @override
@@ -88,6 +93,8 @@ class UserRepositoryImpl implements UserRepository {
       fullname: user.fullname,
       username: user.username,
       password: user.password,
+      destinations: List<String>.from(user.destinations),
+      categories: List<String>.from(user.categories),
       createdAt: _users[index].createdAt,
       updatedAt: DateTime.now(),
     );
@@ -95,5 +102,10 @@ class UserRepositoryImpl implements UserRepository {
     _users[index] = updatedUser;
 
     return updatedUser;
+  }
+
+  @override
+  Future<void> deleteUser(int id) async {
+    _users.removeWhere((user) => user.id == id);
   }
 }

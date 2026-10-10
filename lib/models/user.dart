@@ -3,6 +3,8 @@ class User{
   final String fullname; 
   final String username;
   final String password; 
+  final List<String> destinations; 
+  final List<String> categories;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -11,6 +13,8 @@ class User{
     required this.fullname,
     required this.username,
     required this.password,
+    this.destinations = const [],
+    this.categories = const [],
     required this.createdAt,
     required this.updatedAt
   }); 
