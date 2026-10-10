@@ -1,4 +1,5 @@
 import 'package:waylo/models/category.dart';
+import 'package:waylo/models/coordinate.dart';
 import 'package:waylo/models/location.dart';
 
 class Destination {
@@ -10,8 +11,7 @@ class Destination {
   final double? fee;
   final String? openingHour;
   final String? closingHour;
-  final double? longitude;
-  final double? latitude;
+  final Coordinate coordinate;
   final double rating;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -25,8 +25,7 @@ class Destination {
     this.fee,
     this.openingHour,
     this.closingHour,
-    this.longitude,
-    this.latitude,
+    required this.coordinate,
     required this.rating,
     required this.createdAt,
     required this.updatedAt,
