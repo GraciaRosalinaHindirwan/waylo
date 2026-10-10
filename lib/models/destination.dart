@@ -1,8 +1,9 @@
 import 'package:waylo/models/category.dart';
+import 'package:waylo/models/location.dart';
 
 class Destination {
   final int id;
-  final int postalCodeSubdistrict;
+  final Location location;
   final String name;
   final String description;
   final List<Category> categories;
@@ -17,7 +18,7 @@ class Destination {
 
   const Destination({
     required this.id,
-    required this.postalCodeSubdistrict,
+    required this.location,
     required this.name,
     required this.description,
     this.categories = const [],

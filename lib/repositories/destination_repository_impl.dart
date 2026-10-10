@@ -1,5 +1,6 @@
 import 'package:waylo/models/category.dart';
 import 'package:waylo/models/destination.dart';
+import 'package:waylo/models/location.dart';
 import 'package:waylo/repositories/destination_repository.dart';
 
 class DestinationRepositoryImpl implements DestinationRepository {
@@ -42,10 +43,88 @@ class DestinationRepositoryImpl implements DestinationRepository {
     ),
   ];
 
+  final List<Location> _locations = [
+    Location(
+      idProvince: 34,
+      idCountry: 1,
+      provinceName: 'DI Yogyakarta',
+      idDistrict: 3471,
+      districtName: 'Kota Yogyakarta',
+      postalCode: 55111,
+      subdistrictName: 'Sosromenduran',
+      provinceCreatedAt: DateTime(2026, 1, 1),
+      provinceUpdatedAt: DateTime(2026, 1, 1),
+      districtCreatedAt: DateTime(2026, 1, 1),
+      districtUpdatedAt: DateTime(2026, 1, 1),
+      subdistrictCreatedAt: DateTime(2026, 1, 1),
+      subdistrictUpdatedAt: DateTime(2026, 1, 1),
+    ),
+    Location(
+      idProvince: 34,
+      idCountry: 1,
+      provinceName: 'DI Yogyakarta',
+      idDistrict: 3471,
+      districtName: 'Kota Yogyakarta',
+      postalCode: 55171,
+      subdistrictName: 'Patehan',
+      provinceCreatedAt: DateTime(2026, 1, 1),
+      provinceUpdatedAt: DateTime(2026, 1, 1),
+      districtCreatedAt: DateTime(2026, 1, 1),
+      districtUpdatedAt: DateTime(2026, 1, 1),
+      subdistrictCreatedAt: DateTime(2026, 1, 1),
+      subdistrictUpdatedAt: DateTime(2026, 1, 1),
+    ),
+    Location(
+      idProvince: 34,
+      idCountry: 1,
+      provinceName: 'DI Yogyakarta',
+      idDistrict: 3402,
+      districtName: 'Kabupaten Bantul',
+      postalCode: 55792,
+      subdistrictName: 'Parangtritis',
+      provinceCreatedAt: DateTime(2026, 1, 1),
+      provinceUpdatedAt: DateTime(2026, 1, 1),
+      districtCreatedAt: DateTime(2026, 1, 1),
+      districtUpdatedAt: DateTime(2026, 1, 1),
+      subdistrictCreatedAt: DateTime(2026, 1, 1),
+      subdistrictUpdatedAt: DateTime(2026, 1, 1),
+    ),
+    Location(
+      idProvince: 34,
+      idCountry: 1,
+      provinceName: 'DI Yogyakarta',
+      idDistrict: 3402,
+      districtName: 'Kabupaten Bantul',
+      postalCode: 55792,
+      subdistrictName: 'Mangunan',
+      provinceCreatedAt: DateTime(2026, 1, 1),
+      provinceUpdatedAt: DateTime(2026, 1, 1),
+      districtCreatedAt: DateTime(2026, 1, 1),
+      districtUpdatedAt: DateTime(2026, 1, 1),
+      subdistrictCreatedAt: DateTime(2026, 1, 1),
+      subdistrictUpdatedAt: DateTime(2026, 1, 1),
+    ),
+    Location(
+      idProvince: 34,
+      idCountry: 1,
+      provinceName: 'DI Yogyakarta',
+      idDistrict: 3404,
+      districtName: 'Kabupaten Sleman',
+      postalCode: 55582,
+      subdistrictName: 'Bokoharjo',
+      provinceCreatedAt: DateTime(2026, 1, 1),
+      provinceUpdatedAt: DateTime(2026, 1, 1),
+      districtCreatedAt: DateTime(2026, 1, 1),
+      districtUpdatedAt: DateTime(2026, 1, 1),
+      subdistrictCreatedAt: DateTime(2026, 1, 1),
+      subdistrictUpdatedAt: DateTime(2026, 1, 1),
+    ),
+  ];
+
   late final List<Destination> _destinations = [
     Destination(
       id: 1,
-      postalCodeSubdistrict: 55111,
+      location: _locations[0],
       name: 'Malioboro',
       description: 'Kawasan wisata dan belanja populer di Yogyakarta.',
       fee: 0,
@@ -60,7 +139,7 @@ class DestinationRepositoryImpl implements DestinationRepository {
     ),
     Destination(
       id: 2,
-      postalCodeSubdistrict: 55171,
+      location: _locations[1],
       name: 'Taman Sari',
       description: 'Kompleks bersejarah bekas taman kerajaan Yogyakarta.',
       fee: 15000,
@@ -75,7 +154,7 @@ class DestinationRepositoryImpl implements DestinationRepository {
     ),
     Destination(
       id: 3,
-      postalCodeSubdistrict: 55792,
+      location: _locations[2],
       name: 'Pantai Parangtritis',
       description: 'Pantai populer dengan pemandangan laut dan pasir luas.',
       fee: 15000,
@@ -90,7 +169,7 @@ class DestinationRepositoryImpl implements DestinationRepository {
     ),
     Destination(
       id: 4,
-      postalCodeSubdistrict: 55582,
+      location: _locations[3],
       name: 'Hutan Pinus Mangunan',
       description: 'Destinasi alam dengan pemandangan hutan pinus.',
       fee: 5000,
@@ -105,7 +184,7 @@ class DestinationRepositoryImpl implements DestinationRepository {
     ),
     Destination(
       id: 5,
-      postalCodeSubdistrict: 55281,
+      location: _locations[4],
       name: 'Candi Prambanan',
       description: 'Kompleks candi Hindu bersejarah di Yogyakarta.',
       fee: 50000,
@@ -119,18 +198,6 @@ class DestinationRepositoryImpl implements DestinationRepository {
       updatedAt: DateTime(2026, 1, 5),
     ),
   ];
-
-  @override
-  Future<Destination> createDestination(
-    Destination destination,
-  ) async {
-    if (_destinations.any((item) => item.id == destination.id)) {
-      throw Exception('ID destinasi sudah digunakan');
-    }
-
-    _destinations.add(destination);
-    return destination;
-  }
 
   @override
   Future<Destination?> getDestinationById(int id) async {
@@ -160,6 +227,37 @@ class DestinationRepositoryImpl implements DestinationRepository {
   }
 
   @override
+Future<Destination> createDestination(
+  Destination destination,
+) async {
+  final exists = _destinations.any(
+    (item) => item.id == destination.id,
+  );
+
+  if (exists) {
+    throw Exception('ID destinasi sudah digunakan');
+  }
+
+  _destinations.add(destination);
+  return destination;
+}
+
+@override
+Future<void> deleteDestination(int id) async {
+  final exists = _destinations.any(
+    (item) => item.id == id,
+  );
+
+  if (!exists) {
+    throw Exception('Destinasi tidak ditemukan');
+  }
+
+  _destinations.removeWhere(
+    (item) => item.id == id,
+  );
+}
+
+@override
   Future<Destination> updateDestination(
     Destination destination,
   ) async {
@@ -173,7 +271,7 @@ class DestinationRepositoryImpl implements DestinationRepository {
 
     final updatedDestination = Destination(
       id: destination.id,
-      postalCodeSubdistrict: destination.postalCodeSubdistrict,
+      location: destination.location,
       name: destination.name,
       description: destination.description,
       fee: destination.fee,
@@ -182,19 +280,13 @@ class DestinationRepositoryImpl implements DestinationRepository {
       longitude: destination.longitude,
       latitude: destination.latitude,
       rating: destination.rating,
-      categories: destination.categories,
+      categories: List<Category>.from(destination.categories),
       createdAt: _destinations[index].createdAt,
       updatedAt: DateTime.now(),
     );
 
     _destinations[index] = updatedDestination;
-    return updatedDestination;
-  }
 
-  @override
-  Future<void> deleteDestination(int id) async {
-    _destinations.removeWhere(
-      (destination) => destination.id == id,
-    );
+    return updatedDestination;
   }
 }
