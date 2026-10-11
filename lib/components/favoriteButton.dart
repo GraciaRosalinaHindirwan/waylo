@@ -31,12 +31,12 @@ class _FavoriteButtonState extends State<FavoriteButton> {
 
     widget.onChanged?.call(isFavorite);
   }
-
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: toggleFavorite,
-      child: Container(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(
           horizontal: 8,
           vertical: 8,
@@ -46,8 +46,8 @@ class _FavoriteButtonState extends State<FavoriteButton> {
           borderRadius: BorderRadius.circular(100),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.8),
-              spreadRadius: 2,
+              color: Colors.grey.withOpacity(0.3),
+              spreadRadius: 1,
               blurRadius: 4,
               offset: const Offset(0, 3),
             ),
@@ -63,15 +63,18 @@ class _FavoriteButtonState extends State<FavoriteButton> {
               size: 24,
               color: AppColors.accent,
             ),
-            const SizedBox(width: 8),
-            const Text(
-              'Favorite',
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 16,
-                color: AppColors.textSecondary,
+
+            if (isFavorite) ...[
+              const SizedBox(width: 8),
+              const Text(
+                'Favorite',
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 16,
+                  color: AppColors.textSecondary,
+                ),
               ),
-            ),
+            ],
           ],
         ),
       ),
