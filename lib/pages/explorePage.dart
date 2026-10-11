@@ -1,5 +1,6 @@
 
 import 'package:flutter/material.dart';
+import 'package:waylo/components/recommendCard.dart';
 import 'package:waylo/components/searchBar.dart';
 import 'package:waylo/layouts/homeLayout.dart';
 import 'package:waylo/theme/appColors.dart';
@@ -55,8 +56,9 @@ class Explorepage extends StatelessWidget {
             children: [
               Text(
                 'Destination Near You',
-                style: AppTextStyles.heading3.copyWith(
+                style: AppTextStyles.heading4.copyWith(
                   color: AppColors.textPrimary,
+                  fontSize: 18, 
                 ),
               ),
 
@@ -66,11 +68,45 @@ class Explorepage extends StatelessWidget {
                 },
                 child: Text(
                   'See All',
-                  style: AppTextStyles.heading4.copyWith(
+                  style: AppTextStyles.body.copyWith(
                     color: AppColors.accent,
                   ),
                 ),
               ),
+            ],
+          ),
+
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            
+            children: [
+              Text(
+                'Inspiring Destination',
+                style: AppTextStyles.heading4.copyWith(
+                  color: AppColors.textPrimary,
+                  fontSize: 18, 
+                ),
+              ),
+
+              TextButton(
+                onPressed: (){
+                  //diisi nanti sama page nya 
+                },
+                child: Text(
+                  'See All',
+                  style: AppTextStyles.body.copyWith(
+                    color: AppColors.accent,
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          Row(
+            spacing: 16,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              
             ],
           ),
         ],
