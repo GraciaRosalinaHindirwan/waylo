@@ -22,21 +22,26 @@ class Homelayout extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.background, 
       body: SafeArea(
-        bottom: false, 
+        bottom: false,
         child: SingleChildScrollView(
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Stack(
+                clipBehavior: Clip.none,
                 children: [
+                  // Gambar header
                   SizedBox(
                     width: double.infinity,
+                    height: 300,
                     child: Image.asset(
                       'assets/img/backgroundUp.png',
-                      fit: BoxFit.cover, 
+                      fit: BoxFit.cover,
                       alignment: Alignment.topCenter,
-                    ), 
+                    ),
                   ),
 
+                  // Teks di atas gambar
                   Positioned(
                     top: 24,
                     left: 28,
@@ -53,28 +58,36 @@ class Homelayout extends StatelessWidget {
                         Text(
                           title,
                           style: AppTextStyles.heading1.copyWith(
-                            color: AppColors.textPrimary
+                            color: AppColors.textPrimary,
                           ),
                         ),
-
                         const SizedBox(height: 8),
                         Text(
                           subtitle,
                           style: AppTextStyles.body.copyWith(
-                            color: AppColors.textSecondary
+                            color: AppColors.textSecondary,
                           ),
                         ),
                       ],
                     ),
                   ),
-                ], 
+
+                  // Search bar menimpa bagian bawah gambar
+                  Positioned(
+                    left: 16,
+                    right: 16,
+                    bottom: -27,
+                    child: content,
+                  ),
+                ],
               ),
 
-              content, 
+              // Ruang agar konten berikutnya tidak bertabrakan
+              const SizedBox(height: 43),
             ],
           ),
         ),
-      )
+      ),
     );
   }
 }
