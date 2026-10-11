@@ -2,6 +2,8 @@ import 'package:waylo/models/user.dart';
 import 'package:waylo/models/category.dart';
 import 'package:waylo/repositories/user_repository.dart';
 
+// dia yang menjalankan tugas dari minta data ke API sampai ilah datanya 
+
 class UserRepositoryImpl implements UserRepository {
   final List<Category> _categories = [
     Category(

@@ -2,6 +2,8 @@ import 'package:waylo/models/user.dart';
 import 'package:waylo/repositories/user_repository.dart';
 import 'package:waylo/service/password_hasher.dart';
 
+//logikanya disini semua 
+
 class AuthService {
   final UserRepository repository;
 
