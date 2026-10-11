@@ -28,7 +28,6 @@ class SubPageLayout extends StatelessWidget {
                   child: Container(
                     width: 40,
                     height: 40,
-                    padding: const EdgeInsets.all(6.82),
                     decoration: BoxDecoration(
                       color: AppColors.card,
                       borderRadius: BorderRadius.circular(100),
@@ -40,7 +39,13 @@ class SubPageLayout extends StatelessWidget {
                         ),
                       ],
                     ),
-                    child: Image.asset('assets/icons/back.png'),
+                    child: const Center(
+                      child: Icon(
+                        Icons.arrow_back_ios_new,
+                        size: 18,
+                        color: AppColors.accent,
+                      ),
+                    ),
                   ),
                 ),
                 Expanded(
@@ -52,18 +57,7 @@ class SubPageLayout extends StatelessWidget {
               ],
             ),
           ),
-          Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                SizedBox(
-                  width: double.infinity,
-                  height: 304.12,
-                  child: content,
-                ),
-              ],
-            ),
-          ),
+          Expanded(child: content),
         ],
       ),
     );

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:waylo/theme/appColors.dart';
+import 'package:waylo/theme/app_text_styles.dart';
 
 class SelectionButton extends StatefulWidget {
   final List<String> options;
@@ -42,9 +43,8 @@ class _SelectionButtonState extends State<SelectionButton> {
             widget.onChanged(option);
           },
           child: Container(
-            width: isOther ? 160 : 174,
-            height: 91,
-            alignment: Alignment.center,
+            height: 40,
+            padding: const EdgeInsets.symmetric(horizontal: 17.06),
             decoration: BoxDecoration(
               color: isSelected
                   ? (isOther
@@ -53,7 +53,7 @@ class _SelectionButtonState extends State<SelectionButton> {
                   : (isOther
                       ? AppColors.border
                       : AppColors.card),
-              borderRadius: BorderRadius.circular(18),
+              borderRadius: BorderRadius.circular(8.53),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.20),
@@ -62,12 +62,13 @@ class _SelectionButtonState extends State<SelectionButton> {
                 ),
               ],
             ),
-            child: Text(
-              option,
-              style: const TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 26,
-                color: AppColors.textPrimary,
+            child: Center(
+              widthFactor: 1,
+              child: Text(
+                option,
+                style: AppTextStyles.button.copyWith(
+                  color: AppColors.textPrimary,
+                ),
               ),
             ),
           ),
