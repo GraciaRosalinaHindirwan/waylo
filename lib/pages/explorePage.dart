@@ -1,5 +1,6 @@
 
 import 'package:flutter/material.dart';
+import 'package:waylo/components/buttomNav.dart';
 import 'package:waylo/components/recommendCard.dart';
 import 'package:waylo/components/searchBar.dart';
 import 'package:waylo/layouts/homeLayout.dart';
@@ -32,6 +33,32 @@ class _ExplorepageState extends State<Explorepage> {
       greeting: "Let's Find a Place",
       title: 'Explore',
       subtitle: 'Discover your next destination',
+      bottomNavigationBar: CustomBottomNavBar(
+      currentIndex: 1,
+      onTap: (index) {
+        switch (index) {
+          case 0:
+            // Navigator.pushReplacement(
+            //   context,
+            //   MaterialPageRoute(
+            //     builder: (context) => Homepage(),
+            //   ),
+            // );
+            break;
+          case 1:
+            // Sudah berada di Explore
+            break;
+          case 2:
+            // Navigator.pushReplacement(
+            //   context,
+            //   MaterialPageRoute(
+            //     builder: (context) => ProfilePage(),
+            //   ),
+            // );
+            break;
+        }
+      },
+    ),
 
       // Bagian ini saja yang menimpa gambar
       searchBar: Row(
