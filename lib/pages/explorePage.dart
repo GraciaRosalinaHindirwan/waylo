@@ -5,6 +5,7 @@ import 'package:waylo/components/recommendCard.dart';
 import 'package:waylo/components/searchBar.dart';
 import 'package:waylo/layouts/homeLayout.dart';
 import 'package:waylo/models/destination.dart';
+import 'package:waylo/pages/detailDestination.dart';
 import 'package:waylo/repositories/destination_repository_factory.dart';
 import 'package:waylo/theme/appColors.dart';
 import 'package:waylo/theme/app_text_styles.dart';
@@ -197,11 +198,7 @@ class _ExplorepageState extends State<Explorepage> {
                           city: destination.location.districtName, 
                           rating: destination.rating, 
                           distance: '-', 
-                          page: const Scaffold(
-                            body: Center(
-                              child: Text("Destinasi Detail"),
-                            ),
-                          ),
+                          page: Detaildestination(destination: destination)
                         ),
                       );
                     },
