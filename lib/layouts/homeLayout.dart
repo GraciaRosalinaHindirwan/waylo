@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:waylo/theme/appColors.dart';
 import 'package:waylo/theme/app_text_styles.dart';
-import 'package:flutter/material.dart';
-
 
 class Homelayout extends StatelessWidget {
   final String greeting;
@@ -10,6 +8,7 @@ class Homelayout extends StatelessWidget {
   final String subtitle;
   final Widget searchBar;
   final Widget content;
+  final Widget? bottomNavigationBar;
 
   const Homelayout({
     super.key,
@@ -18,11 +17,13 @@ class Homelayout extends StatelessWidget {
     required this.subtitle,
     required this.searchBar,
     required this.content,
+    this.bottomNavigationBar,
   });
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      bottomNavigationBar: bottomNavigationBar,
       backgroundColor: AppColors.background,
       body: SafeArea(
         bottom: false,

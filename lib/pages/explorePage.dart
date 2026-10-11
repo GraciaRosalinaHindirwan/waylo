@@ -167,7 +167,7 @@ class _ExplorepageState extends State<Explorepage> {
                         child: RecommendCard(
                           image: imageUrl,
                           name: destination.name, 
-                          city: destination.location.provinceName, 
+                          city: destination.location.districtName, 
                           rating: destination.rating, 
                           distance: '-', 
                           page: const Scaffold(
