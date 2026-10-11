@@ -33,7 +33,6 @@ class Homelayout extends StatelessWidget {
                   // Gambar header
                   SizedBox(
                     width: double.infinity,
-                    height: 300,
                     child: Image.asset(
                       'assets/img/backgroundUp.png',
                       fit: BoxFit.cover,
@@ -76,7 +75,7 @@ class Homelayout extends StatelessWidget {
                   Positioned(
                     left: 16,
                     right: 16,
-                    bottom: -27,
+                    bottom: -2,
                     child: content,
                   ),
                 ],
