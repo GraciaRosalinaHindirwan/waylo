@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:waylo/components/searchBar.dart';
 import 'package:waylo/layouts/homeLayout.dart';
 import 'package:waylo/theme/appColors.dart';
+import 'package:waylo/theme/app_text_styles.dart';
 
 class Explorepage extends StatelessWidget {
   const Explorepage({super.key});
@@ -13,7 +14,9 @@ class Explorepage extends StatelessWidget {
       greeting: "Let's Find a Place",
       title: 'Explore',
       subtitle: 'Discover your next destination',
-      content: Row(
+
+      // Bagian ini saja yang menimpa gambar
+      searchBar: Row(
         children: [
           const Expanded(
             child: CustomSearchBar(),
@@ -40,6 +43,35 @@ class Explorepage extends StatelessWidget {
                 size: 22,
               ),
             ),
+          ),
+        ],
+      ),
+
+      content: Column(
+        children: [
+          //destination near you
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Destination Near You',
+                style: AppTextStyles.heading3.copyWith(
+                  color: AppColors.textPrimary,
+                ),
+              ),
+
+              TextButton(
+                onPressed: (){
+                  //diisi nanti sama page nya 
+                },
+                child: Text(
+                  'See All',
+                  style: AppTextStyles.heading4.copyWith(
+                    color: AppColors.accent,
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
