@@ -79,7 +79,7 @@ class _HomePageState extends State<HomePage> {
         image: imagePath(destination),
         name: destination.name,
         city: destination.location.districtName,
-        rating: destination.rating.toStringAsFixed(1),
+        rating: destination.rating,
         distance: destination.location.subdistrictName,
         page: Explorepage(),
       ),
