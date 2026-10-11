@@ -49,6 +49,13 @@ class _DetaildestinationState extends State<Detaildestination> {
                       });
                     },
                     itemBuilder:(context, index){
+                      final imageUrl = images[index].imageUrl;
+                      if (imageUrl.startsWith('http')) {
+                        return Image.network(
+                          imageUrl,
+                          fit: BoxFit.cover,
+                        );
+                      }
                       return Image.asset(
                         images[index].imageUrl, 
                         fit: BoxFit.cover,  
