@@ -1,8 +1,10 @@
 import 'package:waylo/models/category.dart';
 import 'package:waylo/models/coordinate.dart';
 import 'package:waylo/models/destination.dart';
+import 'package:waylo/models/destinationImage.dart';
 import 'package:waylo/models/location.dart';
 import 'package:waylo/repositories/destination_repository.dart';
+
 
 class DestinationRepositoryImpl implements DestinationRepository {
   final List<Category> _categories = [
@@ -122,78 +124,129 @@ class DestinationRepositoryImpl implements DestinationRepository {
     ),
   ];
 
-  late final List<Destination> _destinations = [
-    Destination(
-      id: 1,
-      location: _locations[0],
-      name: 'Malioboro',
-      description: 'Kawasan wisata dan belanja populer di Yogyakarta.',
-      fee: 0,
-      openingHour: '00:00:00',
-      closingHour: '23:59:59',
-      coordinate: Coordinate(latitude: -7.8101, longitude: 110.3592),
-      rating: 4.8,
-      categories: [_categories[3], _categories[4]],
-      createdAt: DateTime(2026, 1, 1),
-      updatedAt: DateTime(2026, 1, 1),
-    ),
-    Destination(
-      id: 2,
-      location: _locations[1],
-      name: 'Taman Sari',
-      description: 'Kompleks bersejarah bekas taman kerajaan Yogyakarta.',
-      fee: 15000,
-      openingHour: '09:00:00',
-      closingHour: '15:00:00',
-      coordinate: Coordinate(latitude: -7.8101, longitude: 110.3592),
-      rating: 4.7,
-      categories: [_categories[3], _categories[4]],
-      createdAt: DateTime(2026, 1, 2),
-      updatedAt: DateTime(2026, 1, 2),
-    ),
-    Destination(
-      id: 3,
-      location: _locations[2],
-      name: 'Pantai Parangtritis',
-      description: 'Pantai populer dengan pemandangan laut dan pasir luas.',
-      fee: 15000,
-      openingHour: '00:00:00',
-      closingHour: '23:59:59',
-      coordinate: Coordinate(latitude: -8.0246, longitude: 110.3292),
-      rating: 4.6,
-      categories: [_categories[0], _categories[2]],
-      createdAt: DateTime(2026, 1, 3),
-      updatedAt: DateTime(2026, 1, 3),
-    ),
-    Destination(
-      id: 4,
-      location: _locations[3],
-      name: 'Hutan Pinus Mangunan',
-      description: 'Destinasi alam dengan pemandangan hutan pinus.',
-      fee: 5000,
-      openingHour: '06:00:00',
-      closingHour: '18:00:00',
-      coordinate: Coordinate(latitude: -7.9372, longitude: 110.4317),
-      rating: 4.5,
-      categories: [_categories[1], _categories[2]],
-      createdAt: DateTime(2026, 1, 4),
-      updatedAt: DateTime(2026, 1, 4),
-    ),
-    Destination(
-      id: 5,
-      location: _locations[4],
-      name: 'Candi Prambanan',
-      description: 'Kompleks candi Hindu bersejarah di Yogyakarta.',
-      fee: 50000,
-      openingHour: '06:30:00',
-      closingHour: '17:00:00',
-      coordinate: Coordinate(latitude: -7.7520, longitude: 110.4915),
-      rating: 4.8,
-      categories: [_categories[3], _categories[4]],
-      createdAt: DateTime(2026, 1, 5),
-      updatedAt: DateTime(2026, 1, 5),
-    ),
-  ];
+  
+late final List<Destination> _destinations = [
+  Destination(
+    id: 1,
+    location: _locations[0],
+    name: 'Malioboro',
+    description: 'Kawasan wisata dan belanja populer di Yogyakarta.',
+    fee: 0,
+    openingHour: '00:00:00',
+    closingHour: '23:59:59',
+    coordinate: Coordinate(latitude: -7.8101, longitude: 110.3592),
+    rating: 4.8,
+    categories: [_categories[3], _categories[4]],
+    images: [
+      DestinationImage(
+        id: 1,
+        destinationId: 1,
+        isBanner: true,
+        imageUrl: 'assets/img/malioboro.png',
+        createdAt: DateTime(2026, 1, 1),
+        updatedAt: DateTime(2026, 1, 1),
+      ),
+    ],
+    createdAt: DateTime(2026, 1, 1),
+    updatedAt: DateTime(2026, 1, 1),
+  ),
+  Destination(
+    id: 2,
+    location: _locations[1],
+    name: 'Taman Sari',
+    description: 'Kompleks bersejarah bekas taman kerajaan Yogyakarta.',
+    fee: 15000,
+    openingHour: '09:00:00',
+    closingHour: '15:00:00',
+    coordinate: Coordinate(latitude: -7.8101, longitude: 110.3592),
+    rating: 4.7,
+    categories: [_categories[3], _categories[4]],
+    images: [
+      DestinationImage(
+        id: 2,
+        destinationId: 2,
+        isBanner: true,
+        imageUrl: 'assets/img/taman_sari.png',
+        createdAt: DateTime(2026, 1, 2),
+        updatedAt: DateTime(2026, 1, 2),
+      ),
+    ],
+    createdAt: DateTime(2026, 1, 2),
+    updatedAt: DateTime(2026, 1, 2),
+  ),
+  Destination(
+    id: 3,
+    location: _locations[2],
+    name: 'Pantai Parangtritis',
+    description: 'Pantai populer dengan pemandangan laut dan pasir luas.',
+    fee: 15000,
+    openingHour: '00:00:00',
+    closingHour: '23:59:59',
+    coordinate: Coordinate(latitude: -8.0246, longitude: 110.3292),
+    rating: 4.6,
+    categories: [_categories[0], _categories[2]],
+    images: [
+      DestinationImage(
+        id: 3,
+        destinationId: 3,
+        isBanner: true,
+        imageUrl: 'assets/img/parangtritis.png',
+        createdAt: DateTime(2026, 1, 3),
+        updatedAt: DateTime(2026, 1, 3),
+      ),
+    ],
+    createdAt: DateTime(2026, 1, 3),
+    updatedAt: DateTime(2026, 1, 3),
+  ),
+  Destination(
+    id: 4,
+    location: _locations[3],
+    name: 'Hutan Pinus Mangunan',
+    description: 'Destinasi alam dengan pemandangan hutan pinus.',
+    fee: 5000,
+    openingHour: '06:00:00',
+    closingHour: '18:00:00',
+    coordinate: Coordinate(latitude: -7.9372, longitude: 110.4317),
+    rating: 4.5,
+    categories: [_categories[1], _categories[2]],
+    images: [
+      DestinationImage(
+        id: 4,
+        destinationId: 4,
+        isBanner: true,
+        imageUrl: 'assets/img/hutan_pinus_mangunan.png',
+        createdAt: DateTime(2026, 1, 4),
+        updatedAt: DateTime(2026, 1, 4),
+      ),
+    ],
+    createdAt: DateTime(2026, 1, 4),
+    updatedAt: DateTime(2026, 1, 4),
+  ),
+  Destination(
+    id: 5,
+    location: _locations[4],
+    name: 'Candi Prambanan',
+    description: 'Kompleks candi Hindu bersejarah di Yogyakarta.',
+    fee: 50000,
+    openingHour: '06:30:00',
+    closingHour: '17:00:00',
+    coordinate: Coordinate(latitude: -7.7520, longitude: 110.4915),
+    rating: 4.8,
+    categories: [_categories[3], _categories[4]],
+    images: [
+      DestinationImage(
+        id: 5,
+        destinationId: 5,
+        isBanner: true,
+        imageUrl: 'assets/img/prambanan.png',
+        createdAt: DateTime(2026, 1, 5),
+        updatedAt: DateTime(2026, 1, 5),
+      ),
+    ],
+    createdAt: DateTime(2026, 1, 5),
+    updatedAt: DateTime(2026, 1, 5),
+  ),
+];
 
   @override
   Future<Destination?> getDestinationById(int id) async {
@@ -267,6 +320,7 @@ Future<void> deleteDestination(int id) async {
 
     final updatedDestination = Destination(
       id: destination.id,
+      images: List<DestinationImage>.from(destination.images),
       location: destination.location,
       name: destination.name,
       description: destination.description,

@@ -1,11 +1,12 @@
+import 'package:waylo/theme/appColors.dart';
 import 'package:waylo/theme/app_text_styles.dart';
 import 'package:flutter/material.dart';
 
 class RecommendCard extends StatelessWidget {
-  final String image;
+  final String? image;
   final String name;
   final String city;
-  final String rating;
+  final double rating;
   final String distance;
   final Widget page;
 
@@ -37,10 +38,13 @@ class RecommendCard extends StatelessWidget {
             height: 130,
             clipBehavior: Clip.antiAlias,
             decoration: BoxDecoration(
-              image: DecorationImage(
-                image: AssetImage(image),
-                fit: BoxFit.cover,
-              ),
+                image: image != null
+                ? DecorationImage(
+                    image: AssetImage(image!),
+                    fit: BoxFit.cover,
+                  )
+                : null,
+            color: AppColors.border,
             ),
             child: Stack(
               children: [
@@ -123,12 +127,12 @@ class RecommendCard extends StatelessWidget {
                     spacing: 4,
                     children: [
                       const Icon(
-                        Icons.star,
+                        Icons.star_rounded,
                         size: 18,
                         color: Color(0xFFF37735),
                       ),
                       Text(
-                        rating,
+                        rating.toStringAsFixed(1),
                         style: AppTextStyles.label.copyWith(
                           color: const Color(0xFFF37735),
                         ),
