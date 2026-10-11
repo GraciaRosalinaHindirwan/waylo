@@ -1,9 +1,11 @@
 import 'package:waylo/models/category.dart';
 import 'package:waylo/models/coordinate.dart';
+import 'package:waylo/models/destinationImage.dart';
 import 'package:waylo/models/location.dart';
 
 class Destination {
   final int id;
+  final List<DestinationImage> images;
   final Location location;
   final String name;
   final String description;
@@ -18,6 +20,7 @@ class Destination {
 
   const Destination({
     required this.id,
+    required this.images, 
     required this.location,
     required this.name,
     required this.description,

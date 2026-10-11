@@ -3,11 +3,28 @@ import 'package:flutter/material.dart';
 import 'package:waylo/components/recommendCard.dart';
 import 'package:waylo/components/searchBar.dart';
 import 'package:waylo/layouts/homeLayout.dart';
+import 'package:waylo/models/destination.dart';
+import 'package:waylo/repositories/destination_repository_factory.dart';
 import 'package:waylo/theme/appColors.dart';
 import 'package:waylo/theme/app_text_styles.dart';
 
-class Explorepage extends StatelessWidget {
+class Explorepage extends StatefulWidget {
   const Explorepage({super.key});
+
+  @override
+  State<Explorepage> createState() => _ExplorepageState();
+}
+
+class _ExplorepageState extends State<Explorepage> {
+  late final Future<List<Destination>> _destinationsFuture;
+  
+  @override
+  void initState() {
+    super.initState();
+
+    final repository = DestinationRepositoryFactory.create();
+    _destinationsFuture = repository.getAllDestinations();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -102,12 +119,69 @@ class Explorepage extends StatelessWidget {
             ],
           ),
 
-          Row(
-            spacing: 16,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              
-            ],
+          SizedBox(
+            height: 250,
+            child: FutureBuilder<List<Destination>>(
+              future: _destinationsFuture, 
+              builder: (
+                (context, snapshot){
+                //loading
+                  if(snapshot.connectionState == ConnectionState.waiting){
+                    return const Center(
+                      child: CircularProgressIndicator(),
+                    );
+                  }
+          
+                  //error
+                  if(snapshot.hasError){
+                    return const Center(
+                      child: Text("Gagal memuat destinasi"),
+                    );
+                  }
+          
+                  //data berhasil diterima
+                  final destinations = snapshot.data ?? [];
+          
+                  if (destinations.isEmpty) {
+                    return const Center(
+                      child: Text("Belum ada destinasi"),
+                    );
+                  }
+          
+                  return ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: destinations.length,
+                    separatorBuilder: (context, index) => const SizedBox(width: 16),
+                    itemBuilder: (context, index){
+                      final destination = destinations[index]; 
+                      final bannerImages = destination.images
+                        .where((image) => image.isBanner)
+                        .toList();
+          
+                      final imageUrl = bannerImages.isNotEmpty
+                          ? bannerImages.first.imageUrl
+                          : null;
+          
+                      return SizedBox(
+                        width: 166,
+                        child: RecommendCard(
+                          image: imageUrl,
+                          name: destination.name, 
+                          city: destination.location.provinceName, 
+                          rating: destination.rating, 
+                          distance: '-', 
+                          page: const Scaffold(
+                            body: Center(
+                              child: Text("Destinasi Detail"),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                }
+              ),
+            ),
           ),
         ],
       ),
