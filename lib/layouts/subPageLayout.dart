@@ -68,15 +68,7 @@ class SubPageLayout extends StatelessWidget {
           Expanded(
             child: Stack(
               children: [
-                // Konten halaman
-                Positioned.fill(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: content,
-                  ),
-                ),
-
-                // Gambar dekorasi di bagian bawah
+                // Layer 1: Gambar dekorasi di paling bawah
                 Positioned(
                   left: 0,
                   right: 0,
@@ -88,6 +80,14 @@ class SubPageLayout extends StatelessWidget {
                       fit: BoxFit.fitWidth,
                       alignment: Alignment.bottomCenter,
                     ),
+                  ),
+                ),
+
+                // Layer 2: Konten berada di atas gambar
+                Positioned.fill(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: content,
                   ),
                 ),
               ],
