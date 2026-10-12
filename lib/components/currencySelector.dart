@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:waylo/models/currency.dart';
 import 'package:waylo/theme/appColors.dart';
+import 'package:waylo/theme/app_text_styles.dart';
 
 class CurrencySelector extends StatelessWidget {
   final List<Currency> currencies;
@@ -50,10 +51,7 @@ Widget build(BuildContext context) {
                   currency.code,
                   softWrap: false,
                   overflow: TextOverflow.visible,
-                  style: const TextStyle(
-                    fontFamily: 'Fraunces',
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
+                  style: AppTextStyles.heading4.copyWith(
                     color: AppColors.textPrimary,
                   ),
                 ),
@@ -82,11 +80,7 @@ Widget build(BuildContext context) {
                   decimal: true,
                 ),
                 textAlign: TextAlign.end,
-                style: const TextStyle(
-                  fontFamily: 'Fraunces',
-                  fontSize: 36,
-                  fontWeight: FontWeight.bold,
-                  height: 1,
+                style: AppTextStyles.heading3.copyWith(
                   color: AppColors.textPrimary,
                 ),
                 decoration: const InputDecoration(
@@ -101,9 +95,7 @@ Widget build(BuildContext context) {
             Text(
               selectedCurrency.name,
               textAlign: TextAlign.end,
-              style: const TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 16,
+              style: AppTextStyles.caption.copyWith(
                 color: AppColors.textSecondary,
               ),
             ),
