@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:waylo/components/currencySelector.dart';
 import 'package:waylo/layouts/subPageLayout.dart';
 import 'package:waylo/models/currency.dart';
@@ -13,8 +14,16 @@ class Currencyconvert extends StatefulWidget {
 }
 
 class _CurrencyconvertState extends State<Currencyconvert> {
+  final NumberFormat _numberFormat = NumberFormat(
+    '#,##0.###',
+    'de_DE',
+  );
+
   late final CurrencyService currencyService;
   late final List<TextEditingController> amountControllers;
+
+  int _conversionRequestId = 0;
+  int _sourceIndex = 0;
 
   List<Currency> currencies = [];
   List<Currency> selectedCurrencies = [];
@@ -41,19 +50,11 @@ class _CurrencyconvertState extends State<Currencyconvert> {
     loadCurrencies();
   }
 
+  // Mengambil daftar mata uang dari API
   Future<void> loadCurrencies() async {
     try {
-      debugPrint('1. Mulai mengambil mata uang');
-
       final repository = CurrencyRepositoryFactory.create();
-
-      debugPrint('2. Repository berhasil dibuat');
-
       final result = await repository.getCurrencies();
-
-      debugPrint('3. Jumlah mata uang: ${result.length}');
-
-      if (!mounted) return;
 
       final initialCurrencies = <Currency>[];
 
@@ -67,14 +68,14 @@ class _CurrencyconvertState extends State<Currencyconvert> {
         initialCurrencies.add(matches.first);
       }
 
+      if (!mounted) return;
+
       setState(() {
         currencies = result;
         selectedCurrencies = initialCurrencies;
         isLoadingCurrencies = false;
         currencyError = null;
       });
-
-      debugPrint('4. Mata uang berhasil dimuat');
     } catch (e, stackTrace) {
       debugPrint('ERROR CURRENCY: $e');
       debugPrint('$stackTrace');
@@ -85,6 +86,73 @@ class _CurrencyconvertState extends State<Currencyconvert> {
         currencyError = e.toString();
         isLoadingCurrencies = false;
       });
+    }
+  }
+
+  // Menghitung nominal pada dua mata uang lainnya
+  Future<void> convertAmounts(int sourceIndex, String value) async {
+    final requestId = ++_conversionRequestId;
+    _sourceIndex = sourceIndex;
+
+    final normalizedValue = value
+    .replaceAll('.', '')
+    .replaceAll(',', '.')
+    .trim();
+
+    final amount = double.tryParse(normalizedValue);
+
+    setState(() {
+      amounts[sourceIndex] = value;
+    });
+
+    // Jika input kosong atau tidak valid, kosongkan hasil lainnya.
+    if (amount == null) {
+      setState(() {
+        for (int i = 0; i < 3; i++) {
+          if (i == sourceIndex) continue;
+
+          amounts[i] = '';
+          amountControllers[i].clear();
+        }
+      });
+      return;
+    }
+
+    // Hitung ulang dua mata uang lainnya.
+    for (int i = 0; i < 3; i++) {
+      if (i == sourceIndex) continue;
+
+      try {
+        final result = await currencyService.convert(
+          fromCurrency: selectedCurrencies[sourceIndex],
+          toCurrency: selectedCurrencies[i],
+          amount: amount,
+        );
+
+        // Abaikan hasil request yang sudah kedaluwarsa.
+        if (!mounted || requestId != _conversionRequestId) {
+          return;
+        }
+
+        final formatted = _numberFormat.format(
+          result.convertedAmount,
+        );
+
+        setState(() {
+          amounts[i] = formatted;
+
+          amountControllers[i].value = TextEditingValue(
+            text: formatted,
+            selection: TextSelection.collapsed(
+              offset: formatted.length,
+            ),
+          );
+        });
+      } catch (e) {
+        debugPrint(
+          'Gagal mengonversi ke ${selectedCurrencies[i].code}: $e',
+        );
+      }
     }
   }
 
@@ -132,6 +200,7 @@ class _CurrencyconvertState extends State<Currencyconvert> {
                     isLoadingCurrencies = true;
                     currencyError = null;
                   });
+
                   loadCurrencies();
                 },
                 child: const Text('Coba Lagi'),
@@ -151,15 +220,22 @@ class _CurrencyconvertState extends State<Currencyconvert> {
             selectedCurrency: selectedCurrencies[index],
             amount: amounts[index],
             amountController: amountControllers[index],
+
+            // Jika dropdown berubah, hitung ulang hasilnya.
             onChanged: (currency) {
               setState(() {
                 selectedCurrencies[index] = currency;
               });
+
+              convertAmounts(
+                _sourceIndex,
+                amountControllers[_sourceIndex].text,
+              );
             },
+
+            // Jika nominal berubah, konversi otomatis.
             onAmountChanged: (value) {
-              setState(() {
-                amounts[index] = value;
-              });
+              convertAmounts(index, value);
             },
           ),
         );

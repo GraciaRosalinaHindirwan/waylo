@@ -38,6 +38,7 @@ dependencies:
   timezone: ^0.11.1
   password_guard: ^1.0.5
   http: ^1.6.0
+  intl: ^0.20.3
 
 dev_dependencies:
   flutter_test:
