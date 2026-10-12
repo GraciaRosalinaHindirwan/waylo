@@ -10,6 +10,8 @@ class CurrencySelector extends StatelessWidget {
   final String amount;
   final ValueChanged<String> onAmountChanged;
 
+  final TextEditingController amountController;
+
   const CurrencySelector({
     super.key,
     required this.currencies,
@@ -17,6 +19,7 @@ class CurrencySelector extends StatelessWidget {
     required this.onChanged,
     required this.amount, 
     required this.onAmountChanged, 
+    required this.amountController,
   });
 
   @override
@@ -74,7 +77,7 @@ Widget build(BuildContext context) {
             SizedBox(
               width: 150,
               child: TextField(
-                controller: TextEditingController(text: amount),
+                controller: amountController,
                 keyboardType: const TextInputType.numberWithOptions(
                   decimal: true,
                 ),
@@ -88,10 +91,20 @@ Widget build(BuildContext context) {
                 ),
                 decoration: const InputDecoration(
                   border: InputBorder.none,
-                  hintText: '0',
                   isDense: true,
+                  contentPadding: EdgeInsets.zero,
                 ),
                 onChanged: onAmountChanged,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              selectedCurrency.name,
+              textAlign: TextAlign.end,
+              style: const TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 16,
+                color: AppColors.textSecondary,
               ),
             ),
           ],

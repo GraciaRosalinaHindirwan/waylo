@@ -10,10 +10,12 @@ class Currencyconvert extends StatefulWidget {
 
   @override
   State<Currencyconvert> createState() => _CurrencyconvertState();
+  
 }
 
 class _CurrencyconvertState extends State<Currencyconvert> {
   late final CurrencyService currencyService;
+  late List<TextEditingController> amountControllers;
 
   final List<Currency> currencies = const [
     Currency(
@@ -51,10 +53,24 @@ class _CurrencyconvertState extends State<Currencyconvert> {
     ];
 
     amounts = ['0', '0', '0'];
+
+    amountControllers = [
+      TextEditingController(text: '0'),
+      TextEditingController(text: '0'),
+      TextEditingController(text: '0'),
+    ];
   }
   
   @override
   Widget build(BuildContext context) {
+    @override
+    void dispose() {
+      for (final controller in amountControllers) {
+        controller.dispose();
+      }
+
+      super.dispose();
+    }
     return SubPageLayout(
       title: "Currency Convert",
       content: Column(
@@ -65,6 +81,7 @@ class _CurrencyconvertState extends State<Currencyconvert> {
               currencies: currencies,
               selectedCurrency: selectedCurrencies[index],
               amount: amounts[index],
+              amountController: amountControllers[index],
               onChanged: (currency) {
                 setState(() {
                   selectedCurrencies[index] = currency;
