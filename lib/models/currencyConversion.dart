@@ -1,4 +1,5 @@
 import 'package:waylo/models/currency.dart';
+//model untuk nyimpen mata uang yang di konversi  
 
 class CurrencyConversion {
   final Currency fromCurrency;

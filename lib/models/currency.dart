@@ -1,3 +1,4 @@
+//model untuk nyimpen mata uang buat di drop down 
 class Currency {
   final String code;
   final String name;
