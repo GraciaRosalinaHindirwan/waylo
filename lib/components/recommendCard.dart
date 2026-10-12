@@ -38,12 +38,17 @@ class RecommendCard extends StatelessWidget {
             height: 130,
             clipBehavior: Clip.antiAlias,
             decoration: BoxDecoration(
-                image: image != null
-                ? DecorationImage(
-                    image: AssetImage(image!),
-                    fit: BoxFit.cover,
-                  )
-                : null,
+                image: image != null && image!.isNotEmpty
+                      ? DecorationImage(
+                          image: image!.startsWith('http')
+                              ? NetworkImage(image!)
+                              : AssetImage(image!) as ImageProvider,
+                          fit: BoxFit.cover,
+                          onError: (exception, stackTrace) {
+                            debugPrint('Gagal memuat gambar: $exception');
+                          },
+                        )
+                      : null,
             color: AppColors.border,
             ),
             child: Stack(
