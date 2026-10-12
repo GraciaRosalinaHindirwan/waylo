@@ -15,10 +15,14 @@ class SubPageLayout extends StatelessWidget {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Header tetap seperti kode kamu sebelumnya
           Container(
             width: double.infinity,
             height: 124,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 20,
+              vertical: 24,
+            ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               spacing: 32,
@@ -51,13 +55,44 @@ class SubPageLayout extends StatelessWidget {
                 Expanded(
                   child: Text(
                     title,
-                    style: AppTextStyles.heading3.copyWith(color: Colors.black),
+                    style: AppTextStyles.heading3.copyWith(
+                      color: Colors.black,
+                    ),
                   ),
                 ),
               ],
             ),
           ),
-          Expanded(child: content),
+
+          // Area konten dan gambar bawah
+          Expanded(
+            child: Stack(
+              children: [
+                // Konten halaman
+                Positioned.fill(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: content,
+                  ),
+                ),
+
+                // Gambar dekorasi di bagian bawah
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: IgnorePointer(
+                    child: Image.asset(
+                      'assets/img/backgroundDown.png',
+                      width: double.infinity,
+                      fit: BoxFit.fitWidth,
+                      alignment: Alignment.bottomCenter,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );

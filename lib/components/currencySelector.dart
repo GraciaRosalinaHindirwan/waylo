@@ -7,12 +7,16 @@ class CurrencySelector extends StatelessWidget {
   final List<Currency> currencies;
   final Currency selectedCurrency;
   final ValueChanged<Currency> onChanged;
+  final String amount;
+  final ValueChanged<String> onAmountChanged;
 
   const CurrencySelector({
     super.key,
     required this.currencies,
     required this.selectedCurrency,
     required this.onChanged,
+    required this.amount, 
+    required this.onAmountChanged, 
   });
 
   @override
@@ -67,22 +71,27 @@ Widget build(BuildContext context) {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            const Text(
-              '1',
-              style: TextStyle(
-                fontFamily: 'Fraunces',
-                fontSize: 36,
-                fontWeight: FontWeight.bold,
-                height: 1,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            Text(
-              selectedCurrency.name,
-              style: const TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 16,
-                color: AppColors.textSecondary,
+            SizedBox(
+              width: 150,
+              child: TextField(
+                controller: TextEditingController(text: amount),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                textAlign: TextAlign.end,
+                style: const TextStyle(
+                  fontFamily: 'Fraunces',
+                  fontSize: 36,
+                  fontWeight: FontWeight.bold,
+                  height: 1,
+                  color: AppColors.textPrimary,
+                ),
+                decoration: const InputDecoration(
+                  border: InputBorder.none,
+                  hintText: '0',
+                  isDense: true,
+                ),
+                onChanged: onAmountChanged,
               ),
             ),
           ],
