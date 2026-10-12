@@ -8,6 +8,33 @@ import 'package:waylo/repositories/currency_repository.dart';
 
 class CurrencyRepositoryImpl implements CurrencyRepository {
   @override
+  Future<List<Currency>> getCurrencies() async {
+    final url = Uri.parse(
+      'https://api.frankfurter.dev/v2/currencies',
+    );
+
+    final response = await http.get(url);
+
+    if (response.statusCode != 200) {
+      throw Exception(
+        'Gagal mengambil daftar mata uang: ${response.statusCode}',
+      );
+    }
+
+    final data = jsonDecode(response.body) as List<dynamic>;
+
+    return data.map((item) {
+      final currency = item as Map<String, dynamic>;
+
+      return Currency(
+        code: currency['iso_code'] as String,
+        name: currency['name'] as String,
+        symbol: (currency['symbol'] as String?) ?? '',
+      );
+    }).toList();
+  }
+
+  @override
   Future<ExchangeRate> getExchangeRate({
     required Currency baseCurrency,
     required Currency targetCurrency,

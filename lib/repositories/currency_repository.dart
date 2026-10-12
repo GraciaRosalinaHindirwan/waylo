@@ -8,4 +8,6 @@ abstract class CurrencyRepository {
     required Currency baseCurrency,
     required Currency targetCurrency,
   });
+
+  Future<List<Currency>> getCurrencies();
 }
