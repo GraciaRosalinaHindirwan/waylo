@@ -12,6 +12,7 @@ import 'package:waylo/pages/detailDestination.dart';
 import 'package:waylo/theme/appColors.dart';
 import 'package:waylo/theme/app_text_styles.dart';
 import 'package:flutter/material.dart';
+import 'package:waylo/pages/profile.dart';
 
 class HomePage extends StatefulWidget {
   final User user;
@@ -190,13 +191,23 @@ class _HomePageState extends State<HomePage> {
               ],
             ),
           ),
+          
           CustomBottomNavBar(
             currentIndex: 0,
             onTap: (index) {
               if (index == 1) {
                 Navigator.pushReplacement(
                   context,
-                  MaterialPageRoute(builder: (context) => Explorepage(user: widget.user,)),
+                  MaterialPageRoute(
+                    builder: (context) => Explorepage(user: widget.user),
+                  ),
+                );
+              } else if (index == 2) {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ProfilePage(user: widget.user),
+                  ),
                 );
               }
             },

@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:waylo/components/buttomNav.dart';
 import 'package:waylo/components/inspiringCard.dart';
@@ -12,14 +11,12 @@ import 'package:waylo/pages/detailDestination.dart';
 import 'package:waylo/repositories/destination_repository_factory.dart';
 import 'package:waylo/theme/appColors.dart';
 import 'package:waylo/theme/app_text_styles.dart';
+import 'package:waylo/pages/profile.dart';
 
 class Explorepage extends StatefulWidget {
-  final User user; 
+  final User user;
 
-  const Explorepage({
-    super.key, 
-    required this.user, 
-  });
+  const Explorepage({super.key, required this.user});
 
   @override
   State<Explorepage> createState() => _ExplorepageState();
@@ -27,7 +24,7 @@ class Explorepage extends StatefulWidget {
 
 class _ExplorepageState extends State<Explorepage> {
   late final Future<List<Destination>> _destinationsFuture;
-  
+
   @override
   void initState() {
     super.initState();
@@ -43,38 +40,36 @@ class _ExplorepageState extends State<Explorepage> {
       title: 'Explore',
       subtitle: 'Discover your next destination',
       bottomNavigationBar: CustomBottomNavBar(
-      currentIndex: 1,
-      onTap: (index) {
-        switch (index) {
-          case 0:
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (context) => HomePage(user: widget.user,),
-              ),
-            );
-            break;
-          case 1:
-            // Sudah berada di Explore
-            break;
-          case 2:
-            // Navigator.pushReplacement(
-            //   context,
-            //   MaterialPageRoute(
-            //     builder: (context) => ProfilePage(),
-            //   ),
-            // );
-            break;
-        }
-      },
-    ),
+        currentIndex: 1,
+        onTap: (index) {
+          switch (index) {
+            case 0:
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => HomePage(user: widget.user),
+                ),
+              );
+              break;
+            case 1:
+              // Sudah berada di Explore
+              break;
+            case 2:
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ProfilePage(user: widget.user),
+                ),
+              );
+              break;
+          }
+        },
+      ),
 
       // Bagian ini saja yang menimpa gambar
       searchBar: Row(
         children: [
-          const Expanded(
-            child: CustomSearchBar(),
-          ),
+          const Expanded(child: CustomSearchBar()),
           const SizedBox(width: 8),
           SizedBox(
             width: 54,
@@ -92,10 +87,7 @@ class _ExplorepageState extends State<Explorepage> {
                   borderRadius: BorderRadius.circular(14),
                 ),
               ),
-              child: const Icon(
-                Icons.tune_rounded,
-                size: 22,
-              ),
+              child: const Icon(Icons.tune_rounded, size: 22),
             ),
           ),
         ],
@@ -111,19 +103,17 @@ class _ExplorepageState extends State<Explorepage> {
                 'Destination Near You',
                 style: AppTextStyles.heading4.copyWith(
                   color: AppColors.textPrimary,
-                  fontSize: 18, 
+                  fontSize: 18,
                 ),
               ),
 
               TextButton(
-                onPressed: (){
-                  //diisi nanti sama page nya 
+                onPressed: () {
+                  //diisi nanti sama page nya
                 },
                 child: Text(
                   'See All',
-                  style: AppTextStyles.body.copyWith(
-                    color: AppColors.accent,
-                  ),
+                  style: AppTextStyles.body.copyWith(color: AppColors.accent),
                 ),
               ),
             ],
@@ -132,115 +122,102 @@ class _ExplorepageState extends State<Explorepage> {
           SizedBox(
             height: 225,
             child: FutureBuilder<List<Destination>>(
-              future: _destinationsFuture, 
-              builder: (
-                (context, snapshot){
+              future: _destinationsFuture,
+              builder: ((context, snapshot) {
                 //loading
-                  if(snapshot.connectionState == ConnectionState.waiting){
-                    return const Center(
-                      child: CircularProgressIndicator(),
-                    );
-                  }
-          
-                  //error
-                  if(snapshot.hasError){
-                    return const Center(
-                      child: Text("Gagal memuat destinasi"),
-                    );
-                  }
-          
-                  //data berhasil diterima
-                  final destinations = snapshot.data ?? [];
-          
-                  if (destinations.isEmpty) {
-                    return const Center(
-                      child: Text("Belum ada destinasi"),
-                    );
-                  }
-          
-                  return ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: destinations.length,
-                    separatorBuilder: (context, index) => const SizedBox(width: 16),
-                    itemBuilder: (context, index){
-                      final destination = destinations[index]; 
-                      final bannerImages = destination.images
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                //error
+                if (snapshot.hasError) {
+                  return const Center(child: Text("Gagal memuat destinasi"));
+                }
+
+                //data berhasil diterima
+                final destinations = snapshot.data ?? [];
+
+                if (destinations.isEmpty) {
+                  return const Center(child: Text("Belum ada destinasi"));
+                }
+
+                return ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: destinations.length,
+                  separatorBuilder: (context, index) =>
+                      const SizedBox(width: 16),
+                  itemBuilder: (context, index) {
+                    final destination = destinations[index];
+                    final bannerImages = destination.images
                         .where((image) => image.isBanner)
                         .toList();
-          
-                      final imageUrl = bannerImages.isNotEmpty
-                          ? bannerImages.first.imageUrl
-                          : null;
-          
-                      return SizedBox(
-                        width: 196,
-                        height: 225,
-                        child: RecommendCard(
-                          image: imageUrl,
-                          name: destination.name, 
-                          city: destination.location.districtName, 
-                          rating: destination.rating, 
-                          distance: '-', 
-                          page: Detaildestination(destination: destination, user: widget.user)
+
+                    final imageUrl = bannerImages.isNotEmpty
+                        ? bannerImages.first.imageUrl
+                        : null;
+
+                    return SizedBox(
+                      width: 196,
+                      height: 225,
+                      child: RecommendCard(
+                        image: imageUrl,
+                        name: destination.name,
+                        city: destination.location.districtName,
+                        rating: destination.rating,
+                        distance: '-',
+                        page: Detaildestination(
+                          destination: destination,
+                          user: widget.user,
                         ),
-                      );
-                    },
-                  );
-                }
-              ),
+                      ),
+                    );
+                  },
+                );
+              }),
             ),
           ),
 
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            
+
             children: [
               Text(
                 'Inspiring Destination',
                 style: AppTextStyles.heading4.copyWith(
                   color: AppColors.textPrimary,
-                  fontSize: 18, 
+                  fontSize: 18,
                 ),
               ),
 
               TextButton(
-                onPressed: (){
-                  //diisi nanti sama page nya 
+                onPressed: () {
+                  //diisi nanti sama page nya
                 },
                 child: Text(
                   'See All',
-                  style: AppTextStyles.body.copyWith(
-                    color: AppColors.accent,
-                  ),
+                  style: AppTextStyles.body.copyWith(color: AppColors.accent),
                 ),
               ),
             ],
           ),
 
-          
           SizedBox(
             height: 160,
             child: FutureBuilder<List<Destination>>(
               future: _destinationsFuture,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(
-                    child: CircularProgressIndicator(),
-                  );
+                  return const Center(child: CircularProgressIndicator());
                 }
 
                 if (snapshot.hasError) {
-                  return const Center(
-                    child: Text('Gagal memuat destinasi'),
-                  );
+                  return const Center(child: Text('Gagal memuat destinasi'));
                 }
 
                 final destinations = snapshot.data ?? [];
 
                 if (destinations.isEmpty) {
-                  return const Center(
-                    child: Text('Belum ada destinasi'),
-                  );
+                  return const Center(child: Text('Belum ada destinasi'));
                 }
 
                 return ListView.separated(
