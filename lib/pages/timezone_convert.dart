@@ -4,13 +4,20 @@ import 'package:waylo/components/buttomNav.dart';
 import 'package:waylo/layouts/subPageLayout.dart';
 import 'package:waylo/models/timezone.dart';
 import 'package:timezone/timezone.dart' as tz;
+import 'package:waylo/models/user.dart';
+import 'package:waylo/pages/explorePage.dart';
+import 'package:waylo/pages/home.dart';
 import 'package:waylo/repositories/timezone_repository_factory.dart';
 import 'package:waylo/components/timezoneCard.dart';
 import 'package:waylo/components/JakartaTimeConvert.dart';
 import 'package:waylo/theme/appColors.dart';
 
 class TimezoneConvert extends StatefulWidget {
-  const TimezoneConvert({super.key});
+  final User user; 
+  const TimezoneConvert({
+    super.key, 
+    required this.user, 
+  });
 
   @override
   State<TimezoneConvert> createState() =>
@@ -214,13 +221,23 @@ class _TimezoneConvertState extends State<TimezoneConvert> {
           onTap: (index) {
             switch (index) {
               case 0:
-                // Navigasi ke Home
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => HomePage(user: widget.user,),
+                  ),
+                );
                 break;
               case 1:
-                // Sudah berada di halaman Time Convert
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => Explorepage(user: widget.user,),
+                  ),
+                );
                 break;
               case 2:
-                // Navigasi ke Profile
+                // halaman ini ada di profile 
                 break;
             }
           },

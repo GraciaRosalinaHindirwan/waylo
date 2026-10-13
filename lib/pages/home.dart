@@ -51,7 +51,7 @@ class _HomePageState extends State<HomePage> {
   void openExplore() {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => Explorepage()),
+      MaterialPageRoute(builder: (context) => Explorepage(user: widget.user,)),
     );
   }
 
@@ -81,7 +81,7 @@ class _HomePageState extends State<HomePage> {
         city: destination.location.districtName,
         rating: destination.rating,
         distance: destination.location.subdistrictName,
-        page: Explorepage(),
+        page: Explorepage(user: widget.user,),
       ),
     );
   }
@@ -132,7 +132,7 @@ class _HomePageState extends State<HomePage> {
                                     (item) => QuickAction(
                                       label: item.$1,
                                       icon: item.$2,
-                                      page: Explorepage(),
+                                      page: Explorepage(user: widget.user),
                                     ),
                                   )
                                   .toList(),
@@ -195,7 +195,7 @@ class _HomePageState extends State<HomePage> {
               if (index == 1) {
                 Navigator.pushReplacement(
                   context,
-                  MaterialPageRoute(builder: (context) => Explorepage()),
+                  MaterialPageRoute(builder: (context) => Explorepage(user: widget.user,)),
                 );
               }
             },

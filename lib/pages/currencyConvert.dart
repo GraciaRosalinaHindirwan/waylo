@@ -4,12 +4,20 @@ import 'package:waylo/components/buttomNav.dart';
 import 'package:waylo/components/currencySelector.dart';
 import 'package:waylo/layouts/subPageLayout.dart';
 import 'package:waylo/models/currency.dart';
+import 'package:waylo/models/user.dart';
+import 'package:waylo/pages/explorePage.dart';
+import 'package:waylo/pages/home.dart';
 import 'package:waylo/repositories/currency_repository_factory.dart';
 import 'package:waylo/service/currency_service.dart';
 import 'package:waylo/theme/appColors.dart';
 
 class Currencyconvert extends StatefulWidget {
-  const Currencyconvert({super.key});
+  final User user; 
+  
+  const Currencyconvert({
+    super.key, 
+    required this.user, 
+  });
 
   @override
   State<Currencyconvert> createState() => _CurrencyconvertState();
@@ -171,19 +179,29 @@ class _CurrencyconvertState extends State<Currencyconvert> {
       bottomNavigationBar: SafeArea(
         top: false,
         child: CustomBottomNavBar(
-          currentIndex: 1,
+          currentIndex: 2,
           onTap: (index) {
             switch (index) {
               case 0:
-                // Navigasi ke Home
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => HomePage(user: widget.user,),
+                  ),
+                );
                 break;
 
               case 1:
-                // Halaman saat ini
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => Explorepage(user: widget.user,),
+                  ),
+                );
                 break;
 
               case 2:
-                // Navigasi ke Profile
+                // halaman ini ada di profil
                 break;
             }
           },

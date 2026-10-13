@@ -5,13 +5,20 @@ import 'package:waylo/components/recommendCard.dart';
 import 'package:waylo/components/searchBar.dart';
 import 'package:waylo/layouts/homeLayout.dart';
 import 'package:waylo/models/destination.dart';
+import 'package:waylo/models/user.dart';
+import 'package:waylo/pages/home.dart';
 import 'package:waylo/pages/detailDestination.dart';
 import 'package:waylo/repositories/destination_repository_factory.dart';
 import 'package:waylo/theme/appColors.dart';
 import 'package:waylo/theme/app_text_styles.dart';
 
 class Explorepage extends StatefulWidget {
-  const Explorepage({super.key});
+  final User user; 
+
+  const Explorepage({
+    super.key, 
+    required this.user, 
+  });
 
   @override
   State<Explorepage> createState() => _ExplorepageState();
@@ -39,12 +46,12 @@ class _ExplorepageState extends State<Explorepage> {
       onTap: (index) {
         switch (index) {
           case 0:
-            // Navigator.pushReplacement(
-            //   context,
-            //   MaterialPageRoute(
-            //     builder: (context) => Homepage(),
-            //   ),
-            // );
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => HomePage(user: widget.user,),
+              ),
+            );
             break;
           case 1:
             // Sudah berada di Explore
@@ -198,7 +205,7 @@ class _ExplorepageState extends State<Explorepage> {
                           city: destination.location.districtName, 
                           rating: destination.rating, 
                           distance: '-', 
-                          page: Detaildestination(destination: destination)
+                          page: Detaildestination(destination: destination, user: widget.user)
                         ),
                       );
                     },

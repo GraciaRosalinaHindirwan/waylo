@@ -100,6 +100,16 @@ class UserRepositoryImpl implements UserRepository {
         createdAt: DateTime(2026, 1, 5),
         updatedAt: DateTime(2026, 1, 5),
       ),
+      User(
+        id: 6,
+        fullname: 'test',
+        username: 'test',
+        password: 'test123',
+        destinations: ['China'],
+        categories: [_categories[2], _categories[4]],
+        createdAt: DateTime(2026, 1, 5),
+        updatedAt: DateTime(2026, 1, 5),
+      ),
     ]);
   }
 

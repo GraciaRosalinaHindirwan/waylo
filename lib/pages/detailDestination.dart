@@ -4,15 +4,19 @@ import 'package:waylo/components/enteranceFeeCard.dart';
 import 'package:waylo/components/favoriteButton.dart';
 import 'package:waylo/components/infoChip.dart';
 import 'package:waylo/models/destination.dart';
+import 'package:waylo/models/user.dart';
+import 'package:waylo/pages/home.dart';
 import 'package:waylo/theme/appColors.dart';
 import 'package:waylo/theme/app_text_styles.dart';
 
 class Detaildestination extends StatefulWidget{
+  final User user; 
   final Destination destination; 
   
   const Detaildestination({
     super.key, 
     required this.destination, 
+    required this.user, 
   });
 
   @override
@@ -286,12 +290,12 @@ class _DetaildestinationState extends State<Detaildestination> {
           onTap: (index) {
             switch (index) {
               case 0:
-                // Navigator.pushReplacement(
-                //   context,
-                //   MaterialPageRoute(
-                //     builder: (context) => Homepage(),
-                //   ),
-                // );
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => HomePage(user: widget.user),
+                  ),
+                );
                 break;
               case 1:
                 // Sudah berada di Explore

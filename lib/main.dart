@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:timezone/data/latest.dart' as tzdata;
-import 'package:waylo/pages/timezone_convert.dart';
-
+import 'package:waylo/models/user.dart';
+import 'package:waylo/pages/home.dart';
+import 'package:waylo/repositories/user_repository_impl.dart';
 
 void main() {
-  WidgetsFlutterBinding.ensureInitialized();
-  tzdata.initializeTimeZones();
   runApp(const MyApp());
 }
 
@@ -16,7 +14,34 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: TimezoneConvert(),
+      home: FutureBuilder<User?>(
+        future: UserRepositoryImpl().getUserByUsername('test'),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Scaffold(
+              body: Center(child: CircularProgressIndicator()),
+            );
+          }
+
+          if (snapshot.hasError) {
+            return Scaffold(
+              body: Center(
+                child: Text('Error: ${snapshot.error}'),
+              ),
+            );
+          }
+
+          final user = snapshot.data;
+
+          if (user == null) {
+            return const Scaffold(
+              body: Center(child: Text('User tidak ditemukan')),
+            );
+          }
+
+          return HomePage(user: user);
+        },
+      ),
     );
   }
 }
