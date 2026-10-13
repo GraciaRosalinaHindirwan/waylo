@@ -130,7 +130,7 @@ class _ExplorepageState extends State<Explorepage> {
           ),
 
           SizedBox(
-            height: 250,
+            height: 225,
             child: FutureBuilder<List<Destination>>(
               future: _destinationsFuture, 
               builder: (
@@ -173,7 +173,8 @@ class _ExplorepageState extends State<Explorepage> {
                           : null;
           
                       return SizedBox(
-                        width: 166,
+                        width: 196,
+                        height: 225,
                         child: RecommendCard(
                           image: imageUrl,
                           name: destination.name, 

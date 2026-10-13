@@ -8,6 +8,7 @@ import 'package:waylo/models/user.dart';
 import 'package:waylo/pages/explorePage.dart';
 import 'package:waylo/repositories/destination_repository.dart';
 import 'package:waylo/repositories/destination_repository_factory.dart';
+import 'package:waylo/pages/detailDestination.dart';
 import 'package:waylo/theme/appColors.dart';
 import 'package:waylo/theme/app_text_styles.dart';
 import 'package:flutter/material.dart';
@@ -61,27 +62,27 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget buildDestinationCard(Destination destination) {
-    return Container(
+    final bannerImages = destination.images
+        .where((image) => image.isBanner)
+        .toList();
+
+    final imageUrl = bannerImages.isNotEmpty
+        ? bannerImages.first.imageUrl
+        : null;
+
+    return SizedBox(
       width: 196,
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        color: AppColors.card,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x16342B20),
-            blurRadius: 25,
-            offset: Offset(0, 8),
-          ),
-        ],
-      ),
+      height: 225,
       child: RecommendCard(
-        image: imagePath(destination),
+        image: imageUrl,
         name: destination.name,
         city: destination.location.districtName,
         rating: destination.rating,
-        distance: destination.location.subdistrictName,
-        page: Explorepage(user: widget.user,),
+        distance: '-',
+        page: Detaildestination(
+          destination: destination,
+          user: widget.user,
+        ),
       ),
     );
   }
