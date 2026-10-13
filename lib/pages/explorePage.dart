@@ -259,11 +259,11 @@ class _ExplorepageState extends State<Explorepage> {
                         ? bannerImages.first.imageUrl
                         : null;
 
-                    return PopularDestinationCard(
+                    return Inspiringcard(
                       destination: destination,
                       user: widget.user,
                       image: imageUrl,
-                      country: destination.location.subdistrictName,
+                      location: destination.location.subdistrictName,
                     );
                   },
                 );

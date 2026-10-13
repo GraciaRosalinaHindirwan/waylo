@@ -6,18 +6,18 @@ import 'package:waylo/pages/detailDestination.dart';
 import 'package:waylo/theme/appColors.dart';
 import 'package:waylo/theme/app_text_styles.dart';
 
-class PopularDestinationCard extends StatelessWidget {
+class Inspiringcard extends StatelessWidget {
   final Destination destination;
   final User user;
   final String? image;
-  final String country;
+  final String location;
 
-  const PopularDestinationCard({
+  const Inspiringcard({
     super.key,
     required this.destination,
     required this.user,
     required this.image,
-    required this.country,
+    required this.location,
   });
 
   @override
@@ -45,7 +45,6 @@ class PopularDestinationCard extends StatelessWidget {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            // Background image
             if (image != null && image!.isNotEmpty)
               Image(
                 image: image!.startsWith('http')
@@ -53,17 +52,12 @@ class PopularDestinationCard extends StatelessWidget {
                     : AssetImage(image!) as ImageProvider,
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    color: AppColors.border,
-                  );
+                  return Container(color: AppColors.border);
                 },
               )
             else
-              Container(
-                color: AppColors.border,
-              ),
+              Container(color: AppColors.border),
 
-            // Gradient untuk membantu teks terbaca
             const DecoratedBox(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
@@ -79,7 +73,6 @@ class PopularDestinationCard extends StatelessWidget {
               ),
             ),
 
-            // Nama destinasi dan negara
             Positioned(
               left: 10,
               right: 8,
@@ -99,7 +92,7 @@ class PopularDestinationCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    country,
+                    location,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: AppTextStyles.body.copyWith(
@@ -111,7 +104,6 @@ class PopularDestinationCard extends StatelessWidget {
               ),
             ),
 
-            // Tombol panah
             Positioned(
               right: 8,
               bottom: 10,
