@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:waylo/components/buttomNav.dart';
 import 'package:waylo/components/currencySelector.dart';
 import 'package:waylo/layouts/subPageLayout.dart';
 import 'package:waylo/models/currency.dart';
 import 'package:waylo/repositories/currency_repository_factory.dart';
 import 'package:waylo/service/currency_service.dart';
+import 'package:waylo/theme/appColors.dart';
 
 class Currencyconvert extends StatefulWidget {
   const Currencyconvert({super.key});
@@ -158,11 +160,38 @@ class _CurrencyconvertState extends State<Currencyconvert> {
 
   @override
   Widget build(BuildContext context) {
-    return SubPageLayout(
-      title: 'Currency Convert',
-      content: _buildContent(),
+    return Scaffold(
+      backgroundColor: AppColors.background,
+
+      body: SubPageLayout(
+        title: 'Currency Convert',
+        content: _buildContent(),
+      ),
+
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: CustomBottomNavBar(
+          currentIndex: 1,
+          onTap: (index) {
+            switch (index) {
+              case 0:
+                // Navigasi ke Home
+                break;
+
+              case 1:
+                // Halaman saat ini
+                break;
+
+              case 2:
+                // Navigasi ke Profile
+                break;
+            }
+          },
+        ),
+      ),
     );
   }
+
 
   Widget _buildContent() {
     if (isLoadingCurrencies) {
