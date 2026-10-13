@@ -8,6 +8,7 @@ import 'package:waylo/models/user.dart';
 import 'package:waylo/pages/home.dart';
 import 'package:waylo/theme/appColors.dart';
 import 'package:waylo/theme/app_text_styles.dart';
+import 'package:waylo/repositories/favorite_repository_factory.dart';
 
 class Detaildestination extends StatefulWidget{
   final User user; 
@@ -139,7 +140,10 @@ class _DetaildestinationState extends State<Detaildestination> {
             
                           // Button Favorite
                           FavoriteButton(
+                            //cek status awal true or false 
+                            initialFavorite: FavoriteRepositoryFactory.create().isFavorite(widget.destination.id), 
                             onChanged: (isFavorite) {
+                              FavoriteRepositoryFactory.create().toggleFavorite(widget.destination);
                               debugPrint('Favorite: $isFavorite');
                             },
                           ),

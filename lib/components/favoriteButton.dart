@@ -16,20 +16,20 @@ class FavoriteButton extends StatefulWidget {
 }
 
 class _FavoriteButtonState extends State<FavoriteButton> {
-  late bool isFavorite;
+  late bool isFavorite; //maksdunya, dia diberi nilai sebelum digunakan. 
 
   @override
   void initState() {
     super.initState();
-    isFavorite = widget.initialFavorite;
+    isFavorite = widget.initialFavorite; //dikasihnya disini isFavorite = false. 
   }
 
   void toggleFavorite() {
     setState(() {
-      isFavorite = !isFavorite;
+      isFavorite = !isFavorite; //statusnya berubah jadi true pas user klik buttonnya 
     });
 
-    widget.onChanged?.call(isFavorite);
+    widget.onChanged?.call(isFavorite); //kirim informasi button ke widget yang gunain button ini 
   }
   @override
   Widget build(BuildContext context) {
