@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 
 class ProfileCard extends StatelessWidget {
   final String title;
-  final String icon;
+  final IconData icon;
   final Widget page;
 
   const ProfileCard({
@@ -40,10 +40,10 @@ class ProfileCard extends StatelessWidget {
         child: Row(
           spacing: 8,
           children: [
-            Image.asset(
+            Icon(
               icon,
-              width: 24,
-              height: 24,
+              size: 24,
+              color: AppColors.background,
             ),
             Expanded(
               child: Text(
