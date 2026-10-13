@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:waylo/components/buttomNav.dart';
 
 import 'package:waylo/layouts/subPageLayout.dart';
 import 'package:waylo/models/timezone.dart';
@@ -6,6 +7,7 @@ import 'package:timezone/timezone.dart' as tz;
 import 'package:waylo/repositories/timezone_repository_factory.dart';
 import 'package:waylo/components/timezoneCard.dart';
 import 'package:waylo/components/JakartaTimeConvert.dart';
+import 'package:waylo/theme/appColors.dart';
 
 class TimezoneConvert extends StatefulWidget {
   const TimezoneConvert({super.key});
@@ -95,117 +97,135 @@ class _TimezoneConvertState extends State<TimezoneConvert> {
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
-    return SubPageLayout(
-      title: 'Time Convert',
-      content: isLoading
-          ? const Center(
-              child: CircularProgressIndicator(),
-            )
-          : errorMessage != null
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(
-                          Icons.error_outline,
-                          size: 40,
-                          color: Colors.red,
-                        ),
-                        const SizedBox(height: 12),
-                        const Text(
-                          'Gagal memuat zona waktu',
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          errorMessage!,
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: () {
-                            setState(() {
-                              isLoading = true;
-                              errorMessage = null;
-                            });
+    return Scaffold(
+      backgroundColor: AppColors.background,
 
-                            loadTimezones();
-                          },
-                          child: const Text('Coba Lagi'),
-                        ),
-                      ],
-                    ),
-                  ),
-                )
-              : timezones.isEmpty ||
-                selectedTimezones.isEmpty ||
-                selectedTimezones.every(
-                  (timezone) => timezone == null,
-                )
-                ? const Center(
-                    child: Text(
-                      'Zona waktu tidak tersedia',
+      body: SubPageLayout(
+        title: 'Time Convert',
+        content: isLoading
+            ? const Center(
+                child: CircularProgressIndicator(),
+              )
+            : errorMessage != null
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.error_outline,
+                            size: 40,
+                            color: Colors.red,
+                          ),
+                          const SizedBox(height: 12),
+                          const Text(
+                            'Gagal memuat zona waktu',
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            errorMessage!,
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: () {
+                              setState(() {
+                                isLoading = true;
+                                errorMessage = null;
+                              });
+                              loadTimezones();
+                            },
+                            child: const Text('Coba Lagi'),
+                          ),
+                        ],
+                      ),
                     ),
                   )
-                  : ListView(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 16,
+                : timezones.isEmpty ||
+                        selectedTimezones.isEmpty ||
+                        selectedTimezones.every(
+                          (timezone) => timezone == null,
+                        )
+                    ? const Center(
+                        child: Text(
+                          'Zona waktu tidak tersedia',
+                        ),
+                      )
+                    : ListView(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 16,
+                        ),
+                        children: [
+                          const JakartaTimezoneCard(),
+
+                          const SizedBox(height: 24),
+
+                          if (selectedTimezones[0] != null)
+                            TimezoneCard(
+                              key: const ValueKey('timezone_1'),
+                              timezones: timezones,
+                              selectedTimezone: selectedTimezones[0]!,
+                              onChanged: (timezone) {
+                                setState(() {
+                                  selectedTimezones[0] = timezone;
+                                });
+                              },
+                            ),
+
+                          const SizedBox(height: 16),
+
+                          if (selectedTimezones[1] != null)
+                            TimezoneCard(
+                              key: const ValueKey('timezone_2'),
+                              timezones: timezones,
+                              selectedTimezone: selectedTimezones[1]!,
+                              onChanged: (timezone) {
+                                setState(() {
+                                  selectedTimezones[1] = timezone;
+                                });
+                              },
+                            ),
+
+                          const SizedBox(height: 16),
+
+                          if (selectedTimezones[2] != null)
+                            TimezoneCard(
+                              key: const ValueKey('timezone_3'),
+                              timezones: timezones,
+                              selectedTimezone: selectedTimezones[2]!,
+                              onChanged: (timezone) {
+                                setState(() {
+                                  selectedTimezones[2] = timezone;
+                                });
+                              },
+                            ),
+                        ],
                       ),
-                      children: [
-                        // Card waktu Jakarta
-                        const JakartaTimezoneCard(),
+      ),
 
-                        const SizedBox(height: 12),
-
-                        // Kota tujuan pertama
-                        if (selectedTimezones[0] != null)
-                          TimezoneCard(
-                            key: const ValueKey('timezone_1'),
-                            timezones: timezones,
-                            selectedTimezone: selectedTimezones[0]!,
-                            onChanged: (timezone) {
-                              setState(() {
-                                selectedTimezones[0] = timezone;
-                              });
-                            },
-                          ),
-
-                        const SizedBox(height: 24),
-
-                        // Kota tujuan kedua
-                        if (selectedTimezones[1] != null)
-                          TimezoneCard(
-                            key: const ValueKey('timezone_2'),
-                            timezones: timezones,
-                            selectedTimezone: selectedTimezones[1]!,
-                            onChanged: (timezone) {
-                              setState(() {
-                                selectedTimezones[1] = timezone;
-                              });
-                            },
-                          ),
-
-                        const SizedBox(height: 24),
-
-                        // Kota tujuan ketiga
-                        if (selectedTimezones[2] != null)
-                          TimezoneCard(
-                            key: const ValueKey('timezone_3'),
-                            timezones: timezones,
-                            selectedTimezone: selectedTimezones[2]!,
-                            onChanged: (timezone) {
-                              setState(() {
-                                selectedTimezones[2] = timezone;
-                              });
-                            },
-                          ),
-                      ],
-                    ),
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: CustomBottomNavBar(
+          currentIndex: 2,
+          onTap: (index) {
+            switch (index) {
+              case 0:
+                // Navigasi ke Home
+                break;
+              case 1:
+                // Sudah berada di halaman Time Convert
+                break;
+              case 2:
+                // Navigasi ke Profile
+                break;
+            }
+          },
+        ),
+      ),
     );
   }
 }
