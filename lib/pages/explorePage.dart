@@ -1,6 +1,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:waylo/components/buttomNav.dart';
+import 'package:waylo/components/inspiringCard.dart';
 import 'package:waylo/components/recommendCard.dart';
 import 'package:waylo/components/searchBar.dart';
 import 'package:waylo/layouts/homeLayout.dart';
@@ -128,32 +129,6 @@ class _ExplorepageState extends State<Explorepage> {
             ],
           ),
 
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            
-            children: [
-              Text(
-                'Inspiring Destination',
-                style: AppTextStyles.heading4.copyWith(
-                  color: AppColors.textPrimary,
-                  fontSize: 18, 
-                ),
-              ),
-
-              TextButton(
-                onPressed: (){
-                  //diisi nanti sama page nya 
-                },
-                child: Text(
-                  'See All',
-                  style: AppTextStyles.body.copyWith(
-                    color: AppColors.accent,
-                  ),
-                ),
-              ),
-            ],
-          ),
-
           SizedBox(
             height: 250,
             child: FutureBuilder<List<Destination>>(
@@ -212,6 +187,87 @@ class _ExplorepageState extends State<Explorepage> {
                   );
                 }
               ),
+            ),
+          ),
+
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            
+            children: [
+              Text(
+                'Inspiring Destination',
+                style: AppTextStyles.heading4.copyWith(
+                  color: AppColors.textPrimary,
+                  fontSize: 18, 
+                ),
+              ),
+
+              TextButton(
+                onPressed: (){
+                  //diisi nanti sama page nya 
+                },
+                child: Text(
+                  'See All',
+                  style: AppTextStyles.body.copyWith(
+                    color: AppColors.accent,
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          
+          SizedBox(
+            height: 160,
+            child: FutureBuilder<List<Destination>>(
+              future: _destinationsFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(
+                    child: CircularProgressIndicator(),
+                  );
+                }
+
+                if (snapshot.hasError) {
+                  return const Center(
+                    child: Text('Gagal memuat destinasi'),
+                  );
+                }
+
+                final destinations = snapshot.data ?? [];
+
+                if (destinations.isEmpty) {
+                  return const Center(
+                    child: Text('Belum ada destinasi'),
+                  );
+                }
+
+                return ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  clipBehavior: Clip.none,
+                  itemCount: destinations.length,
+                  separatorBuilder: (context, index) =>
+                      const SizedBox(width: 16),
+                  itemBuilder: (context, index) {
+                    final destination = destinations[index];
+
+                    final bannerImages = destination.images
+                        .where((image) => image.isBanner)
+                        .toList();
+
+                    final imageUrl = bannerImages.isNotEmpty
+                        ? bannerImages.first.imageUrl
+                        : null;
+
+                    return PopularDestinationCard(
+                      destination: destination,
+                      user: widget.user,
+                      image: imageUrl,
+                      country: destination.location.subdistrictName,
+                    );
+                  },
+                );
+              },
             ),
           ),
         ],
