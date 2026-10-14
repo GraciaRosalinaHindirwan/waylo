@@ -1,6 +1,6 @@
 
 import 'package:flutter/material.dart';
-import 'package:waylo/models/destination_model.dart';
+import 'package:waylo/components/destination_model.dart';
 import 'package:waylo/theme/appColors.dart';
 import 'package:waylo/theme/app_text_styles.dart';
 
