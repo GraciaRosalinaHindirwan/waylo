@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:waylo/models/destination.dart';
 import 'package:waylo/theme/appColors.dart';
+import 'package:waylo/models/favoriteDestination.dart';
 
 class FavoriteCard extends StatelessWidget {
-  final Destination destination;
+  final FavoriteDestination destination;
 
   const FavoriteCard({
     super.key,
@@ -12,9 +12,6 @@ class FavoriteCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bannerImage = destination.images.firstWhere(
-      (image) => image.isBanner,
-    );
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -34,7 +31,7 @@ class FavoriteCard extends StatelessWidget {
           ClipRRect(
             borderRadius: BorderRadius.circular(30),
             child: Image.network(
-              bannerImage.imageUrl,
+              destination.imageUrl,
               width: 180,
               height: 180,
               fit: BoxFit.cover,
@@ -61,7 +58,7 @@ class FavoriteCard extends StatelessWidget {
                 const SizedBox(height: 2),
 
                 Text(
-                  destination.location.districtName,
+                  destination.location,
                   style: const TextStyle(
                     fontFamily: 'Poppins',
                     fontSize: 18,

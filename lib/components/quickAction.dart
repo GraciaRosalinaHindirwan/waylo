@@ -1,5 +1,4 @@
 import 'package:waylo/theme/appColors.dart';
-import 'package:waylo/theme/app_text_styles.dart';
 import 'package:flutter/material.dart';
 
 class QuickAction extends StatelessWidget {
@@ -23,39 +22,46 @@ class QuickAction extends StatelessWidget {
           MaterialPageRoute(builder: (context) => page),
         );
       },
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Container(
-            width: 50,
-            height: 50,
-            decoration: BoxDecoration(
-              color: AppColors.border,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: Center(
-              child: Image.asset(
-                icon,
-                width: 30,
-                height: 30,
-                fit: BoxFit.fill,
+      child: SizedBox(
+        width: 50,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Container(
+              width: double.infinity,
+              height: 50,
+              decoration: BoxDecoration(
+                color: AppColors.border,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: Center(
+                child: Image.asset(
+                  icon,
+                  width: 30,
+                  height: 30,
+                  fit: BoxFit.fill,
+                ),
               ),
             ),
-          ),
 
-          Text(
-            label,
-            maxLines: 1,
-            softWrap: false,
-            textAlign: TextAlign.center,
-            style: AppTextStyles.label.copyWith(
-              color: AppColors.textPrimary,
+            SizedBox(
+              width: 50,
+              child: Text(
+                label,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: AppColors.textPrimary,
+                  fontSize: 12,
+                  fontFamily: 'Poppins',
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

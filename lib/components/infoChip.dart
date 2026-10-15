@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:waylo/theme/app_text_styles.dart';
 import 'package:waylo/theme/appColors.dart';
-import 'package:waylo/theme/app_text_styles.dart';
 
 class Infochip extends StatelessWidget {
   final Widget? icon; 
@@ -24,11 +23,11 @@ class Infochip extends StatelessWidget {
       ),
 
       decoration: BoxDecoration(
-        color: AppColors.card, 
+        color: Colors.white, 
         borderRadius: BorderRadius.circular(100), 
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.15),
+            color: Colors.grey.withOpacity(0.8), 
             spreadRadius: 0.5, 
             blurRadius: 4, 
             offset: const Offset(0, 4), 
@@ -41,13 +40,15 @@ class Infochip extends StatelessWidget {
         children: [
            if (icon != null) ...[
             icon!,
-            const SizedBox(width: 4),
+            const SizedBox(width: 8),
           ],
 
           Text(
             value, 
-            style: AppTextStyles.body.copyWith(
+            style: TextStyle(
+              fontFamily: AppTextStyles.label.fontFamily,
               color: textColor, 
+              fontSize: 16, 
             ),
           ),
         ],

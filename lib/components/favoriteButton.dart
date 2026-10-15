@@ -16,27 +16,27 @@ class FavoriteButton extends StatefulWidget {
 }
 
 class _FavoriteButtonState extends State<FavoriteButton> {
-  late bool isFavorite; //maksdunya, dia diberi nilai sebelum digunakan. 
+  late bool isFavorite;
 
   @override
   void initState() {
     super.initState();
-    isFavorite = widget.initialFavorite; //dikasihnya disini isFavorite = false. 
+    isFavorite = widget.initialFavorite;
   }
 
   void toggleFavorite() {
     setState(() {
-      isFavorite = !isFavorite; //statusnya berubah jadi true pas user klik buttonnya 
+      isFavorite = !isFavorite;
     });
 
-    widget.onChanged?.call(isFavorite); //kirim informasi button ke widget yang gunain button ini 
+    widget.onChanged?.call(isFavorite);
   }
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: toggleFavorite,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
+      child: Container(
         padding: const EdgeInsets.symmetric(
           horizontal: 8,
           vertical: 8,
@@ -46,8 +46,8 @@ class _FavoriteButtonState extends State<FavoriteButton> {
           borderRadius: BorderRadius.circular(100),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.3),
-              spreadRadius: 1,
+              color: Colors.grey.withOpacity(0.8),
+              spreadRadius: 2,
               blurRadius: 4,
               offset: const Offset(0, 3),
             ),
@@ -63,18 +63,15 @@ class _FavoriteButtonState extends State<FavoriteButton> {
               size: 24,
               color: AppColors.accent,
             ),
-
-            if (isFavorite) ...[
-              const SizedBox(width: 8),
-              const Text(
-                'Favorite',
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 16,
-                  color: AppColors.textSecondary,
-                ),
+            const SizedBox(width: 8),
+            const Text(
+              'Favorite',
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 16,
+                color: AppColors.textSecondary,
               ),
-            ],
+            ),
           ],
         ),
       ),
