@@ -10,11 +10,6 @@ class AuthService extends ChangeNotifier {
   final UserRepository repository;
   final SessionStorage sessionStorage; 
 
-  AuthService(
-    this.repository, 
-    this.sessionStorage,
-  );
-
   // User yang sedang login pada aplikasi.
   User? _currentUser;
 
@@ -22,6 +17,11 @@ class AuthService extends ChangeNotifier {
   User? get currentUser => _currentUser;
 
   bool get isLoggedIn => _currentUser != null;
+
+  AuthService(
+    this.repository, 
+    this.sessionStorage,
+  );
 
   // Dipanggil setelah autentikasi berhasil.
   void setCurrentUser(User user) {
@@ -83,7 +83,7 @@ class AuthService extends ChangeNotifier {
 
   //Fungsi ini akan memulihkan pengguna jika ID masih ditemukan dan waktu tidak aktif belum mencapai satu menit. 
   //Jika tidak valid, session dihapus.
-  static const Duration sessionTimeout = Duration(seconds: 10);
+  static const Duration sessionTimeout = Duration(minutes: 10);
 
   Future<void> restoreSession() async {
     final userId = await sessionStorage.getUserId();

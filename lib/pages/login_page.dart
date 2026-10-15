@@ -7,7 +7,6 @@ import 'package:waylo/pages/regist.dart';
 import 'package:waylo/pages/biometric.dart';
 import 'package:provider/provider.dart';
 import 'package:waylo/service/auth_service.dart';
-import 'package:waylo/pages/home.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});

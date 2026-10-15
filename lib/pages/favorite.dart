@@ -1,6 +1,5 @@
 import 'package:waylo/components/buttomNav.dart';
 import 'package:waylo/models/destination.dart';
-import 'package:waylo/models/user.dart';
 import 'package:waylo/pages/detailDestination.dart';
 import 'package:waylo/pages/explorePage.dart';
 import 'package:waylo/pages/home.dart';

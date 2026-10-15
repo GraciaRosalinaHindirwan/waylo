@@ -9,7 +9,6 @@ import 'package:waylo/models/user.dart';
 import 'package:waylo/pages/explorePage.dart';
 import 'package:waylo/pages/favorite.dart';
 import 'package:waylo/pages/home.dart';
-import 'package:waylo/pages/regist.dart';
 import 'package:waylo/theme/appColors.dart';
 import 'package:waylo/theme/app_text_styles.dart';
 import 'package:waylo/pages/currencyConvertPage.dart';
