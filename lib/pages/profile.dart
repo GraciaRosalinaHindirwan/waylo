@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:waylo/pages/login_page.dart';
 import 'package:waylo/service/auth_service.dart';
 
 import 'package:waylo/components/profileCard.dart';
@@ -85,7 +86,7 @@ Widget buildAvatar(User? user) {
       onTap: () {
         Navigator.pushAndRemoveUntil(
           context,
-          MaterialPageRoute(builder: (context) => const RegisterPage()),
+          MaterialPageRoute(builder: (context) => const LoginPage()),
           (route) => false,
         );
       },

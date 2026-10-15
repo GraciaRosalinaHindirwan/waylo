@@ -2,6 +2,7 @@ import 'package:waylo/models/user.dart';
 import 'package:waylo/models/category.dart';
 import 'package:waylo/repositories/user_repository.dart';
 import 'package:waylo/service/password_hasher.dart';
+import 'package:flutter/foundation.dart' hide Category;
 
 // dia yang menjalankan tugas dari minta data ke API sampai ilah datanya 
 
@@ -116,8 +117,12 @@ class UserRepositoryImpl implements UserRepository {
     ];
 
     for (final user in dummyUsers) {
+      debugPrint('Mulai hash: ${user.username}');
+
       final hashedPassword =
           await PasswordHasher.hashPassword(user.password);
+
+      debugPrint('Selesai hash: ${user.username}');
 
       _users.add(
         User(
@@ -133,6 +138,29 @@ class UserRepositoryImpl implements UserRepository {
       );
     }
   }
+
+  static Future<UserRepositoryImpl> create() async {
+    debugPrint('A. Membuat instance repository');
+
+    final repository = UserRepositoryImpl();
+
+    debugPrint('B. Mulai hashing dummy users');
+    await repository.initializeDummyUsers();
+    debugPrint('C. Hashing selesai');
+
+  return repository;
+}
+
+@override
+Future<User?> getUserById(int id) async {
+  for (final user in _users) {
+    if (user.id == id) {
+      return user;
+    }
+  }
+
+  return null;
+}
 
   @override
   Future<User> createUser(User user) async {

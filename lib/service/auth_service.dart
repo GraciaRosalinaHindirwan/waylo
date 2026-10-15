@@ -1,4 +1,6 @@
 import 'package:flutter/foundation.dart';
+import 'dart:async';
+
 import 'package:waylo/models/user.dart';
 import 'package:waylo/repositories/user_repository.dart';
 import 'package:waylo/service/password_hasher.dart';
@@ -73,12 +75,78 @@ class AuthService extends ChangeNotifier {
     await sessionStorage.saveLastActivity(); 
 
     _currentUser = user; 
+    startSessionTimer();
     notifyListeners();
 
     return user;
   }
+
+  //Fungsi ini akan memulihkan pengguna jika ID masih ditemukan dan waktu tidak aktif belum mencapai satu menit. 
+  //Jika tidak valid, session dihapus.
+  static const Duration sessionTimeout = Duration(seconds: 10);
+
+  Future<void> restoreSession() async {
+    final userId = await sessionStorage.getUserId();
+    final lastActivity = await sessionStorage.getLastActivity();
+
+    if (userId == null || lastActivity == null) {
+      await logout();
+      return;
+    }
+
+    final inactiveDuration = DateTime.now().difference(lastActivity);
+
+    if (inactiveDuration >= sessionTimeout) {
+      await logout();
+      return;
+    }
+
+    final user = await repository.getUserById(userId);
+
+    if (user == null) {
+      await logout();
+      return;
+    }
+
+    _currentUser = user;
+    startSessionTimer();
+    notifyListeners();
+  }
+
+  Future<void> updateLastActivity() async {
+    if (!isLoggedIn) return;
+
+    await sessionStorage.saveLastActivity();
+  }
+
+  Timer? _sessionTimer;
+
+  void startSessionTimer() {
+    _sessionTimer?.cancel();
+
+    _sessionTimer = Timer.periodic(
+      const Duration(seconds: 1),
+      (_) async {
+        if (!isLoggedIn) {
+          _sessionTimer?.cancel();
+          return;
+        }
+
+        final lastActivity = await sessionStorage.getLastActivity();
+
+        if (lastActivity == null ||
+            DateTime.now().difference(lastActivity) >= sessionTimeout) {
+          await logout();
+        }
+      },
+    );
+  }
+
   // Mengakhiri session.
   Future<void> logout() async {
+    _sessionTimer?.cancel();
+    _sessionTimer = null;
+
     await sessionStorage.clearSession();
 
     _currentUser = null;

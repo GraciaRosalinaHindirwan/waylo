@@ -15,52 +15,68 @@ Future<void> main() async{
    // Inisialisasi database zona waktu sebelum aplikasi berjalan.
   tzdata.initializeTimeZones();
 
-  try {
-    final repository = UserRepositoryFactory.create(); 
-    // await repository.initializeDummyUsers();
-    final authService = AuthService(repository, SessionStorage()); 
+  
+try {
+  debugPrint('1. Mulai membuat repository');
 
-    final router = GoRouter(
-      initialLocation: '/login',
-      refreshListenable: authService,
-      redirect: (context, state) {
-        final isLoggedIn = authService.isLoggedIn;
-        final isLoginPage = state.matchedLocation == '/login';
+  final repository = await UserRepositoryFactory.create();
 
-        // Belum login dan membuka halaman internal.
-        if (!isLoggedIn && !isLoginPage) {
-          return '/login';
-        }
+  debugPrint('2. Repository selesai dibuat');
 
-        // Sudah login dan membuka halaman login.
-        if (isLoggedIn && isLoginPage) {
-          return '/home';
-        }
+  final authService = AuthService(
+    repository,
+    SessionStorage(),
+  );
 
-        return null;
-      },
-      routes: [
-        GoRoute(
-          path: '/login',
-          builder: (context, state) => LoginPage(),
-        ),
-        GoRoute(
-          path: '/home',
-          builder: (context, state) => HomePage(),
-        ),
-      ],
-    );
-    runApp(
-      ChangeNotifierProvider<AuthService>.value(
-        value: authService,
-        child: MyApp(router: router),
+  await authService.restoreSession();
+
+  debugPrint('3. AuthService selesai dibuat');
+
+  final router = GoRouter(
+    initialLocation: '/login',
+    refreshListenable: authService,
+    redirect: (context, state) {
+      final isLoggedIn = authService.isLoggedIn;
+      final isLoginPage = state.matchedLocation == '/login';
+
+      if (!isLoggedIn && !isLoginPage) {
+        return '/login';
+      }
+
+      if (isLoggedIn && isLoginPage) {
+        return '/home';
+      }
+
+      return null;
+    },
+    routes: [
+      GoRoute(
+        path: '/login',
+        builder: (context, state) => LoginPage(),
       ),
-    );
-  } catch (e, stackTrace) {
-    debugPrint('Gagal menjalankan aplikasi: $e');
-    debugPrintStack(stackTrace: stackTrace);
-    rethrow;
-  }
+      GoRoute(
+        path: '/home',
+        builder: (context, state) => HomePage(),
+      ),
+    ],
+  );
+
+  debugPrint('4. Router selesai dibuat');
+
+  runApp(
+    ChangeNotifierProvider<AuthService>.value(
+      value: authService,
+      child: MyApp(router: router),
+    ),
+  );
+
+  debugPrint('5. runApp sudah dipanggil');
+} catch (e, stackTrace) {
+  debugPrint('Gagal menjalankan aplikasi: $e');
+  debugPrintStack(stackTrace: stackTrace);
+  rethrow;
+}
+
 
   
 

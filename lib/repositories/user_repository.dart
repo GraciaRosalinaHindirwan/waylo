@@ -4,6 +4,8 @@ import 'package:waylo/models/user.dart';
 abstract class UserRepository {
   // CREATE
   Future<User> createUser(User user);
+  
+  Future<User?> getUserById(int id);
 
   // READ
   Future<User?> getUserByUsername(String username);
