@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
@@ -19,17 +20,21 @@ class DestinationMapCard extends StatefulWidget {
   });
 
   @override
-  State<DestinationMapCard> createState() => _DestinationMapCardState();
+  State<DestinationMapCard> createState() =>
+      _DestinationMapCardState();
 }
 
-class _DestinationMapCardState extends State<DestinationMapCard> {
+class _DestinationMapCardState
+    extends State<DestinationMapCard> {
   GoogleMapController? _mapController;
   LatLng? _userLocation;
   double? _distanceKm;
   bool _loadingLocation = true;
 
-  LatLng get _destination =>
-      LatLng(widget.destinationLatitude, widget.destinationLongitude);
+  LatLng get _destination => LatLng(
+        widget.destinationLatitude,
+        widget.destinationLongitude,
+      );
 
   @override
   void initState() {
@@ -39,7 +44,8 @@ class _DestinationMapCardState extends State<DestinationMapCard> {
 
   Future<void> _getUserLocation() async {
     try {
-      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      bool serviceEnabled =
+          await Geolocator.isLocationServiceEnabled();
 
       if (!serviceEnabled) {
         if (mounted) {
@@ -48,7 +54,8 @@ class _DestinationMapCardState extends State<DestinationMapCard> {
         return;
       }
 
-      LocationPermission permission = await Geolocator.checkPermission();
+      LocationPermission permission =
+          await Geolocator.checkPermission();
 
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
@@ -64,7 +71,10 @@ class _DestinationMapCardState extends State<DestinationMapCard> {
 
       final position = await Geolocator.getCurrentPosition();
 
-      final user = LatLng(position.latitude, position.longitude);
+      final user = LatLng(
+        position.latitude,
+        position.longitude,
+      );
 
       final distance = Geolocator.distanceBetween(
         user.latitude,
@@ -94,7 +104,9 @@ class _DestinationMapCardState extends State<DestinationMapCard> {
     if (controller == null) return;
 
     if (_userLocation == null) {
-      controller.animateCamera(CameraUpdate.newLatLngZoom(_destination, 14));
+      controller.animateCamera(
+        CameraUpdate.newLatLngZoom(_destination, 14),
+      );
       return;
     }
 
@@ -117,7 +129,9 @@ class _DestinationMapCardState extends State<DestinationMapCard> {
       ),
     );
 
-    controller.animateCamera(CameraUpdate.newLatLngBounds(bounds, 55));
+    controller.animateCamera(
+      CameraUpdate.newLatLngBounds(bounds, 55),
+    );
   }
 
   String get _distanceText {
@@ -159,15 +173,20 @@ class _DestinationMapCardState extends State<DestinationMapCard> {
                 },
                 markers: {
                   Marker(
-                    markerId: const MarkerId('destination'),
+                    markerId:
+                        const MarkerId('destination'),
                     position: _destination,
-                    infoWindow: const InfoWindow(title: 'Destination'),
+                    infoWindow: const InfoWindow(
+                      title: 'Destination',
+                    ),
                   ),
                   if (_userLocation != null)
                     Marker(
                       markerId: const MarkerId('user'),
                       position: _userLocation!,
-                      infoWindow: const InfoWindow(title: 'Your location'),
+                      infoWindow: const InfoWindow(
+                        title: 'Your location',
+                      ),
                       icon: BitmapDescriptor.defaultMarkerWithHue(
                         BitmapDescriptor.hueAzure,
                       ),
@@ -180,7 +199,10 @@ class _DestinationMapCardState extends State<DestinationMapCard> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 15,
+              ),
               child: Row(
                 children: [
                   const Icon(
@@ -204,7 +226,9 @@ class _DestinationMapCardState extends State<DestinationMapCard> {
                     const SizedBox(
                       width: 16,
                       height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                      ),
                     ),
                 ],
               ),
