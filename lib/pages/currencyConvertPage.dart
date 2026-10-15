@@ -4,26 +4,21 @@ import 'package:waylo/components/buttomNav.dart';
 import 'package:waylo/components/currencySelector.dart';
 import 'package:waylo/layouts/subPageLayout.dart';
 import 'package:waylo/models/currency.dart';
-import 'package:waylo/models/user.dart';
-import 'package:waylo/pages/explorePage.dart';
-import 'package:waylo/pages/home.dart';
-import 'package:waylo/repositories/currency_repository_factory.dart';
+import 'package:waylo/factories/currency_repository_factory.dart';
 import 'package:waylo/service/currency_service.dart';
 import 'package:waylo/theme/appColors.dart';
 
-class Currencyconvert extends StatefulWidget {
-  final User user; 
+class Currencyconvertpage extends StatefulWidget {
   
-  const Currencyconvert({
-    super.key, 
-    required this.user, 
+  const Currencyconvertpage({
+    super.key,  
   });
 
   @override
-  State<Currencyconvert> createState() => _CurrencyconvertState();
+  State<Currencyconvertpage> createState() => _CurrencyconvertpageState();
 }
 
-class _CurrencyconvertState extends State<Currencyconvert> {
+class _CurrencyconvertpageState extends State<Currencyconvertpage> {
   final NumberFormat _numberFormat = NumberFormat(
     '#,##0.###',
     'de_DE',
@@ -63,20 +58,10 @@ class _CurrencyconvertState extends State<Currencyconvert> {
   // Mengambil daftar mata uang dari API
   Future<void> loadCurrencies() async {
     try {
-      final repository = CurrencyRepositoryFactory.create();
-      final result = await repository.getCurrencies();
+      final result = await currencyService.getCurrencies();
 
-      final initialCurrencies = <Currency>[];
-
-      for (final code in ['IDR', 'KWD', 'USD']) {
-        final matches = result.where((c) => c.code == code);
-
-        if (matches.isEmpty) {
-          throw Exception('Mata uang $code tidak ditemukan');
-        }
-
-        initialCurrencies.add(matches.first);
-      }
+      final initialCurrencies =
+          currencyService.getInitialCurrencies(result);
 
       if (!mounted) return;
 
@@ -98,6 +83,7 @@ class _CurrencyconvertState extends State<Currencyconvert> {
       });
     }
   }
+
 
   // Menghitung nominal pada dua mata uang lainnya
   Future<void> convertAmounts(int sourceIndex, String value) async {
@@ -183,21 +169,21 @@ class _CurrencyconvertState extends State<Currencyconvert> {
           onTap: (index) {
             switch (index) {
               case 0:
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => HomePage(user: widget.user,),
-                  ),
-                );
+                // Navigator.pushReplacement(
+                //   context,
+                //   MaterialPageRoute(
+                //     builder: (context) => HomePage(user: widget.user,),
+                //   ),
+                // );
                 break;
 
               case 1:
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => Explorepage(user: widget.user,),
-                  ),
-                );
+                // Navigator.pushReplacement(
+                //   context,
+                //   MaterialPageRoute(
+                //     builder: (context) => Explorepage(user: widget.user,),
+                //   ),
+                // );
                 break;
 
               case 2:

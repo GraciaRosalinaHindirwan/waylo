@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:timezone/data/latest.dart' as tzdata;
+import 'package:waylo/pages/currencyConvertPage.dart';
 import 'package:waylo/pages/timezoneConvertPage.dart';
 
 void main() {
@@ -17,7 +18,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: Timezoneconvertpage(), 
+      home: Currencyconvertpage(), 
     );
   }
 }

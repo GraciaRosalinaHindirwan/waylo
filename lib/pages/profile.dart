@@ -8,7 +8,7 @@ import 'package:waylo/pages/regist.dart';
 import 'package:waylo/theme/appColors.dart';
 import 'package:waylo/theme/app_text_styles.dart';
 import 'package:flutter/material.dart';
-import 'package:waylo/pages/currencyConvert.dart';
+import 'package:waylo/pages/currencyConvertPage.dart';
 import 'package:waylo/pages/timezoneConvertPage.dart';
 import 'package:waylo/pages/aboutMobile.dart';
 
@@ -155,7 +155,7 @@ class ProfilePage extends StatelessWidget {
                               ProfileCard(
                                 title: 'Currency Convert',
                                 icon: Icons.currency_exchange,
-                                page: Currencyconvert(user: user),
+                                page: Currencyconvertpage(),
                               ),
                               ProfileCard(
                                 title: 'Local Time Convert',

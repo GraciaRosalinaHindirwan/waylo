@@ -3,14 +3,10 @@ import 'package:waylo/layouts/subPageLayout.dart';
 import 'package:waylo/theme/appColors.dart';
 
 import 'package:waylo/components/buttomNav.dart';
-import 'package:waylo/pages/explorePage.dart';
-import 'package:waylo/pages/home.dart';
 import 'package:waylo/components/timezoneCard.dart';
 import 'package:waylo/components/JakartaTimeConvert.dart';
 
 import 'package:waylo/models/timezone.dart';
-import 'package:timezone/timezone.dart' as tz;
-import 'package:waylo/models/user.dart';
 import 'package:waylo/factories/timezone_repository_factory.dart';
 import 'package:waylo/service/timezone_service.dart';
 

@@ -9,6 +9,27 @@ class CurrencyService {
     required this.currencyRepository,
   });
 
+  // Mengambil daftar mata uang dari repository.
+  Future<List<Currency>> getCurrencies() {
+    return currencyRepository.getCurrencies();
+  }
+
+    // Menentukan mata uang default untuk tiga card.
+  List<Currency> getInitialCurrencies(
+    List<Currency> currencies,
+  ) {
+    const defaultCodes = ['IDR', 'KWD', 'USD'];
+
+    return defaultCodes.map((code) {
+      return currencies.firstWhere(
+        (currency) => currency.code == code,
+        orElse: () => throw Exception(
+          'Mata uang $code tidak ditemukan',
+        ),
+      );
+    }).toList();
+  }
+
   Future<CurrencyConversion> convert({
     required Currency fromCurrency,
     required Currency toCurrency,
