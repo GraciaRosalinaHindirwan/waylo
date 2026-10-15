@@ -9,6 +9,7 @@ class User{
    final List<Category> categories;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final bool hasCompletedPreference;
 
   const User({
     required this.id,
@@ -18,6 +19,7 @@ class User{
     this.destinations = const [],
     this.categories = const [],
     required this.createdAt,
-    required this.updatedAt
+    required this.updatedAt,
+    this.hasCompletedPreference = false,
   }); 
 }

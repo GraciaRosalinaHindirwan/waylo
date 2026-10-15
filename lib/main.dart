@@ -8,6 +8,7 @@ import 'package:waylo/pages/home.dart';
 import 'package:waylo/pages/login_page.dart';
 import 'package:waylo/service/session_storage.dart';
 import 'package:waylo/factories/user_repository_factory.dart';
+import 'package:waylo/pages/userPreference.dart';
 
 Future<void> main() async{
   WidgetsFlutterBinding.ensureInitialized();
@@ -36,14 +37,19 @@ try {
     initialLocation: '/login',
     refreshListenable: authService,
     redirect: (context, state) {
-      final isLoggedIn = authService.isLoggedIn;
+      final user = authService.currentUser; 
       final isLoginPage = state.matchedLocation == '/login';
+      final isPreferencePage = state.matchedLocation == '/preference';
 
-      if (!isLoggedIn && !isLoginPage) {
-        return '/login';
+      if(user == null) {
+        return isLoginPage ? null : '/login'; 
       }
 
-      if (isLoggedIn && isLoginPage) {
+      if (!user.hasCompletedPreference) {
+        return isPreferencePage ? null : '/preferance';
+      }
+
+      if (isLoginPage || isPreferencePage) {
         return '/home';
       }
 
@@ -57,6 +63,16 @@ try {
       GoRoute(
         path: '/home',
         builder: (context, state) => HomePage(),
+      ),
+      GoRoute(
+        path: '/preferance',
+        builder: (context, state) {
+          final user = authService.currentUser!;
+          return UserPreferencePage(
+            user: user,
+            userRepository: repository,
+          );
+        }
       ),
     ],
   );

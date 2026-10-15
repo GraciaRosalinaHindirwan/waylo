@@ -1,3 +1,8 @@
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import 'package:flutter/material.dart';
+import 'package:waylo/service/auth_service.dart';
+
 import 'package:waylo/layouts/subPageLayout.dart';
 import 'package:waylo/components/selectionButton.dart';
 import 'package:waylo/components/button.dart';
@@ -6,21 +11,20 @@ import 'package:waylo/models/user.dart';
 import 'package:waylo/repositories/category_repository.dart';
 import 'package:waylo/repositories/category_repository_factory.dart';
 import 'package:waylo/repositories/user_repository.dart';
-import 'package:waylo/factories/user_repository_factory.dart';
 import 'package:waylo/theme/app_text_styles.dart';
-import 'package:flutter/material.dart';
 
 class UserPreferencePage extends StatefulWidget {
   final User user;
+  final UserRepository userRepository;
 
-  const UserPreferencePage({super.key, required this.user});
+  const UserPreferencePage({super.key, required this.user, required this.userRepository});
 
   @override
   State<UserPreferencePage> createState() => _UserPreferencePageState();
 }
 
 class _UserPreferencePageState extends State<UserPreferencePage> {
-  final UserRepository _userRepository = UserRepositoryFactory.create();
+  late final UserRepository _userRepository; 
   final CategoryRepository _categoryRepository =
       CategoryRepositoryFactory.create();
 
@@ -40,6 +44,7 @@ class _UserPreferencePageState extends State<UserPreferencePage> {
   @override
   void initState() {
     super.initState();
+    _userRepository = widget.userRepository;
     loadCategories();
   }
 
@@ -50,34 +55,60 @@ class _UserPreferencePageState extends State<UserPreferencePage> {
   }
 
   Future<void> save() async {
+    if (isSaving) return;
+
     setState(() => isSaving = true);
 
-    final user = widget.user;
+    try {
+      final user = widget.user;
 
-    final destinations = selectedDestination == null
-        ? user.destinations
-        : [selectedDestination!];
+      final destinations = selectedDestination == null
+          ? user.destinations
+          : [selectedDestination!];
 
-    final categories = selectedCategory == null
-        ? user.categories
-        : categoryOptions.where((c) => c.name == selectedCategory).toList();
+      final categories = selectedCategory == null
+          ? user.categories
+          : categoryOptions
+              .where((c) => c.name == selectedCategory)
+              .toList();
+      
+      debugPrint('1. Tombol Save ditekan');
 
-    final updatedUser = await _userRepository.updateUser(
-      User(
-        id: user.id,
-        fullname: user.fullname,
-        username: user.username,
-        password: user.password,
-        destinations: destinations,
-        categories: categories,
-        createdAt: user.createdAt,
-        updatedAt: user.updatedAt,
-      ),
-    );
+      final updatedUser = await _userRepository.updateUser(
+        User(
+          id: user.id,
+          fullname: user.fullname,
+          username: user.username,
+          password: user.password,
+          destinations: destinations,
+          categories: categories,
+          createdAt: user.createdAt,
+          updatedAt: user.updatedAt,
+          hasCompletedPreference: true,
+        ),
+      );
 
-    if (!mounted) return;
-    setState(() => isSaving = false);
-    Navigator.pop(context, updatedUser);
+      debugPrint('2. Preferensi berhasil disimpan');
+
+      if (!mounted) return;
+
+      context.read<AuthService>().setCurrentUser(updatedUser);
+      debugPrint('3. Current user diperbarui');
+      context.go('/home');
+      debugPrint('4. Navigasi ke Home dijalankan');
+    } catch (e) {
+      debugPrint('Gagal menyimpan preferensi: $e');
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal menyimpan preferensi: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => isSaving = false);
+      }
+    }
   }
 
   Widget buildSection(String title, Widget child) {

@@ -204,6 +204,7 @@ Future<User?> getUserById(int id) async {
       categories: List<Category>.from(user.categories),
       createdAt: _users[index].createdAt,
       updatedAt: DateTime.now(),
+      hasCompletedPreference: user.hasCompletedPreference,
     );
 
     _users[index] = updatedUser;
