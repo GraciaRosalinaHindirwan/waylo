@@ -1,40 +1,36 @@
 
 import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 
 import '../theme/appColors.dart';
 
-class DestinationMapCard extends StatefulWidget {
-  final double destinationLatitude;
-  final double destinationLongitude;
-  final String? distanceLabel;
-  final VoidCallback? onTap;
+class MapCard extends StatefulWidget {
+  final double latitude;
+  final double longitude;
+  final String destinationName;
 
-  const DestinationMapCard({
+  const MapCard({
     super.key,
-    required this.destinationLatitude,
-    required this.destinationLongitude,
-    this.distanceLabel,
-    this.onTap,
+    required this.latitude,
+    required this.longitude,
+    required this.destinationName,
   });
 
   @override
-  State<DestinationMapCard> createState() =>
-      _DestinationMapCardState();
+  State<MapCard> createState() => _MapCardState();
 }
 
-class _DestinationMapCardState
-    extends State<DestinationMapCard> {
-  GoogleMapController? _mapController;
+class _MapCardState extends State<MapCard> {
+  final MapController _mapController = MapController();
+
   LatLng? _userLocation;
   double? _distanceKm;
   bool _loadingLocation = true;
 
-  LatLng get _destination => LatLng(
-        widget.destinationLatitude,
-        widget.destinationLongitude,
-      );
+  LatLng get _destination =>
+      LatLng(widget.latitude, widget.longitude);
 
   @override
   void initState() {
@@ -44,7 +40,7 @@ class _DestinationMapCardState
 
   Future<void> _getUserLocation() async {
     try {
-      bool serviceEnabled =
+      final serviceEnabled =
           await Geolocator.isLocationServiceEnabled();
 
       if (!serviceEnabled) {
@@ -54,8 +50,7 @@ class _DestinationMapCardState
         return;
       }
 
-      LocationPermission permission =
-          await Geolocator.checkPermission();
+      var permission = await Geolocator.checkPermission();
 
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
@@ -90,8 +85,6 @@ class _DestinationMapCardState
         _distanceKm = distance / 1000;
         _loadingLocation = false;
       });
-
-      _fitMapToMarkers();
     } catch (_) {
       if (mounted) {
         setState(() => _loadingLocation = false);
@@ -99,143 +92,115 @@ class _DestinationMapCardState
     }
   }
 
-  void _fitMapToMarkers() {
-    final controller = _mapController;
-    if (controller == null) return;
-
-    if (_userLocation == null) {
-      controller.animateCamera(
-        CameraUpdate.newLatLngZoom(_destination, 14),
-      );
-      return;
-    }
-
-    final bounds = LatLngBounds(
-      southwest: LatLng(
-        _userLocation!.latitude < _destination.latitude
-            ? _userLocation!.latitude
-            : _destination.latitude,
-        _userLocation!.longitude < _destination.longitude
-            ? _userLocation!.longitude
-            : _destination.longitude,
-      ),
-      northeast: LatLng(
-        _userLocation!.latitude > _destination.latitude
-            ? _userLocation!.latitude
-            : _destination.latitude,
-        _userLocation!.longitude > _destination.longitude
-            ? _userLocation!.longitude
-            : _destination.longitude,
-      ),
-    );
-
-    controller.animateCamera(
-      CameraUpdate.newLatLngBounds(bounds, 55),
-    );
-  }
-
-  String get _distanceText {
-    if (_distanceKm != null) {
-      return '${_distanceKm!.toStringAsFixed(1)} km from your location';
-    }
-
-    if (widget.distanceLabel != null) {
-      return widget.distanceLabel!;
-    }
-
-    return 'Location unavailable';
-  }
-
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: AppColors.card,
-      borderRadius: BorderRadius.circular(20),
+    final destination = _destination;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
       clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: widget.onTap,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SizedBox(
-              height: 245,
-              width: double.infinity,
-              child: GoogleMap(
-                initialCameraPosition: CameraPosition(
-                  target: _destination,
-                  zoom: 14,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            height: 245,
+            width: double.infinity,
+            child: FlutterMap(
+              mapController: _mapController,
+              options: MapOptions(
+                initialCenter: destination,
+                initialZoom: 14,
+              ),
+              children: [
+                TileLayer(
+                  urlTemplate:
+                      'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  userAgentPackageName: 'com.example.waylo',
                 ),
-                onMapCreated: (controller) {
-                  _mapController = controller;
-                  if (_userLocation != null) {
-                    _fitMapToMarkers();
-                  }
-                },
-                markers: {
-                  Marker(
-                    markerId:
-                        const MarkerId('destination'),
-                    position: _destination,
-                    infoWindow: const InfoWindow(
-                      title: 'Destination',
-                    ),
-                  ),
-                  if (_userLocation != null)
+                MarkerLayer(
+                  markers: [
                     Marker(
-                      markerId: const MarkerId('user'),
-                      position: _userLocation!,
-                      infoWindow: const InfoWindow(
-                        title: 'Your location',
-                      ),
-                      icon: BitmapDescriptor.defaultMarkerWithHue(
-                        BitmapDescriptor.hueAzure,
+                      point: destination,
+                      width: 45,
+                      height: 45,
+                      child: const Icon(
+                        Icons.location_on,
+                        color: AppColors.accent,
+                        size: 42,
                       ),
                     ),
-                },
-                myLocationEnabled: false,
-                zoomControlsEnabled: false,
-                mapToolbarEnabled: false,
-                compassEnabled: false,
-              ),
+                    if (_userLocation != null)
+                      Marker(
+                        point: _userLocation!,
+                        width: 30,
+                        height: 30,
+                        child: const Icon(
+                          Icons.my_location,
+                          color: Colors.blue,
+                          size: 24,
+                        ),
+                      ),
+                  ],
+                ),
+                RichAttributionWidget(
+                  attributions: [
+                    TextSourceAttribution(
+                      'OpenStreetMap contributors',
+                      onTap: () {},
+                    ),
+                  ],
+                ),
+              ],
             ),
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 15,
-              ),
-              child: Row(
-                children: [
-                  const Icon(
-                    Icons.location_on_rounded,
-                    color: AppColors.secondary,
-                    size: 21,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      _loadingLocation
-                          ? 'Finding your location...'
-                          : _distanceText,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ),
-                  if (_loadingLocation)
-                    const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                      ),
-                    ),
-                ],
-              ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 15,
             ),
-          ],
-        ),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.person_pin_circle_rounded,
+                  color: AppColors.secondary,
+                  size: 21,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    _loadingLocation
+                        ? 'Finding your location...'
+                        : _distanceKm != null
+                            ? '${_distanceKm!.toStringAsFixed(1)} km from your location'
+                            : 'Location unavailable',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
 }
+
+// cara pake
+// MapCard(
+//   latitude: -7.7956,
+//   longitude: 110.3695,
+//   destinationName: 'Yogyakarta',
+// )
