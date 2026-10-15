@@ -1,0 +1,107 @@
+
+import 'package:flutter/material.dart';
+import 'package:waylo/models/currency.dart';
+import 'package:waylo/theme/appColors.dart';
+import 'package:waylo/theme/app_text_styles.dart';
+
+class CurrencySelector extends StatelessWidget {
+  final List<Currency> currencies;
+  final Currency selectedCurrency;
+  final ValueChanged<Currency> onChanged;
+  final String amount;
+  final ValueChanged<String> onAmountChanged;
+
+  final TextEditingController amountController;
+
+  const CurrencySelector({
+    super.key,
+    required this.currencies,
+    required this.selectedCurrency,
+    required this.onChanged,
+    required this.amount, 
+    required this.onAmountChanged, 
+    required this.amountController,
+  });
+
+  @override
+Widget build(BuildContext context) {
+  return 
+    Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Kiri: IDR dan dropdown
+        
+      DropdownButtonHideUnderline(
+        child: IntrinsicWidth(
+          child: DropdownButton<Currency>(
+            value: selectedCurrency,
+            isDense: true,
+            padding: EdgeInsets.zero,
+            isExpanded: false,
+            icon: const Icon(
+              Icons.keyboard_arrow_down_rounded,
+              color: Color(0xFFF5AD66),
+              size: 30,
+            ),
+            items: currencies.map((currency) {
+              return DropdownMenuItem<Currency>(
+                value: currency,
+                child: Text(
+                  currency.code,
+                  softWrap: false,
+                  overflow: TextOverflow.visible,
+                  style: AppTextStyles.heading4.copyWith(
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              );
+            }).toList(),
+            onChanged: (currency) {
+              if (currency != null) {
+                onChanged(currency);
+              }
+            },
+          ),
+        ),
+      ),
+
+
+        // Kanan: angka dan nama mata uang
+        Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            SizedBox(
+              width: 150,
+              child: TextField(
+                controller: amountController,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                textAlign: TextAlign.end,
+                style: AppTextStyles.heading3.copyWith(
+                  color: AppColors.textPrimary,
+                ),
+                decoration: const InputDecoration(
+                  border: InputBorder.none,
+                  isDense: true,
+                  contentPadding: EdgeInsets.zero,
+                ),
+                onChanged: onAmountChanged,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              selectedCurrency.name,
+              textAlign: TextAlign.end,
+              style: AppTextStyles.caption.copyWith(
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}

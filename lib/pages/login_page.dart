@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:waylo/theme/appColors.dart';
 import 'package:waylo/theme/app_text_styles.dart';
 import 'package:waylo/components/button.dart';
 import 'package:waylo/pages/regist.dart';
 import 'package:waylo/pages/biometric.dart';
+import 'package:provider/provider.dart';
+import 'package:waylo/service/auth_service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -61,12 +64,28 @@ void initState() {
     super.dispose();
   }
 
-  void _login() {
-    if (_formKey.currentState!.validate()) {
-      // Hubungkan ke proses autentikasi di sini.
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Login submitted')));
+  Future<void>_login()async{
+    if(!_formKey.currentState!.validate())return; 
+
+    try {
+      final authService = context.read<AuthService>();
+      await authService.login(
+        _usernameController.text.trim(),
+        _passwordController.text,
+      );
+
+      if(!mounted) return; 
+      context.go('/home'); //login berhasil pindah ke home 
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            e.toString().replaceFirst('Exception: ', ''),
+          ),
+        ),
+      );
     }
   }
 

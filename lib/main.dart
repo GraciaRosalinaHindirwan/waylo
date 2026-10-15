@@ -1,36 +1,111 @@
 import 'package:flutter/material.dart';
-import 'package:waylo/components/favoriteCard.dart';
-import 'package:waylo/dummy/favoriteDummy.dart';
+import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
+import 'package:waylo/service/auth_service.dart';
+import 'package:timezone/data/latest.dart' as tzdata;
 
-void main() {
-  runApp(const MyApp());
+import 'package:waylo/pages/home.dart';
+import 'package:waylo/pages/login_page.dart';
+import 'package:waylo/service/session_storage.dart';
+import 'package:waylo/factories/user_repository_factory.dart';
+import 'package:waylo/pages/userPreference.dart';
+
+Future<void> main() async{
+  WidgetsFlutterBinding.ensureInitialized();
+  //jangan dihapus 
+   // Inisialisasi database zona waktu sebelum aplikasi berjalan.
+  tzdata.initializeTimeZones();
+
+  
+try {
+
+  final repository = await UserRepositoryFactory.create();
+
+  final authService = AuthService(
+    repository,
+    SessionStorage(),
+  );
+
+  await authService.restoreSession();
+
+  final router = GoRouter(
+    initialLocation: '/login',
+    refreshListenable: authService,
+    redirect: (context, state) {
+      final user = authService.currentUser; 
+
+      debugPrint('=== ROUTER REDIRECT ===');
+      debugPrint('Path: ${state.matchedLocation}');
+      debugPrint('User: ${user?.username}');
+      debugPrint(
+        'hasCompletedPreference: ${user?.hasCompletedPreference}',
+      );
+      final isLoginPage = state.matchedLocation == '/login';
+      final isPreferencePage = state.matchedLocation == '/preference';
+
+      if(user == null) {
+        return isLoginPage ? null : '/login'; 
+      }
+
+      if (!user.hasCompletedPreference) {
+        return isPreferencePage ? null : '/preferance';
+      }
+
+      if (isLoginPage || isPreferencePage) {
+        return '/home';
+      }
+
+      return null;
+    },
+    routes: [
+      GoRoute(
+        path: '/login',
+        builder: (context, state) => LoginPage(),
+      ),
+      GoRoute(
+        path: '/home',
+        builder: (context, state) => HomePage(),
+      ),
+      GoRoute(
+        path: '/preferance',
+        builder: (context, state) {
+          final user = authService.currentUser!;
+          return UserPreferencePage(
+            user: user,
+            userRepository: repository,
+          );
+        }
+      ),
+    ],
+  );
+
+  runApp(
+    ChangeNotifierProvider<AuthService>.value(
+      value: authService,
+      child: MyApp(router: router),
+    ),
+  );
+
+} catch (e, stackTrace) {
+  debugPrint('Gagal menjalankan aplikasi: $e');
+  debugPrintStack(stackTrace: stackTrace);
+  rethrow;
+}
+
+
+  
+
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final GoRouter router; 
+  const MyApp({super.key, required this.router});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return MaterialApp.router(
       debugShowCheckedModeBanner: false,
-      home: Scaffold(
-        backgroundColor: const Color(0xFFFFF8E8),
-        body: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              children: favoriteDummy.map((destination) {
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 20),
-                  child: FavoriteCard(
-                    destination: destination,
-                  ),
-                );
-              }).toList(),
-            ),
-          ),
-        ),
-      ),
+      routerConfig: router,
     );
   }
 }
