@@ -113,6 +113,7 @@ class UserRepositoryImpl implements UserRepository {
         categories: [_categories[2], _categories[4]],
         createdAt: DateTime(2026, 1, 5),
         updatedAt: DateTime(2026, 1, 5),
+        hasCompletedPreference: true, 
       ),
     ];
 
@@ -134,6 +135,7 @@ class UserRepositoryImpl implements UserRepository {
           categories: List<Category>.from(user.categories),
           createdAt: user.createdAt,
           updatedAt: user.updatedAt,
+          hasCompletedPreference: user.hasCompletedPreference,
         ),
       );
     }

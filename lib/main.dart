@@ -18,11 +18,8 @@ Future<void> main() async{
 
   
 try {
-  debugPrint('1. Mulai membuat repository');
 
   final repository = await UserRepositoryFactory.create();
-
-  debugPrint('2. Repository selesai dibuat');
 
   final authService = AuthService(
     repository,
@@ -31,13 +28,18 @@ try {
 
   await authService.restoreSession();
 
-  debugPrint('3. AuthService selesai dibuat');
-
   final router = GoRouter(
     initialLocation: '/login',
     refreshListenable: authService,
     redirect: (context, state) {
       final user = authService.currentUser; 
+
+      debugPrint('=== ROUTER REDIRECT ===');
+      debugPrint('Path: ${state.matchedLocation}');
+      debugPrint('User: ${user?.username}');
+      debugPrint(
+        'hasCompletedPreference: ${user?.hasCompletedPreference}',
+      );
       final isLoginPage = state.matchedLocation == '/login';
       final isPreferencePage = state.matchedLocation == '/preference';
 
@@ -77,8 +79,6 @@ try {
     ],
   );
 
-  debugPrint('4. Router selesai dibuat');
-
   runApp(
     ChangeNotifierProvider<AuthService>.value(
       value: authService,
@@ -86,7 +86,6 @@ try {
     ),
   );
 
-  debugPrint('5. runApp sudah dipanggil');
 } catch (e, stackTrace) {
   debugPrint('Gagal menjalankan aplikasi: $e');
   debugPrintStack(stackTrace: stackTrace);
