@@ -6,7 +6,7 @@ import 'package:waylo/models/user.dart';
 import 'package:waylo/repositories/category_repository.dart';
 import 'package:waylo/repositories/category_repository_factory.dart';
 import 'package:waylo/repositories/user_repository.dart';
-import 'package:waylo/repositories/user_repository_factory.dart';
+import 'package:waylo/factories/user_repository_factory.dart';
 import 'package:waylo/theme/app_text_styles.dart';
 import 'package:flutter/material.dart';
 

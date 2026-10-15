@@ -1,31 +1,33 @@
 import 'package:flutter/material.dart';
-import 'package:waylo/components/buttomNav.dart';
-
 import 'package:waylo/layouts/subPageLayout.dart';
+import 'package:waylo/theme/appColors.dart';
+
+import 'package:waylo/components/buttomNav.dart';
+import 'package:waylo/pages/explorePage.dart';
+import 'package:waylo/pages/home.dart';
+import 'package:waylo/components/timezoneCard.dart';
+import 'package:waylo/components/JakartaTimeConvert.dart';
+
 import 'package:waylo/models/timezone.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:waylo/models/user.dart';
-import 'package:waylo/pages/explorePage.dart';
-import 'package:waylo/pages/home.dart';
-import 'package:waylo/repositories/timezone_repository_factory.dart';
-import 'package:waylo/components/timezoneCard.dart';
-import 'package:waylo/components/JakartaTimeConvert.dart';
-import 'package:waylo/theme/appColors.dart';
+import 'package:waylo/factories/timezone_repository_factory.dart';
+import 'package:waylo/service/timezone_service.dart';
 
-class TimezoneConvert extends StatefulWidget {
-  final User user; 
-  const TimezoneConvert({
+
+class Timezoneconvertpage extends StatefulWidget {
+  const Timezoneconvertpage({
     super.key, 
-    required this.user, 
   });
 
   @override
-  State<TimezoneConvert> createState() =>
-      _TimezoneConvertState();
+  State<Timezoneconvertpage> createState() =>
+      _TimezoneconvertpageState();
 }
 
-class _TimezoneConvertState extends State<TimezoneConvert> {
+class _TimezoneconvertpageState extends State<Timezoneconvertpage> {
   final repository = TimezoneRepositoryFactory.create();
+  late final TimezoneService service; 
 
   List<Timezone> timezones = [];
   List<Timezone?> selectedTimezones = [];
@@ -36,56 +38,21 @@ class _TimezoneConvertState extends State<TimezoneConvert> {
   @override
   void initState() {
     super.initState();
+
+    service = TimezoneService(
+      timezoneRepository: TimezoneRepositoryFactory.create(),
+    );
+
     loadTimezones();
   }
 
-  Future<void> loadTimezones() async {
+    Future<void> loadTimezones() async {
     try {
-      final result = await repository.getTimezones();
+      final availableTimezones =
+          await service.getAvailableTimezones();
 
-      if (!mounted) return;
-
-      // Filter zona waktu yang valid di database timezone.
-      final availableTimezones = result.where((timezone) {
-        try {
-          tz.getLocation(timezone.timeZoneId);
-          return timezone.timeZoneId != 'Asia/Jakarta';
-        } catch (_) {
-          return false;
-        }
-      }).toList();
-
-      Timezone? findTimezone(String id) {
-        for (final timezone in availableTimezones) {
-          if (timezone.timeZoneId == id) {
-            return timezone;
-          }
-        }
-        return null;
-      }
-
-      final selected = <Timezone?>[
-        findTimezone('Asia/Tokyo'),
-        findTimezone('Asia/Seoul'),
-        findTimezone('Europe/London'),
-      ];
-
-      // Isi pilihan yang tidak tersedia dengan zona waktu valid
-      // yang belum dipakai oleh card lainnya.
-      for (var i = 0; i < selected.length; i++) {
-        if (selected[i] == null) {
-          for (final timezone in availableTimezones) {
-            final alreadyUsed = selected.any(
-              (item) => item?.timeZoneId == timezone.timeZoneId,
-            );
-
-            if (!alreadyUsed) {
-              selected[i] = timezone;
-              break;
-            }
-          }
-        }
-      }
+      final selected =
+          service.getDefaultTimezones(availableTimezones);
 
       if (!mounted) return;
 
@@ -93,6 +60,7 @@ class _TimezoneConvertState extends State<TimezoneConvert> {
         timezones = availableTimezones;
         selectedTimezones = selected;
         isLoading = false;
+        errorMessage = null;
       });
     } catch (e) {
       if (!mounted) return;
@@ -151,11 +119,10 @@ class _TimezoneConvertState extends State<TimezoneConvert> {
                       ),
                     ),
                   )
-                : timezones.isEmpty ||
-                        selectedTimezones.isEmpty ||
-                        selectedTimezones.every(
-                          (timezone) => timezone == null,
-                        )
+                : !service.hasAvailableTimezones(
+                  timezones: timezones, 
+                  selectedTimezones: selectedTimezones,
+                  )
                     ? const Center(
                         child: Text(
                           'Zona waktu tidak tersedia',
@@ -221,20 +188,20 @@ class _TimezoneConvertState extends State<TimezoneConvert> {
           onTap: (index) {
             switch (index) {
               case 0:
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => HomePage(user: widget.user,),
-                  ),
-                );
+                // Navigator.pushReplacement(
+                //   context,
+                //   MaterialPageRoute(
+                //     builder: (context) => HomePage(user: widget.user,),
+                //   ),
+                // );
                 break;
               case 1:
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => Explorepage(user: widget.user,),
-                  ),
-                );
+                // Navigator.pushReplacement(
+                //   context,
+                //   MaterialPageRoute(
+                //     builder: (context) => Explorepage(user: widget.user,),
+                //   ),
+                // );
                 break;
               case 2:
                 // halaman ini ada di profile 

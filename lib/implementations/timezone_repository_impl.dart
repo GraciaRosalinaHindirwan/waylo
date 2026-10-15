@@ -4,12 +4,15 @@ import 'package:http/http.dart' as http;
 import 'package:waylo/models/timezone.dart';
 import 'package:waylo/repositories/timezone_repository.dart';
 
+//yang memenuhi kontrak dan menentukan cara ambil datanya 
+
 class TimezoneRepositoryImpl implements TimezoneRepository {
   final http.Client client;
 
   TimezoneRepositoryImpl({http.Client? client})
       : client = client ?? http.Client();
 
+  //buat nimpa method yang dari repository 
   @override
   Future<List<Timezone>> getTimezones() async {
     final url = Uri.parse(
