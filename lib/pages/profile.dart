@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:waylo/pages/login_page.dart';
+import 'package:go_router/go_router.dart';
 import 'package:waylo/service/auth_service.dart';
 
 import 'package:waylo/components/profileCard.dart';
@@ -81,46 +81,53 @@ Widget buildAvatar(User? user) {
 
 
   Widget buildLogout(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (context) => const LoginPage()),
-          (route) => false,
-        );
-      },
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(17.06),
-        decoration: BoxDecoration(
-          color: AppColors.background,
-          borderRadius: BorderRadius.circular(106.61),
-          border: Border.all(width: 1, color: AppColors.accent),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x3F000000),
-              blurRadius: 4.26,
-              offset: Offset(4.26, 4.26),
-            ),
-          ],
+  return GestureDetector(
+    onTap: () async {
+      await context.read<AuthService>().logout();
+
+      if (!context.mounted) return;
+
+      context.go('/login');
+    },
+    child: Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(17.06),
+      decoration: BoxDecoration(
+        color: AppColors.background,
+        borderRadius: BorderRadius.circular(106.61),
+        border: Border.all(
+          width: 1,
+          color: AppColors.accent,
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          spacing: 10.66,
-          children: [
-            const Icon(Icons.logout, size: 24, color: AppColors.accent),
-            Text(
-              'Logout',
-              style: AppTextStyles.button.copyWith(
-                color: AppColors.accent,
-                fontSize: 14.93,
-              ),
-            ),
-          ],
-        ),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x3F000000),
+            blurRadius: 4.26,
+            offset: Offset(4.26, 4.26),
+          ),
+        ],
       ),
-    );
-  }
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        spacing: 10.66,
+        children: [
+          const Icon(
+            Icons.logout,
+            size: 24,
+            color: AppColors.accent,
+          ),
+          Text(
+            'Logout',
+            style: AppTextStyles.button.copyWith(
+              color: AppColors.accent,
+              fontSize: 14.93,
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
 
   @override
   Widget build(BuildContext context) {
