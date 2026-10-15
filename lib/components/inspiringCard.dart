@@ -1,21 +1,18 @@
 
 import 'package:flutter/material.dart';
 import 'package:waylo/models/destination.dart';
-import 'package:waylo/models/user.dart';
 import 'package:waylo/pages/detailDestination.dart';
 import 'package:waylo/theme/appColors.dart';
 import 'package:waylo/theme/app_text_styles.dart';
 
 class Inspiringcard extends StatelessWidget {
   final Destination destination;
-  final User user;
   final String? image;
   final String location;
 
   const Inspiringcard({
     super.key,
     required this.destination,
-    required this.user,
     required this.image,
     required this.location,
   });
@@ -29,7 +26,6 @@ class Inspiringcard extends StatelessWidget {
           MaterialPageRoute(
             builder: (context) => Detaildestination(
               destination: destination,
-              user: user,
             ),
           ),
         );

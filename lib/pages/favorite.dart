@@ -11,9 +11,7 @@ import 'package:waylo/theme/app_text_styles.dart';
 import 'package:flutter/material.dart';
 
 class FavoritePage extends StatefulWidget {
-  final User user;
-
-  const FavoritePage({super.key, required this.user});
+  const FavoritePage({super.key});
 
   @override
   State<FavoritePage> createState() => _FavoritePageState();
@@ -63,7 +61,6 @@ class _FavoritePageState extends State<FavoritePage> {
           MaterialPageRoute(
             builder: (context) => Detaildestination(
               destination: destination,
-              user: widget.user,
             ),
           ),
         ).then((_) {
@@ -240,7 +237,7 @@ class _FavoritePageState extends State<FavoritePage> {
                 Navigator.pushAndRemoveUntil(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => HomePage(user: widget.user),
+                    builder: (context) => HomePage(),
                   ),
                   (route) => false,
                 );
@@ -248,7 +245,7 @@ class _FavoritePageState extends State<FavoritePage> {
                 Navigator.pushAndRemoveUntil(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => Explorepage(user: widget.user),
+                    builder: (context) => Explorepage(),
                   ),
                   (route) => false,
                 );

@@ -13,4 +13,6 @@ abstract class UserRepository {
 
   // DELETE
   Future<void> deleteUser(int id);
+
+  Future<void> initializeDummyUsers();
 }

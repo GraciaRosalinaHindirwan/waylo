@@ -1,3 +1,4 @@
+
 import 'package:password_guard/password_guard.dart';
 
 class PasswordHasher {
@@ -7,5 +8,15 @@ class PasswordHasher {
     );
 
     return result.hash;
+  }
+
+  static Future<bool> verifyPassword({
+    required String password, //password asli 
+    required String hashedPassword, //password yang di hash 
+  }) async {
+    return PasswordGuard.verify(
+      password: password,
+      hash: hashedPassword,
+    );
   }
 }

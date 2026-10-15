@@ -1,23 +1,24 @@
+import 'package:flutter/material.dart';
+
 import 'package:waylo/layouts/homeLayout.dart';
 import 'package:waylo/components/searchBar.dart';
 import 'package:waylo/components/quickAction.dart';
 import 'package:waylo/components/recommendCard.dart';
 import 'package:waylo/components/buttomNav.dart';
 import 'package:waylo/models/destination.dart';
-import 'package:waylo/models/user.dart';
 import 'package:waylo/pages/explorePage.dart';
 import 'package:waylo/repositories/destination_repository.dart';
 import 'package:waylo/repositories/destination_repository_factory.dart';
 import 'package:waylo/pages/detailDestination.dart';
 import 'package:waylo/theme/appColors.dart';
 import 'package:waylo/theme/app_text_styles.dart';
-import 'package:flutter/material.dart';
 import 'package:waylo/pages/profile.dart';
 
-class HomePage extends StatefulWidget {
-  final User user;
+import 'package:provider/provider.dart';
+import 'package:waylo/service/auth_service.dart';
 
-  const HomePage({super.key, required this.user});
+class HomePage extends StatefulWidget {
+  const HomePage({super.key});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -53,7 +54,7 @@ class _HomePageState extends State<HomePage> {
   void openExplore() {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => Explorepage(user: widget.user,)),
+      MaterialPageRoute(builder: (context) => Explorepage()),
     );
   }
 
@@ -82,7 +83,6 @@ class _HomePageState extends State<HomePage> {
         distance: '-',
         page: Detaildestination(
           destination: destination,
-          user: widget.user,
         ),
       ),
     );
@@ -90,6 +90,8 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final user = context.watch<AuthService>().currentUser;
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: Column(
@@ -99,7 +101,7 @@ class _HomePageState extends State<HomePage> {
               children: [
                 Homelayout(
                   greeting: 'Hi,',
-                  title: widget.user.fullname,
+                  title: user?.fullname ?? 'Belum login', 
                   subtitle: 'Discover your near Yogyakarta',
                   searchBar: CustomSearchBar(
                     readOnly: true,
@@ -134,7 +136,7 @@ class _HomePageState extends State<HomePage> {
                                     (item) => QuickAction(
                                       label: item.$1,
                                       icon: item.$2,
-                                      page: Explorepage(user: widget.user),
+                                      page: Explorepage(),
                                     ),
                                   )
                                   .toList(),
@@ -199,14 +201,14 @@ class _HomePageState extends State<HomePage> {
                 Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => Explorepage(user: widget.user),
+                    builder: (context) => Explorepage(),
                   ),
                 );
               } else if (index == 2) {
                 Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => ProfilePage(user: widget.user),
+                    builder: (context) => ProfilePage(),
                   ),
                 );
               }

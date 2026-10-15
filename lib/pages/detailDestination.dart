@@ -4,20 +4,17 @@ import 'package:waylo/components/enteranceFeeCard.dart';
 import 'package:waylo/components/favoriteButton.dart';
 import 'package:waylo/components/infoChip.dart';
 import 'package:waylo/models/destination.dart';
-import 'package:waylo/models/user.dart';
 import 'package:waylo/pages/home.dart';
 import 'package:waylo/theme/appColors.dart';
 import 'package:waylo/theme/app_text_styles.dart';
 import 'package:waylo/repositories/favorite_repository_factory.dart';
 
 class Detaildestination extends StatefulWidget{
-  final User user; 
   final Destination destination; 
   
   const Detaildestination({
     super.key, 
     required this.destination, 
-    required this.user, 
   });
 
   @override
@@ -297,7 +294,7 @@ class _DetaildestinationState extends State<Detaildestination> {
                 Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => HomePage(user: widget.user),
+                    builder: (context) => HomePage(),
                   ),
                 );
                 break;

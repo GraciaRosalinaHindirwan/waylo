@@ -5,7 +5,6 @@ import 'package:waylo/components/recommendCard.dart';
 import 'package:waylo/components/searchBar.dart';
 import 'package:waylo/layouts/homeLayout.dart';
 import 'package:waylo/models/destination.dart';
-import 'package:waylo/models/user.dart';
 import 'package:waylo/pages/home.dart';
 import 'package:waylo/pages/detailDestination.dart';
 import 'package:waylo/repositories/destination_repository_factory.dart';
@@ -14,9 +13,7 @@ import 'package:waylo/theme/app_text_styles.dart';
 import 'package:waylo/pages/profile.dart';
 
 class Explorepage extends StatefulWidget {
-  final User user;
-
-  const Explorepage({super.key, required this.user});
+  const Explorepage({super.key});
 
   @override
   State<Explorepage> createState() => _ExplorepageState();
@@ -47,7 +44,7 @@ class _ExplorepageState extends State<Explorepage> {
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => HomePage(user: widget.user),
+                  builder: (context) => HomePage(),
                 ),
               );
               break;
@@ -58,7 +55,7 @@ class _ExplorepageState extends State<Explorepage> {
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => ProfilePage(user: widget.user),
+                  builder: (context) => ProfilePage(),
                 ),
               );
               break;
@@ -167,7 +164,6 @@ class _ExplorepageState extends State<Explorepage> {
                         distance: '-',
                         page: Detaildestination(
                           destination: destination,
-                          user: widget.user,
                         ),
                       ),
                     );
@@ -239,7 +235,6 @@ class _ExplorepageState extends State<Explorepage> {
 
                     return Inspiringcard(
                       destination: destination,
-                      user: widget.user,
                       image: imageUrl,
                       location: destination.location.subdistrictName,
                     );

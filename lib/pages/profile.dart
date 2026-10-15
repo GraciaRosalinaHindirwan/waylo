@@ -1,3 +1,7 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:waylo/service/auth_service.dart';
+
 import 'package:waylo/components/profileCard.dart';
 import 'package:waylo/components/buttomNav.dart';
 import 'package:waylo/models/user.dart';
@@ -7,15 +11,13 @@ import 'package:waylo/pages/home.dart';
 import 'package:waylo/pages/regist.dart';
 import 'package:waylo/theme/appColors.dart';
 import 'package:waylo/theme/app_text_styles.dart';
-import 'package:flutter/material.dart';
 import 'package:waylo/pages/currencyConvertPage.dart';
 import 'package:waylo/pages/timezoneConvertPage.dart';
 import 'package:waylo/pages/aboutMobile.dart';
 
 class ProfilePage extends StatelessWidget {
-  final User user;
 
-  const ProfilePage({super.key, required this.user});
+  const ProfilePage({super.key});
 
   Widget buildHeader() {
     return SizedBox(
@@ -30,46 +32,53 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
-  Widget buildAvatar() {
-    return Column(
-      spacing: 8,
-      children: [
-        Container(
-          width: 100,
-          height: 100,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            shape: BoxShape.circle,
-            border: Border.all(width: 5, color: AppColors.border),
+  
+Widget buildAvatar(User? user) {
+  return Column(
+    spacing: 8,
+    children: [
+      Container(
+        width: 100,
+        height: 100,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          shape: BoxShape.circle,
+          border: Border.all(
+            width: 5,
+            color: AppColors.border,
           ),
-          child: const Center(
-            child: Icon(
-              Icons.person_outline,
-              size: 42,
+        ),
+        child: const Center(
+          child: Icon(
+            Icons.person_outline,
+            size: 42,
+            color: AppColors.textSecondary,
+          ),
+        ),
+      ),
+      Column(
+        spacing: 4,
+        children: [
+          Text(
+            user?.fullname ?? 'Belum login',
+            style: AppTextStyles.heading4.copyWith(
+              color: AppColors.textPrimary,
+            ),
+          ),
+          Text(
+            user?.username != null
+                ? '@${user!.username}'
+                : '@username',
+            style: AppTextStyles.body.copyWith(
               color: AppColors.textSecondary,
             ),
           ),
-        ),
-        Column(
-          spacing: 4,
-          children: [
-            Text(
-              user.fullname,
-              style: AppTextStyles.heading4.copyWith(
-                color: AppColors.textPrimary,
-              ),
-            ),
-            Text(
-              '@${user.username}',
-              style: AppTextStyles.body.copyWith(
-                color: AppColors.textSecondary,
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
+        ],
+      ),
+    ],
+  );
+}
+
 
   Widget buildLogout(BuildContext context) {
     return GestureDetector(
@@ -115,6 +124,7 @@ class ProfilePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final user = context.watch<AuthService>().currentUser;
     return Scaffold(
       backgroundColor: AppColors.background,
       body: Column(
@@ -128,7 +138,7 @@ class ProfilePage extends StatelessWidget {
                   spacing: 16,
                   children: [
                     buildHeader(),
-                    buildAvatar(),
+                    buildAvatar(user),
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       child: Column(
@@ -140,7 +150,7 @@ class ProfilePage extends StatelessWidget {
                               ProfileCard(
                                 title: 'Favorite Place',
                                 icon: Icons.favorite_border,
-                                page: FavoritePage(user: user),
+                                page: FavoritePage(),
                               ),
                                ProfileCard(
                                 title: 'Travel Badges',
@@ -194,13 +204,13 @@ class ProfilePage extends StatelessWidget {
               if (index == 0) {
                 Navigator.pushReplacement(
                   context,
-                  MaterialPageRoute(builder: (context) => HomePage(user: user)),
+                  MaterialPageRoute(builder: (context) => HomePage()),
                 );
               } else if (index == 1) {
                 Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => Explorepage(user: user),
+                    builder: (context) => Explorepage(),
                   ),
                 );
               }

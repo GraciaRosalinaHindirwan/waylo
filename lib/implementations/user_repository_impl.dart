@@ -1,6 +1,7 @@
 import 'package:waylo/models/user.dart';
 import 'package:waylo/models/category.dart';
 import 'package:waylo/repositories/user_repository.dart';
+import 'package:waylo/service/password_hasher.dart';
 
 // dia yang menjalankan tugas dari minta data ke API sampai ilah datanya 
 
@@ -46,10 +47,12 @@ class UserRepositoryImpl implements UserRepository {
 
   final List<User> _users = [];
 
-  UserRepositoryImpl() {
+  Future<void> initializeDummyUsers() async {
+    if (_users.isNotEmpty) return;
+
     final now = DateTime(2026, 1, 1);
 
-    _users.addAll([
+    final dummyUsers = [
       User(
         id: 1,
         fullname: 'Andi Pratama',
@@ -110,7 +113,25 @@ class UserRepositoryImpl implements UserRepository {
         createdAt: DateTime(2026, 1, 5),
         updatedAt: DateTime(2026, 1, 5),
       ),
-    ]);
+    ];
+
+    for (final user in dummyUsers) {
+      final hashedPassword =
+          await PasswordHasher.hashPassword(user.password);
+
+      _users.add(
+        User(
+          id: user.id,
+          fullname: user.fullname,
+          username: user.username,
+          password: hashedPassword,
+          destinations: List<String>.from(user.destinations),
+          categories: List<Category>.from(user.categories),
+          createdAt: user.createdAt,
+          updatedAt: user.updatedAt,
+        ),
+      );
+    }
   }
 
   @override
