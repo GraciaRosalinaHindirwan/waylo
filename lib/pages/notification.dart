@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../theme/appColors.dart';
 import '../theme/app_text_styles.dart';
-import '../components/toggle.dart';
+import '../components/toggleSwitch.dart';
 import '../components/buttomNav.dart';
 import '../services/notification_service.dart';
 
@@ -88,8 +88,8 @@ class _NotificationPageState extends State<NotificationPage> {
             ignoring: !enabled,
             child: Opacity(
               opacity: enabled ? 1 : 0.5,
-              child: CustomToggle(
-                value: value,
+              child: ToggleSwitch(
+                key: ValueKey(value),
                 onChanged: onChanged,
               ),
             ),
