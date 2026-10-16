@@ -4,6 +4,7 @@ import 'package:waylo/components/button.dart';
 import 'package:waylo/components/infoChip.dart';
 import 'package:waylo/service/location_service.dart';
 import 'package:waylo/service/destination_filter_service.dart';
+import 'package:geolocator/geolocator.dart';
 
 import 'package:waylo/components/buttomNav.dart';
 import 'package:waylo/components/inspiringCard.dart';
@@ -32,6 +33,8 @@ class _ExplorepageState extends State<Explorepage> {
   late final Future<List<Destination>> _destinationsFuture;
   final CategoryRepository _categoryRepository = CategoryRepositoryFactory.create();
   final DestinationFilterService _filterService = DestinationFilterService();
+  Position? _userPosition;
+  bool _loadingNearby = true;
 
   final TextEditingController _minController = TextEditingController();
   final TextEditingController _maxController = TextEditingController();
@@ -62,6 +65,7 @@ class _ExplorepageState extends State<Explorepage> {
     _destinationsFuture = repository.getAllDestinations();
     _loadCurrentCity(); 
     _loadCategories();
+    _loadUserPosition();
     _loadDistricts(); 
   }
 
@@ -452,6 +456,51 @@ class _ExplorepageState extends State<Explorepage> {
     }
   }
 
+  Future<void> _loadUserPosition() async {
+  try {
+    final serviceEnabled =
+        await Geolocator.isLocationServiceEnabled();
+
+    if (!serviceEnabled) {
+      debugPrint('GPS/location service tidak aktif');
+      return;
+    }
+
+    var permission = await Geolocator.checkPermission();
+
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+
+    if (permission == LocationPermission.denied ||
+        permission == LocationPermission.deniedForever) {
+      debugPrint('Izin lokasi ditolak: $permission');
+      return;
+    }
+
+    final position = await Geolocator.getCurrentPosition();
+
+    if (!mounted) return;
+
+    setState(() {
+      _userPosition = position;
+    });
+
+    debugPrint(
+      'Koordinat pengguna: '
+      '${position.latitude}, ${position.longitude}',
+    );
+  } catch (e) {
+    debugPrint('Gagal mengambil koordinat pengguna: $e');
+  } finally {
+    if (mounted) {
+      setState(() {
+        _loadingNearby = false;
+      });
+    }
+  }
+}
+
   @override
   Widget build(BuildContext context) {
     return Homelayout(
@@ -546,8 +595,32 @@ class _ExplorepageState extends State<Explorepage> {
                   return const Center(child: Text("Gagal memuat destinasi"));
                 }
 
-                //data berhasil diterima, lalu difilter
+                if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return const Center(
+                    child: Text('Belum ada destinasi'),
+                  );
+                }
+
+                if (_loadingNearby) {
+                  return const Center(
+                    child: CircularProgressIndicator(),
+                  );
+                }
+
+                if (_userPosition == null) {
+                  return const Center(
+                    child: Text('Lokasi pengguna tidak tersedia'),
+                  );
+                }
+
                 final destinations = _applyFilter(snapshot.data ?? []);
+
+                final nearbyDestinations =
+                    _filterService.getNearbyDestinations(
+                  destinations: destinations,
+                  userLatitude: _userPosition!.latitude,
+                  userLongitude: _userPosition!.longitude,
+                );
 
                 if (destinations.isEmpty) {
                   return Center(
@@ -561,11 +634,11 @@ class _ExplorepageState extends State<Explorepage> {
 
                 return ListView.separated(
                   scrollDirection: Axis.horizontal,
-                  itemCount: destinations.length,
+                  itemCount: nearbyDestinations.length,
                   separatorBuilder: (context, index) =>
                       const SizedBox(width: 16),
                   itemBuilder: (context, index) {
-                    final destination = destinations[index];
+                    final destination = nearbyDestinations[index];
                     final bannerImages = destination.images
                         .where((image) => image.isBanner)
                         .toList();

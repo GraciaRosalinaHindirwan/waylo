@@ -1,4 +1,5 @@
 import 'package:waylo/models/destination.dart';
+import 'package:geolocator/geolocator.dart';
 
 class DestinationFilterService {
   List<String> getDistricts(List<Destination> destinations) {
@@ -47,5 +48,43 @@ class DestinationFilterService {
 
       return true;
     }).toList();
+  }
+
+  List<Destination> getNearbyDestinations({
+    required List<Destination> destinations,
+    required double userLatitude,
+    required double userLongitude,
+    double radiusInMeters = 10000,
+  }) {
+    final nearbyDestinations = destinations.where((destination) {
+      final distance = Geolocator.distanceBetween(
+        userLatitude,
+        userLongitude,
+        destination.coordinate.latitude,
+        destination.coordinate.longitude,
+      );
+
+      return distance <= radiusInMeters;
+    }).toList();
+
+    nearbyDestinations.sort((a, b) {
+      final distanceA = Geolocator.distanceBetween(
+        userLatitude,
+        userLongitude,
+        a.coordinate.latitude,
+        a.coordinate.longitude,
+      );
+
+      final distanceB = Geolocator.distanceBetween(
+        userLatitude,
+        userLongitude,
+        b.coordinate.latitude,
+        b.coordinate.longitude,
+      );
+
+      return distanceA.compareTo(distanceB);
+    });
+
+    return nearbyDestinations;
   }
 }
