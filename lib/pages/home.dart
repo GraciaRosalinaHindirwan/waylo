@@ -13,7 +13,7 @@ import 'package:waylo/pages/detailDestination.dart';
 import 'package:waylo/theme/appColors.dart';
 import 'package:waylo/theme/app_text_styles.dart';
 import 'package:waylo/pages/profile.dart';
-
+import 'package:waylo/pages/quickCategory.dart';
 import 'package:provider/provider.dart';
 import 'package:waylo/service/auth_service.dart';
 
@@ -126,7 +126,7 @@ class _HomePageState extends State<HomePage> {
                                     (item) => QuickAction(
                                       label: item.$1,
                                       icon: item.$2,
-                                      page: Explorepage(),
+                                      page: QuickCategoryPage(category: item.$1),
                                     ),
                                   )
                                   .toList(),
