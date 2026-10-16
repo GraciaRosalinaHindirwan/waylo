@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+
 import 'package:waylo/models/destination.dart';
 import 'package:waylo/pages/detailDestination.dart';
 import 'package:waylo/repositories/destination_repository.dart';
-import 'package:waylo/repositories/destination_repository_factory.dart';
+import 'package:waylo/factories/destination_repository_factory.dart';
+import 'package:waylo/service/destination_serach_service.dart';
 import 'package:waylo/theme/appColors.dart';
 import 'package:waylo/theme/app_text_styles.dart';
 
@@ -29,7 +31,12 @@ class CustomSearchBar extends StatefulWidget {
 class _CustomSearchBarState extends State<CustomSearchBar> {
   final DestinationRepository _repository =
       DestinationRepositoryFactory.create();
+
+  final DestinationSearchService _searchService =
+      DestinationSearchService();
+
   final LayerLink _layerLink = LayerLink();
+
   final OverlayPortalController _overlayController =
       OverlayPortalController();
 
@@ -38,41 +45,47 @@ class _CustomSearchBarState extends State<CustomSearchBar> {
 
   List<Destination> _destinations = [];
   List<Destination> _results = [];
+
   double _width = 0;
 
   @override
   void initState() {
     super.initState();
+
     _ownsController = widget.controller == null;
     _controller = widget.controller ?? TextEditingController();
+
     _loadDestinations();
   }
 
   @override
   void dispose() {
-    if (_ownsController) _controller.dispose();
+    if (_ownsController) {
+      _controller.dispose();
+    }
+
     super.dispose();
   }
 
   Future<void> _loadDestinations() async {
-    final result = await _repository.getAllDestinations();
-    if (!mounted) return;
-    setState(() => _destinations = result);
-  }
+    final destinations = await _repository.getAllDestinations();
 
-  void _search(String value) {
-    final keyword = value.trim().toLowerCase();
+    if (!mounted) return;
 
     setState(() {
-      _results = keyword.isEmpty
-          ? []
-          : _destinations.where((destination) {
-              final location = destination.location;
-              return destination.name.toLowerCase().contains(keyword) ||
-                  location.subdistrictName.toLowerCase().contains(keyword) ||
-                  location.districtName.toLowerCase().contains(keyword) ||
-                  location.provinceName.toLowerCase().contains(keyword);
-            }).toList();
+      _destinations = destinations;
+    });
+  }
+
+  // Memanggil service untuk melakukan pencarian.
+  void _search(String value) {
+    final keyword = value.trim();
+
+    setState(() {
+      _results = _searchService.search(
+        destinations: _destinations,
+        query: keyword,
+      );
     });
 
     if (keyword.isEmpty) {
@@ -85,20 +98,25 @@ class _CustomSearchBarState extends State<CustomSearchBar> {
   }
 
   void _closeResults() {
-    if (_overlayController.isShowing) _overlayController.hide();
+    if (_overlayController.isShowing) {
+      _overlayController.hide();
+    }
   }
 
   void _open(Destination destination) {
     _closeResults();
     FocusScope.of(context).unfocus();
+
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => Detaildestination(destination: destination),
+        builder: (context) =>
+            Detaildestination(destination: destination),
       ),
     );
   }
 
+  // Tampilan daftar hasil pencarian.
   Widget _buildResults() {
     return Material(
       color: AppColors.card,
@@ -123,7 +141,10 @@ class _CustomSearchBarState extends State<CustomSearchBar> {
                 padding: const EdgeInsets.symmetric(vertical: 4),
                 itemCount: _results.length,
                 separatorBuilder: (context, index) =>
-                    const Divider(height: 1, color: AppColors.border),
+                    const Divider(
+                  height: 1,
+                  color: AppColors.border,
+                ),
                 itemBuilder: (context, index) {
                   final destination = _results[index];
                   final location = destination.location;
@@ -145,7 +166,8 @@ class _CustomSearchBarState extends State<CustomSearchBar> {
                           ),
                           Expanded(
                             child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                              crossAxisAlignment:
+                                  CrossAxisAlignment.start,
                               children: [
                                 Text(
                                   destination.name,
@@ -156,7 +178,8 @@ class _CustomSearchBarState extends State<CustomSearchBar> {
                                   ),
                                 ),
                                 Text(
-                                  '${location.subdistrictName}, ${location.districtName}',
+                                  '${location.subdistrictName}, '
+                                  '${location.districtName}',
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: AppTextStyles.caption.copyWith(
@@ -176,6 +199,7 @@ class _CustomSearchBarState extends State<CustomSearchBar> {
     );
   }
 
+  // Menampilkan overlay tepat di bawah search bar.
   Widget _buildOverlay(BuildContext context) {
     return Stack(
       children: [
@@ -190,7 +214,10 @@ class _CustomSearchBarState extends State<CustomSearchBar> {
           targetAnchor: Alignment.bottomLeft,
           followerAnchor: Alignment.topLeft,
           offset: const Offset(0, 8),
-          child: SizedBox(width: _width, child: _buildResults()),
+          child: SizedBox(
+            width: _width,
+            child: _buildResults(),
+          ),
         ),
       ],
     );
@@ -211,7 +238,6 @@ class _CustomSearchBarState extends State<CustomSearchBar> {
               height: 54,
               child: Stack(
                 children: [
-                  // Kotak search
                   Positioned.fill(
                     child: TextField(
                       controller: _controller,
@@ -226,7 +252,8 @@ class _CustomSearchBarState extends State<CustomSearchBar> {
                       ),
                       decoration: InputDecoration(
                         isDense: true,
-                        hintText: 'Search destinations or countries',
+                        hintText:
+                            'Search destinations or countries',
                         hintStyle: AppTextStyles.caption.copyWith(
                           color: AppColors.textSecondary,
                         ),
@@ -241,7 +268,8 @@ class _CustomSearchBarState extends State<CustomSearchBar> {
                         ),
                         filled: true,
                         fillColor: AppColors.card,
-                        contentPadding: const EdgeInsets.symmetric(
+                        contentPadding:
+                            const EdgeInsets.symmetric(
                           horizontal: 14,
                           vertical: 0,
                         ),
@@ -268,7 +296,7 @@ class _CustomSearchBarState extends State<CustomSearchBar> {
                     ),
                   ),
 
-                  // Inner shadow di bagian atas
+                  // Inner shadow di bagian atas search bar.
                   Positioned(
                     top: 1,
                     left: 1,

@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:waylo/service/destination_filter_service.dart';
 
 import 'package:waylo/layouts/homeLayout.dart';
-import 'package:waylo/components/searchBar.dart';
+import 'package:waylo/components/customSearchBar.dart';
 import 'package:waylo/components/quickAction.dart';
 import 'package:waylo/components/recommendCard.dart';
 import 'package:waylo/components/buttomNav.dart';
 import 'package:waylo/models/destination.dart';
 import 'package:waylo/pages/explorePage.dart';
 import 'package:waylo/repositories/destination_repository.dart';
-import 'package:waylo/repositories/destination_repository_factory.dart';
+import 'package:waylo/factories/destination_repository_factory.dart';
 import 'package:waylo/pages/detailDestination.dart';
 import 'package:waylo/theme/appColors.dart';
 import 'package:waylo/theme/app_text_styles.dart';
@@ -25,8 +27,11 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final DestinationRepository _destinationRepository =
-      DestinationRepositoryFactory.create();
+  final DestinationRepository _destinationRepository = DestinationRepositoryFactory.create();
+
+  final DestinationFilterService _filterService = DestinationFilterService(); 
+  Position? _userPosition;
+  bool _loadingNearby = true;
 
   static const List<(String, String)> quickActions = [
     ('Beach', 'assets/img/beach.png'),
@@ -43,6 +48,7 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     loadDestinations();
+    _loadUserPosition();
   }
 
   Future<void> loadDestinations() async {
@@ -80,6 +86,64 @@ class _HomePageState extends State<HomePage> {
       ),
     );
   }
+
+  Future<void> _loadUserPosition() async {
+  try {
+    final serviceEnabled =
+        await Geolocator.isLocationServiceEnabled();
+
+    if (!serviceEnabled) {
+      debugPrint('Location service tidak aktif');
+      return;
+    }
+
+    var permission = await Geolocator.checkPermission();
+
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+
+    if (permission == LocationPermission.denied ||
+        permission == LocationPermission.deniedForever) {
+      debugPrint('Izin lokasi ditolak: $permission');
+      return;
+    }
+
+    final position = await Geolocator.getCurrentPosition();
+
+    if (!mounted) return;
+
+    setState(() {
+      _userPosition = position;
+    });
+
+    debugPrint(
+      'Koordinat pengguna: '
+      '${position.latitude}, ${position.longitude}',
+    );
+  } catch (e) {
+    debugPrint('Gagal mengambil lokasi pengguna: $e');
+  } finally {
+    if (mounted) {
+      setState(() {
+        _loadingNearby = false;
+      });
+    }
+  }
+}
+
+List<Destination> get nearbyDestinations {
+  if (_userPosition == null) {
+    return [];
+  }
+
+  return _filterService.getNearbyDestinations(
+    destinations: destinations,
+    userLatitude: _userPosition!.latitude,
+    userLongitude: _userPosition!.longitude,
+    radiusInMeters: 10000,
+  );
+}
 
   @override
   Widget build(BuildContext context) {
@@ -154,18 +218,37 @@ class _HomePageState extends State<HomePage> {
                           ),
                         ],
                       ),
-                      SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        clipBehavior: Clip.none,
-                        padding: const EdgeInsets.symmetric(vertical: 20),
-                        child: Row(
-                          spacing: 16,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: destinations
-                              .map(buildDestinationCard)
-                              .toList(),
-                        ),
+                      
+                      SizedBox(
+                        height: 265,
+                        child: _loadingNearby
+                            ? const Center(
+                                child: CircularProgressIndicator(),
+                              )
+                            : _userPosition == null
+                                ? const Center(
+                                    child: Text('Lokasi pengguna tidak tersedia'),
+                                  )
+                                : nearbyDestinations.isEmpty
+                                    ? const Center(
+                                        child: Text(
+                                          'Tidak ada destinasi dalam radius 10 km',
+                                        ),
+                                      )
+                                    : ListView.separated(
+                                        scrollDirection: Axis.horizontal,
+                                        clipBehavior: Clip.none,
+                                        padding: const EdgeInsets.symmetric(vertical: 20),
+                                        itemCount: nearbyDestinations.length,
+                                        separatorBuilder: (context, index) =>
+                                            const SizedBox(width: 16),
+                                        itemBuilder: (context, index) {
+                                          final destination = nearbyDestinations[index];
+                                          return buildDestinationCard(destination);
+                                        },
+                                      ),
                       ),
+
                       const SizedBox(height: 119),
                     ],
                   ),
