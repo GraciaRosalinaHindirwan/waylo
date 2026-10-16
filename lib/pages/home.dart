@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 
 import 'package:waylo/layouts/homeLayout.dart';
-import 'package:waylo/components/searchBar.dart';
+import 'package:waylo/components/customSearchBar.dart';
 import 'package:waylo/components/quickAction.dart';
 import 'package:waylo/components/recommendCard.dart';
 import 'package:waylo/components/buttomNav.dart';
 import 'package:waylo/models/destination.dart';
 import 'package:waylo/pages/explorePage.dart';
 import 'package:waylo/repositories/destination_repository.dart';
-import 'package:waylo/repositories/destination_repository_factory.dart';
+import 'package:waylo/factories/destination_repository_factory.dart';
 import 'package:waylo/pages/detailDestination.dart';
 import 'package:waylo/theme/appColors.dart';
 import 'package:waylo/theme/app_text_styles.dart';

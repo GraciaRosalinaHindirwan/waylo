@@ -3,11 +3,12 @@ import 'package:flutter/services.dart';
 import 'package:waylo/components/button.dart';
 import 'package:waylo/components/infoChip.dart';
 import 'package:waylo/service/location_service.dart';
+import 'package:waylo/service/destination_filter_service.dart';
 
 import 'package:waylo/components/buttomNav.dart';
 import 'package:waylo/components/inspiringCard.dart';
 import 'package:waylo/components/recommendCard.dart';
-import 'package:waylo/components/searchBar.dart';
+import 'package:waylo/components/customSearchBar.dart';
 import 'package:waylo/layouts/homeLayout.dart';
 import 'package:waylo/models/category.dart';
 import 'package:waylo/models/destination.dart';
@@ -15,7 +16,7 @@ import 'package:waylo/pages/home.dart';
 import 'package:waylo/pages/detailDestination.dart';
 import 'package:waylo/repositories/category_repository.dart';
 import 'package:waylo/repositories/category_repository_factory.dart';
-import 'package:waylo/repositories/destination_repository_factory.dart';
+import 'package:waylo/factories/destination_repository_factory.dart';
 import 'package:waylo/theme/appColors.dart';
 import 'package:waylo/theme/app_text_styles.dart';
 import 'package:waylo/pages/profile.dart';
@@ -29,22 +30,13 @@ class Explorepage extends StatefulWidget {
 
 class _ExplorepageState extends State<Explorepage> {
   late final Future<List<Destination>> _destinationsFuture;
-  final CategoryRepository _categoryRepository =
-      CategoryRepositoryFactory.create();
+  final CategoryRepository _categoryRepository = CategoryRepositoryFactory.create();
+  final DestinationFilterService _filterService = DestinationFilterService();
 
   final TextEditingController _minController = TextEditingController();
   final TextEditingController _maxController = TextEditingController();
 
-  static const List<String> provinces = [
-    'DI Yogyakarta',
-    'Bali',
-    'DKI Jakarta',
-    'Jawa Barat',
-    'Jawa Tengah',
-    'Jawa Timur',
-    'Nusa Tenggara Barat',
-    'Sumatera Utara',
-  ];
+  List<String> _districts = <String>[];
 
   static const List<(String, int?, int?)> budgetOptions = [
     ('Free', 0, 0),
@@ -57,7 +49,8 @@ class _ExplorepageState extends State<Explorepage> {
   Set<int> _selectedCategoryIds = {};
   int? _minFee;
   int? _maxFee;
-  String? _selectedProvince;
+  String? _selectedDistrict;
+
   final LocationService _locationService = LocationService();
   String _currentCity = 'Mencari lokasi...';
 
@@ -67,7 +60,9 @@ class _ExplorepageState extends State<Explorepage> {
 
     final repository = DestinationRepositoryFactory.create();
     _destinationsFuture = repository.getAllDestinations();
+    _loadCurrentCity(); 
     _loadCategories();
+    _loadDistricts(); 
   }
 
   @override
@@ -83,13 +78,30 @@ class _ExplorepageState extends State<Explorepage> {
     setState(() => _categories = result);
   }
 
+  Future<void> _loadDistricts() async {
+  try {
+    final destinations = await _destinationsFuture;
+    final districts = _filterService.getDistricts(destinations);
+
+    if (!mounted) return;
+
+    setState(() {
+      _districts = districts;
+    });
+  } catch (e) {
+    debugPrint('Gagal memuat distrik: $e');
+  }
+}
+
   bool get _filterActive =>
       _selectedCategoryIds.isNotEmpty ||
-      _selectedProvince != null ||
+      _selectedDistrict != null ||
       _minFee != null ||
       _maxFee != null;
 
-  List<Destination> _applyFilter(List<Destination> destinations) {
+  List<Destination> _applyFilter(
+    List<Destination> destinations,
+  ) {
     return destinations.where((destination) {
       if (_selectedCategoryIds.isNotEmpty &&
           !destination.categories.any(
@@ -99,11 +111,14 @@ class _ExplorepageState extends State<Explorepage> {
       }
 
       final fee = destination.fee ?? 0;
+
       if (_minFee != null && fee < _minFee!) return false;
       if (_maxFee != null && fee > _maxFee!) return false;
 
-      if (_selectedProvince != null &&
-          destination.location.provinceName != _selectedProvince) {
+      // Filter berdasarkan district
+      if (_selectedDistrict != null &&
+          destination.location.districtName.trim() !=
+              _selectedDistrict!.trim()) {
         return false;
       }
 
@@ -111,13 +126,19 @@ class _ExplorepageState extends State<Explorepage> {
     }).toList();
   }
 
-  Widget _buildChip(String label, bool selected, VoidCallback onTap) {
+  Widget _buildChip(
+    String label,
+    bool selected,
+    VoidCallback onTap,
+  ) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        height: 40,
-        padding: const EdgeInsets.symmetric(horizontal: 17.06),
-        alignment: Alignment.center,
+        // Jangan tambahkan width: double.infinity di sini
+        padding: const EdgeInsets.symmetric(
+          horizontal: 17,
+          vertical: 10,
+        ),
         decoration: BoxDecoration(
           color: selected ? AppColors.secondary : AppColors.card,
           borderRadius: BorderRadius.circular(8.53),
@@ -131,7 +152,9 @@ class _ExplorepageState extends State<Explorepage> {
         ),
         child: Text(
           label,
-          style: AppTextStyles.button.copyWith(color: AppColors.textPrimary),
+          style: AppTextStyles.button.copyWith(
+            color: AppColors.textPrimary,
+          ),
         ),
       ),
     );
@@ -192,7 +215,7 @@ class _ExplorepageState extends State<Explorepage> {
 
   Future<void> _openFilter() async {
     final tempCategories = {..._selectedCategoryIds};
-    String? tempProvince = _selectedProvince;
+    String? tempProvince = _selectedDistrict;
     _minController.text = _minFee?.toString() ?? '';
     _maxController.text = _maxFee?.toString() ?? '';
 
@@ -244,19 +267,21 @@ class _ExplorepageState extends State<Explorepage> {
                       Wrap(
                         spacing: 12,
                         runSpacing: 12,
-                        children: _categories
-                            .map(
-                              (category) => _buildChip(
+                        children: [
+                          for (final category in _categories)
+                            if (category.name.toLowerCase() != 'other')
+                              _buildChip(
                                 category.name,
                                 tempCategories.contains(category.id),
                                 () => setSheetState(() {
-                                  tempCategories.contains(category.id)
-                                      ? tempCategories.remove(category.id)
-                                      : tempCategories.add(category.id);
+                                  if (tempCategories.contains(category.id)) {
+                                    tempCategories.remove(category.id);
+                                  } else {
+                                    tempCategories.add(category.id);
+                                  }
                                 }),
                               ),
-                            )
-                            .toList(),
+                        ],
                       ),
                     ),
                     _buildSection(
@@ -306,22 +331,20 @@ class _ExplorepageState extends State<Explorepage> {
                       ),
                     ),
                     _buildSection(
-                      'Province',
+                      'District',
                       Wrap(
                         spacing: 12,
                         runSpacing: 12,
-                        children: provinces
-                            .map(
-                              (province) => _buildChip(
-                                province,
-                                tempProvince == province,
-                                () => setSheetState(() {
-                                  tempProvince =
-                                      tempProvince == province ? null : province;
-                                }),
-                              ),
-                            )
-                            .toList(),
+                        children: _districts.map((province) {
+                          return _buildChip(
+                            province,
+                            tempProvince == province,
+                            () => setSheetState(() {
+                              tempProvince =
+                                  tempProvince == province ? null : province;
+                            }),
+                          );
+                        }).toList(),
                       ),
                     ),
                     Row(
@@ -348,7 +371,7 @@ class _ExplorepageState extends State<Explorepage> {
                             onPressed: () {
                               setState(() {
                                 _selectedCategoryIds = tempCategories;
-                                _selectedProvince = tempProvince;
+                                _selectedDistrict = tempProvince;
                                 _minFee = int.tryParse(_minController.text);
                                 _maxFee = int.tryParse(_maxController.text);
                               });
@@ -407,8 +430,6 @@ class _ExplorepageState extends State<Explorepage> {
         ],
       ),
     );
-
-    _loadCurrentCity(); 
   }
 
   Future<void> _loadCurrentCity() async {
