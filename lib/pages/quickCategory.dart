@@ -5,7 +5,7 @@ import 'package:waylo/pages/explorePage.dart';
 import 'package:waylo/pages/home.dart';
 import 'package:waylo/pages/profile.dart';
 import 'package:waylo/repositories/destination_repository.dart';
-import 'package:waylo/repositories/destination_repository_factory.dart';
+import 'package:waylo/factories/destination_repository_factory.dart';
 import 'package:waylo/repositories/favorite_repository.dart';
 import 'package:waylo/repositories/favorite_repository_factory.dart';
 import 'package:waylo/theme/appColors.dart';
@@ -62,10 +62,7 @@ class _QuickCategoryPageState extends State<QuickCategoryPage> {
       width: 88,
       height: 88,
       color: AppColors.border,
-      child: const Icon(
-        Icons.image_outlined,
-        color: AppColors.textSecondary,
-      ),
+      child: const Icon(Icons.image_outlined, color: AppColors.textSecondary),
     );
 
     return Container(
@@ -94,9 +91,7 @@ class _QuickCategoryPageState extends State<QuickCategoryPage> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => Detaildestination(
-              destination: destination,
-            ),
+            builder: (context) => Detaildestination(destination: destination),
           ),
         ).then((_) {
           if (mounted) setState(() {});
@@ -172,9 +167,7 @@ class _QuickCategoryPageState extends State<QuickCategoryPage> {
                       spacing: 4,
                       children: [
                         Icon(
-                          isFavorited
-                              ? Icons.favorite
-                              : Icons.favorite_border,
+                          isFavorited ? Icons.favorite : Icons.favorite_border,
                           size: 24,
                           color: AppColors.accent,
                         ),
@@ -239,9 +232,7 @@ class _QuickCategoryPageState extends State<QuickCategoryPage> {
                 Expanded(
                   child: Text(
                     widget.category,
-                    style: AppTextStyles.heading3.copyWith(
-                      color: Colors.black,
-                    ),
+                    style: AppTextStyles.heading3.copyWith(color: Colors.black),
                   ),
                 ),
               ],
@@ -251,22 +242,22 @@ class _QuickCategoryPageState extends State<QuickCategoryPage> {
             child: isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : destinations.isEmpty
-                    ? Center(
-                        child: Text(
-                          'Belum ada destinasi untuk kategori ini',
-                          style: AppTextStyles.body.copyWith(
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                      )
-                    : ListView.separated(
-                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-                        itemCount: destinations.length,
-                        separatorBuilder: (context, index) =>
-                            const SizedBox(height: 16),
-                        itemBuilder: (context, index) =>
-                            buildCard(destinations[index]),
+                ? Center(
+                    child: Text(
+                      'Belum ada destinasi untuk kategori ini',
+                      style: AppTextStyles.body.copyWith(
+                        color: AppColors.textSecondary,
                       ),
+                    ),
+                  )
+                : ListView.separated(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+                    itemCount: destinations.length,
+                    separatorBuilder: (context, index) =>
+                        const SizedBox(height: 16),
+                    itemBuilder: (context, index) =>
+                        buildCard(destinations[index]),
+                  ),
           ),
           CustomBottomNavBar(
             currentIndex: 0,
