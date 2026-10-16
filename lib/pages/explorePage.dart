@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:waylo/components/infoChip.dart';
+import 'package:waylo/service/location_service.dart';
+
 import 'package:waylo/components/buttomNav.dart';
 import 'package:waylo/components/inspiringCard.dart';
 import 'package:waylo/components/recommendCard.dart';
@@ -21,6 +24,8 @@ class Explorepage extends StatefulWidget {
 
 class _ExplorepageState extends State<Explorepage> {
   late final Future<List<Destination>> _destinationsFuture;
+  final LocationService _locationService = LocationService();
+  String _currentCity = 'Mencari lokasi...';
 
   @override
   void initState() {
@@ -28,6 +33,28 @@ class _ExplorepageState extends State<Explorepage> {
 
     final repository = DestinationRepositoryFactory.create();
     _destinationsFuture = repository.getAllDestinations();
+
+    _loadCurrentCity(); 
+  }
+
+  Future<void> _loadCurrentCity() async {
+    try {
+      final city = await _locationService.getCurrentCity();
+
+      if (!mounted) return;
+
+      setState(() {
+        _currentCity = city;
+      });
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        _currentCity = 'Lokasi tidak tersedia';
+      });
+
+      debugPrint('Gagal mengambil lokasi: $e');
+    }
   }
 
   @override
@@ -115,6 +142,21 @@ class _ExplorepageState extends State<Explorepage> {
               ),
             ],
           ),
+
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Infochip(
+              icon: const Icon(
+                Icons.near_me_rounded,
+                size: 18,
+                color: AppColors.secondaryLight,
+              ),
+              value: _currentCity,
+              textColor: AppColors.textSecondary,
+            ),
+          ),
+
+          const SizedBox(height: 20),
 
           SizedBox(
             height: 225,
