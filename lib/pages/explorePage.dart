@@ -665,6 +665,8 @@ class _ExplorepageState extends State<Explorepage> {
             ),
           ),
 
+          SizedBox(height: 24), 
+
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
 
@@ -688,6 +690,8 @@ class _ExplorepageState extends State<Explorepage> {
               ),
             ],
           ),
+
+          SizedBox(height: 16),
 
           SizedBox(
             height: 160,
