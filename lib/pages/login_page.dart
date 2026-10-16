@@ -3,7 +3,6 @@ import 'package:go_router/go_router.dart';
 import 'package:waylo/theme/appColors.dart';
 import 'package:waylo/theme/app_text_styles.dart';
 import 'package:waylo/components/button.dart';
-import 'package:waylo/pages/regist.dart';
 import 'package:waylo/pages/biometric.dart';
 import 'package:provider/provider.dart';
 import 'package:waylo/service/auth_service.dart';
@@ -228,12 +227,8 @@ void initState() {
                                 ),
                                 GestureDetector(
                                   onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) => const RegisterPage(),
-                                      ),
-                                    );
+                                    debugPrint('REGISTER DIKLIK');
+                                    context.go('/register'); 
                                   },
                                   child: Text(
                                     'Register here',

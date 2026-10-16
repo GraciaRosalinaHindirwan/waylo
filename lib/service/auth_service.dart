@@ -30,6 +30,7 @@ class AuthService extends ChangeNotifier {
   }
 
   Future<User> register(User user) async {
+    //cek apakah username sudah digunakan 
     final existingUser =
         await repository.getUserByUsername(user.username);
 
@@ -37,6 +38,7 @@ class AuthService extends ChangeNotifier {
       throw Exception('Username sudah digunakan');
     }
 
+    //hashed passwrod sebelum disimpan 
     final hashedPassword =
         await PasswordHasher.hashPassword(user.password);
 
@@ -45,8 +47,12 @@ class AuthService extends ChangeNotifier {
       fullname: user.fullname,
       username: user.username,
       password: hashedPassword,
+      destinations: [], 
+      categories: [],
+      hasCompletedPreference: false, 
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
+
     );
 
     return await repository.createUser(newUser);

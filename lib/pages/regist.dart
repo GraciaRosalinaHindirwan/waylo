@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import 'package:waylo/service/auth_service.dart';
+import 'package:waylo/models/user.dart';
+
 import 'package:waylo/theme/appColors.dart';
 import 'package:waylo/theme/app_text_styles.dart';
 import 'package:waylo/components/button.dart';
@@ -21,6 +26,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -31,14 +37,66 @@ class _RegisterPageState extends State<RegisterPage> {
     super.dispose();
   }
 
-  void _register() {
-    if (!_formKey.currentState!.validate()) return;
+  Future<void> _register() async {
+    //mencegah proses registrasi berulang 
+    if(_isLoading) return; 
 
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Registration submitted')));
+    //Validasi semua field, termasuk confirm password
+    if(!_formKey.currentState!.validate()) return; 
 
-    // Hubungkan ke proses registrasi akun di sini.
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final now = DateTime.now();
+
+      final user = User(
+         id: now.millisecondsSinceEpoch,
+         fullname: _fullnameController.text.trim(),
+        username: _usernameController.text.trim(),
+        password: _passwordController.text,
+        destinations: [],
+        categories: [],
+        hasCompletedPreference: false,
+        createdAt: now,
+        updatedAt: now,
+      ); 
+
+      // Panggil AuthService yang sudah terdaftar di Provider
+      await context.read<AuthService>().register(user);
+
+      if (!mounted) return;
+
+      debugPrint('Register berhasil');
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Registrasi berhasil! Silakan login.'),
+        ),
+      );
+
+      debugPrint('Router sebelum navigasi: ${GoRouter.of(context).routerDelegate.currentConfiguration.uri}');
+      GoRouter.of(context).go('/login');
+      debugPrint('Perintah navigasi sudah dipanggil');
+
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            e.toString().replaceFirst('Exception: ', ''),
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   @override
@@ -205,7 +263,7 @@ class _RegisterPageState extends State<RegisterPage> {
                             const SizedBox(height: 48),
 
                             CustomButton(
-                              text: 'Register',
+                              text: _isLoading ? 'Registering...' : 'Register',
                               onPressed: _register,
                               height: 56,
                             ),
