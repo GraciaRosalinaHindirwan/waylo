@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
+import 'package:waylo/pages/regist.dart';
 import 'package:waylo/service/auth_service.dart';
 import 'package:timezone/data/latest.dart' as tzdata;
 
@@ -35,16 +36,17 @@ try {
       final user = authService.currentUser; 
 
       debugPrint('=== ROUTER REDIRECT ===');
-      debugPrint('Path: ${state.matchedLocation}');
-      debugPrint('User: ${user?.username}');
-      debugPrint(
-        'hasCompletedPreference: ${user?.hasCompletedPreference}',
-      );
+      debugPrint('Current location: ${state.matchedLocation}');
+      debugPrint('User: $user');
+      debugPrint('hasCompletedPreference: ${user?.hasCompletedPreference}');
+
       final isLoginPage = state.matchedLocation == '/login';
+      final isRegisterPage = state.matchedLocation == '/register'; //apakah skrg halaman login
       final isPreferencePage = state.matchedLocation == '/preference';
 
       if(user == null) {
-        return isLoginPage ? null : '/login'; 
+        return (isLoginPage || isRegisterPage) ? null : '/login';
+        //user yang blm login bisa akses register dan login 
       }
 
       if (!user.hasCompletedPreference) {
@@ -59,8 +61,15 @@ try {
     },
     routes: [
       GoRoute(
+        path: '/register',
+        builder: (context, state) => const RegisterPage(),
+      ),
+      GoRoute(
         path: '/login',
-        builder: (context, state) => LoginPage(),
+        builder: (context, state) {
+          debugPrint('LOGIN PAGE BUILDER DIPANGGIL');
+          return const LoginPage();
+        },
       ),
       GoRoute(
         path: '/home',

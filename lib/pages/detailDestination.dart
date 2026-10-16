@@ -3,8 +3,10 @@ import 'package:waylo/components/buttomNav.dart';
 import 'package:waylo/components/enteranceFeeCard.dart';
 import 'package:waylo/components/favoriteButton.dart';
 import 'package:waylo/components/infoChip.dart';
+import 'package:waylo/components/map_card.dart';
 import 'package:waylo/models/destination.dart';
 import 'package:waylo/pages/home.dart';
+import 'package:waylo/pages/profile.dart';
 import 'package:waylo/theme/appColors.dart';
 import 'package:waylo/theme/app_text_styles.dart';
 import 'package:waylo/repositories/favorite_repository_factory.dart';
@@ -277,6 +279,14 @@ class _DetaildestinationState extends State<Detaildestination> {
                       ),
                     ),
                   ),
+
+                  SizedBox(height: 16), 
+
+                  MapCard(
+                    latitude: destination.coordinate.latitude, 
+                    longitude: destination.coordinate.longitude, 
+                    destinationName: destination.name
+                  ), 
                 ],
               ),
             ],
@@ -302,12 +312,12 @@ class _DetaildestinationState extends State<Detaildestination> {
                 // Sudah berada di Explore
                 break;
               case 2:
-                // Navigator.pushReplacement(
-                //   context,
-                //   MaterialPageRoute(
-                //     builder: (context) => ProfilePage(),
-                //   ),
-                // );
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ProfilePage(),
+                  ),
+                );
                 break;
             }
           },
