@@ -1,0 +1,428 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:waylo/components/inputfield.dart';
+import 'package:waylo/components/button.dart';
+import 'package:waylo/components/buttomNav.dart';
+import 'package:waylo/models/user.dart';
+import 'package:waylo/pages/explorePage.dart';
+import 'package:waylo/pages/home.dart';
+import 'package:waylo/service/auth_service.dart';
+import 'package:waylo/service/password_hasher.dart';
+import 'package:waylo/theme/appColors.dart';
+import 'package:waylo/theme/app_text_styles.dart';
+
+class EditProfilePage extends StatefulWidget {
+  const EditProfilePage({super.key});
+
+  @override
+  State<EditProfilePage> createState() => _EditProfilePageState();
+}
+
+class _EditProfilePageState extends State<EditProfilePage> {
+  late final TextEditingController _fullnameController;
+  late final TextEditingController _usernameController;
+  final TextEditingController _newPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
+
+  bool editFullname = false;
+  bool editUsername = false;
+  bool isSaving = false;
+  bool _obscureNew = true;
+  bool _obscureConfirm = true;
+
+  @override
+  void initState() {
+    super.initState();
+    final user = context.read<AuthService>().currentUser;
+    _fullnameController = TextEditingController(text: user?.fullname ?? '');
+    _usernameController = TextEditingController(text: user?.username ?? '');
+  }
+
+  @override
+  void dispose() {
+    _fullnameController.dispose();
+    _usernameController.dispose();
+    _newPasswordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
+  }
+
+  void showMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
+  Future<void> save() async {
+    final authService = context.read<AuthService>();
+    final user = authService.currentUser;
+
+    if (user == null) {
+      showMessage('Belum login');
+      return;
+    }
+
+    final fullname = _fullnameController.text.trim();
+    final username = _usernameController.text.trim();
+    final newPassword = _newPasswordController.text;
+    final confirmPassword = _confirmPasswordController.text;
+
+    if (fullname.isEmpty || username.isEmpty) {
+      showMessage('Fullname dan username tidak boleh kosong');
+      return;
+    }
+
+    if (newPassword.isNotEmpty) {
+      if (newPassword.length < 8) {
+        showMessage('Password minimal 8 karakter');
+        return;
+      }
+      if (newPassword != confirmPassword) {
+        showMessage('Konfirmasi password tidak cocok');
+        return;
+      }
+    }
+
+    setState(() => isSaving = true);
+
+    try {
+      // Cek username baru belum dipakai user lain.
+      if (username != user.username) {
+        final existing =
+            await authService.repository.getUserByUsername(username);
+        if (existing != null) {
+          if (!mounted) return;
+          setState(() => isSaving = false);
+          showMessage('Username sudah digunakan');
+          return;
+        }
+      }
+
+      // Password di database tersimpan dalam bentuk hash, jadi hash dulu.
+      final passwordToSave = newPassword.isEmpty
+          ? user.password
+          : await PasswordHasher.hashPassword(newPassword);
+
+      final updatedUser = await authService.repository.updateUser(
+        User(
+          id: user.id,
+          fullname: fullname,
+          username: username,
+          password: passwordToSave,
+          destinations: user.destinations,
+          categories: user.categories,
+          hasCompletedPreference: user.hasCompletedPreference,
+          createdAt: user.createdAt,
+          updatedAt: DateTime.now(),
+        ),
+      );
+
+      authService.setCurrentUser(updatedUser);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => isSaving = false);
+      showMessage('Gagal memperbarui profile');
+      return;
+    }
+
+    if (!mounted) return;
+
+    setState(() => isSaving = false);
+    showMessage('Profile berhasil diperbarui');
+    Navigator.pop(context);
+  }
+
+  Widget buildHeader() {
+    return SizedBox(
+      height: 40,
+      width: double.infinity,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Center(
+            child: Text(
+              'EDIT PROFILE',
+              textAlign: TextAlign.center,
+              style: AppTextStyles.heading3.copyWith(color: Colors.black),
+            ),
+          ),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: GestureDetector(
+              onTap: () => Navigator.pop(context),
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: AppColors.card,
+                  borderRadius: BorderRadius.circular(100),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x14000000),
+                      blurRadius: 4,
+                      offset: Offset(2, 2),
+                    ),
+                  ],
+                ),
+                child: const Center(
+                  child: Icon(
+                    Icons.arrow_back_ios_new,
+                    size: 18,
+                    color: AppColors.accent,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget buildSectionTitle(String title) {
+    return SizedBox(
+      width: double.infinity,
+      child: Text(
+        title,
+        style: AppTextStyles.heading4.copyWith(color: Colors.black),
+      ),
+    );
+  }
+
+  Widget buildRoundButton({
+    required IconData icon,
+    required VoidCallback? onTap,
+    double size = 50,
+    Color color = AppColors.card,
+  }) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(100),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x14000000),
+                blurRadius: 4,
+                offset: Offset(2, 2),
+              ),
+            ],
+          ),
+          child: Center(
+            child: Icon(icon, size: 20, color: AppColors.textPrimary),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget buildEditableField({
+    required String label,
+    required TextEditingController controller,
+    required bool editing,
+    required VoidCallback onToggle,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      spacing: 8,
+      children: [
+        Text(
+          label,
+          style: AppTextStyles.label.copyWith(color: AppColors.textSecondary),
+        ),
+        Row(
+          spacing: 8,
+          children: [
+            Expanded(
+              child: IgnorePointer(
+                ignoring: !editing,
+                child: Inputfield(label: '', controller: controller),
+              ),
+            ),
+            buildRoundButton(
+              icon: editing ? Icons.check : Icons.edit_outlined,
+              onTap: onToggle,
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget buildPasswordField({
+    required String label,
+    required TextEditingController controller,
+    required bool obscure,
+    required VoidCallback onToggleObscure,
+  }) {
+    final border = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(color: AppColors.border),
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      spacing: 8,
+      children: [
+        Text(
+          label,
+          style: AppTextStyles.label.copyWith(color: AppColors.textSecondary),
+        ),
+        TextField(
+          controller: controller,
+          obscureText: obscure,
+          enableSuggestions: false,
+          autocorrect: false,
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: AppColors.card,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
+            ),
+            border: border,
+            enabledBorder: border,
+            focusedBorder: border.copyWith(
+              borderSide: const BorderSide(color: AppColors.accent),
+            ),
+            suffixIcon: IconButton(
+              onPressed: onToggleObscure,
+              icon: Icon(
+                obscure
+                    ? Icons.visibility_off_outlined
+                    : Icons.visibility_outlined,
+                size: 20,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget buildAvatar() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      spacing: 10,
+      children: [
+        // Spacer selebar tombol kamera + jarak, supaya foto tetap di tengah.
+        const SizedBox(width: 50),
+        Container(
+          width: 100,
+          height: 100,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+            border: Border.all(width: 5, color: AppColors.border),
+          ),
+          child: const Center(
+            child: Icon(
+              Icons.person_outline,
+              size: 42,
+              color: AppColors.textSecondary,
+            ),
+          ),
+        ),
+        buildRoundButton(
+          icon: Icons.camera_alt_outlined,
+          color: AppColors.border,
+          size: 40,
+          onTap: () {},
+        ),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: Column(
+        children: [
+          Expanded(
+            child: SafeArea(
+              bottom: false,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.only(top: 24, left: 20, right: 20),
+                child: Column(
+                  spacing: 16,
+                  children: [
+                    buildHeader(),
+                    buildAvatar(),
+                    const SizedBox(height: 8),
+                    buildSectionTitle('Profile'),
+                    buildEditableField(
+                      label: 'Fullname',
+                      controller: _fullnameController,
+                      editing: editFullname,
+                      onToggle: () =>
+                          setState(() => editFullname = !editFullname),
+                    ),
+                    buildEditableField(
+                      label: 'Username',
+                      controller: _usernameController,
+                      editing: editUsername,
+                      onToggle: () =>
+                          setState(() => editUsername = !editUsername),
+                    ),
+                    const SizedBox(height: 8),
+                    buildSectionTitle('Edit Password'),
+                    buildPasswordField(
+                      label: 'New Password',
+                      controller: _newPasswordController,
+                      obscure: _obscureNew,
+                      onToggleObscure: () =>
+                          setState(() => _obscureNew = !_obscureNew),
+                    ),
+                    buildPasswordField(
+                      label: 'Confirm New Password',
+                      controller: _confirmPasswordController,
+                      obscure: _obscureConfirm,
+                      onToggleObscure: () =>
+                          setState(() => _obscureConfirm = !_obscureConfirm),
+                    ),
+                    const SizedBox(height: 8),
+                    CustomButton(
+                      text: isSaving ? 'Saving...' : 'Save',
+                      borderRadius: 106.61,
+                      onPressed: isSaving ? () {} : save,
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          CustomBottomNavBar(
+            currentIndex: 2,
+            onTap: (index) {
+              if (index == 0) {
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (context) => HomePage()),
+                  (route) => false,
+                );
+              } else if (index == 1) {
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (context) => Explorepage()),
+                  (route) => false,
+                );
+              } else {
+                Navigator.pop(context);
+              }
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}

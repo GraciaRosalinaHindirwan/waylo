@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -16,13 +15,27 @@ class NotificationPage extends StatefulWidget {
 }
 
 class _NotificationPageState extends State<NotificationPage> {
-  bool general = true;
-  bool sound = true;
-  bool vibrate = true;
-  bool appUpdate = true;
-  bool newService = true;
+  bool general = false;
+  bool sound = false;
+  bool vibrate = false;
+  bool appUpdate = false;
+  bool newService = false;
 
   bool loading = true;
+
+  Widget _buildToggle({
+    required String keyName,
+    required bool value,
+    required bool enabled,
+  }) {
+    return IgnorePointer(
+      ignoring: !enabled,
+      child: Opacity(
+        opacity: enabled ? 1.0 : 0.45,
+        child: _buildToggle(keyName: keyName, value: value, enabled: enabled),
+      ),
+    );
+  }
 
   @override
   void initState() {
@@ -36,27 +49,46 @@ class _NotificationPageState extends State<NotificationPage> {
     if (!mounted) return;
 
     setState(() {
-      general = prefs.getBool('notif_general') ?? true;
-      sound = prefs.getBool('notif_sound') ?? true;
-      vibrate = prefs.getBool('notif_vibrate') ?? true;
-      appUpdate = prefs.getBool('notif_update') ?? true;
-      newService = prefs.getBool('notif_service') ?? true;
+      general = prefs.getBool('notif_general') ?? false;
+      sound = prefs.getBool('notif_sound') ?? false;
+      vibrate = prefs.getBool('notif_vibrate') ?? false;
+      appUpdate = prefs.getBool('notif_update') ?? false;
+      newService = prefs.getBool('notif_service') ?? false;
       loading = false;
     });
+
+    await NotificationService.instance.updateSchedules();
   }
 
-  Future<void> _changeSetting(
-    String key,
-    bool value,
-    void Function(bool) update,
-  ) async {
-    update(value);
-    setState(() {});
-
+  Future<void> _changeSetting(String key, bool value) async {
     final prefs = await SharedPreferences.getInstance();
+
+    // Simpan status terbaru.
     await prefs.setBool(key, value);
 
-    if (key == 'notif_general' && !value) {
+    if (!mounted) return;
+
+    setState(() {
+      switch (key) {
+        case 'notif_general':
+          general = value;
+          break;
+        case 'notif_sound':
+          sound = value;
+          break;
+        case 'notif_vibrate':
+          vibrate = value;
+          break;
+        case 'notif_update':
+          appUpdate = value;
+          break;
+        case 'notif_service':
+          newService = value;
+          break;
+      }
+    });
+
+    if (!general) {
       await NotificationService.instance.cancelRecommendations();
     } else {
       await NotificationService.instance.updateSchedules();
@@ -65,8 +97,8 @@ class _NotificationPageState extends State<NotificationPage> {
 
   Widget _settingRow({
     required String title,
+    required String keyName,
     required bool value,
-    required ValueChanged<bool> onChanged,
     bool enabled = true,
   }) {
     return Padding(
@@ -87,10 +119,14 @@ class _NotificationPageState extends State<NotificationPage> {
           IgnorePointer(
             ignoring: !enabled,
             child: Opacity(
-              opacity: enabled ? 1 : 0.5,
+              opacity: enabled ? 1.0 : 0.45,
               child: ToggleSwitch(
-                key: ValueKey(value),
-                onChanged: onChanged,
+                // Gunakan key stabil agar state animasi toggle
+                // tidak di-reset setiap kali halaman rebuild.
+                key: ValueKey(keyName),
+                onChanged: (newValue) {
+                  _changeSetting(keyName, newValue);
+                },
               ),
             ),
           ),
@@ -105,28 +141,31 @@ class _NotificationPageState extends State<NotificationPage> {
       backgroundColor: AppColors.background,
       body: Stack(
         children: [
+          // Background WAYLO.
           Positioned(
             left: 0,
             right: 0,
             bottom: 0,
             child: IgnorePointer(
               child: Image.asset(
-                'assets/images/about_mobile_background.png',
+                'assets/img/backgroundUp.jpg',
                 width: double.infinity,
                 fit: BoxFit.fitWidth,
-                errorBuilder: (_, __, ___) =>
-                    const SizedBox.shrink(),
+                alignment: Alignment.bottomCenter,
+                errorBuilder: (context, error, stackTrace) {
+                  return const SizedBox.shrink();
+                },
               ),
             ),
           ),
+
           SafeArea(
             bottom: false,
             child: Column(
               children: [
+                // Header.
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    16, 22, 20, 34,
-                  ),
+                  padding: const EdgeInsets.fromLTRB(16, 22, 20, 34),
                   child: Row(
                     children: [
                       Material(
@@ -159,90 +198,42 @@ class _NotificationPageState extends State<NotificationPage> {
                     ],
                   ),
                 ),
+
+                // Pengaturan notifikasi.
                 Expanded(
                   child: loading
-                      ? const Center(
-                          child: CircularProgressIndicator(),
-                        )
+                      ? const Center(child: CircularProgressIndicator())
                       : ListView(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
                           children: [
                             _settingRow(
                               title: 'General Notification',
+                              keyName: 'notif_general',
                               value: general,
-                              onChanged: (v) => _changeSetting(
-                                'notif_general',
-                                v,
-                                (value) => general = value,
-                              ),
                             ),
                             _settingRow(
                               title: 'Sound',
+                              keyName: 'notif_sound',
                               value: sound,
                               enabled: general,
-                              onChanged: (v) => _changeSetting(
-                                'notif_sound',
-                                v,
-                                (value) => sound = value,
-                              ),
                             ),
                             _settingRow(
                               title: 'Vibrate',
+                              keyName: 'notif_vibrate',
                               value: vibrate,
                               enabled: general,
-                              onChanged: (v) => _changeSetting(
-                                'notif_vibrate',
-                                v,
-                                (value) => vibrate = value,
-                              ),
                             ),
                             _settingRow(
                               title: 'App Update',
+                              keyName: 'notif_update',
                               value: appUpdate,
                               enabled: general,
-                              onChanged: (v) => _changeSetting(
-                                'notif_update',
-                                v,
-                                (value) => appUpdate = value,
-                              ),
                             ),
                             _settingRow(
                               title: 'New Service Available',
+                              keyName: 'notif_service',
                               value: newService,
                               enabled: general,
-                              onChanged: (v) => _changeSetting(
-                                'notif_service',
-                                v,
-                                (value) => newService = value,
-                              ),
-                            ),
-                            const SizedBox(height: 20),
-                            OutlinedButton.icon(
-                              onPressed: () async {
-                                final allowed =
-                                    await NotificationService.instance
-                                        .requestPermission();
-
-                                if (!context.mounted) return;
-
-                                if (allowed) {
-                                  await NotificationService.instance
-                                      .showTestNotification();
-                                } else {
-                                  ScaffoldMessenger.of(context)
-                                      .showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                        'Izin notifikasi belum diberikan.',
-                                      ),
-                                    ),
-                                  );
-                                }
-                              },
-                              icon: const Icon(Icons.notifications_active),
-                              label: const Text('Test notification'),
                             ),
                           ],
                         ),
@@ -252,10 +243,13 @@ class _NotificationPageState extends State<NotificationPage> {
           ),
         ],
       ),
+
+      // Bottom navigation yang sudah ada.
       bottomNavigationBar: CustomBottomNavBar(
         currentIndex: 2,
         onTap: (index) {
-          // Hubungkan ke halaman Home dan Explore milikmu.
+          // Hubungkan dengan halaman Home dan Explore
+          // sesuai konfigurasi navigasi WAYLO milikmu.
         },
       ),
     );

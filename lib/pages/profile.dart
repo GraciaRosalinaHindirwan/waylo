@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:waylo/service/auth_service.dart';
-
+import 'package:waylo/pages/editProfile.dart';
 import 'package:waylo/components/profileCard.dart';
 import 'package:waylo/components/buttomNav.dart';
 import 'package:waylo/models/user.dart';
@@ -17,118 +17,144 @@ import 'package:waylo/pages/aboutMobile.dart';
 import 'package:waylo/pages/notification.dart';
 
 class ProfilePage extends StatelessWidget {
-
   const ProfilePage({super.key});
 
-  Widget buildHeader() {
+  Widget buildHeader(BuildContext context) {
     return SizedBox(
       height: 40,
-      child: Center(
-        child: Text(
-          'MY PROFILE',
-          textAlign: TextAlign.center,
-          style: AppTextStyles.heading3.copyWith(color: Colors.black),
-        ),
+      width: double.infinity,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Center(
+            child: Text(
+              'MY PROFILE',
+              textAlign: TextAlign.center,
+              style: AppTextStyles.heading3.copyWith(color: Colors.black),
+            ),
+          ),
+          Align(
+            alignment: Alignment.centerRight,
+            child: GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const EditProfilePage(),
+                  ),
+                );
+              },
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: AppColors.card,
+                  borderRadius: BorderRadius.circular(100),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x14000000),
+                      blurRadius: 4,
+                      offset: Offset(2, 2),
+                    ),
+                  ],
+                ),
+                child: const Center(
+                  child: Icon(
+                    Icons.edit_outlined,
+                    size: 18,
+                    color: AppColors.secondary,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  
-Widget buildAvatar(User? user) {
-  return Column(
-    spacing: 8,
-    children: [
-      Container(
-        width: 100,
-        height: 100,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          shape: BoxShape.circle,
-          border: Border.all(
-            width: 5,
-            color: AppColors.border,
+  Widget buildAvatar(User? user) {
+    return Column(
+      spacing: 8,
+      children: [
+        Container(
+          width: 100,
+          height: 100,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+            border: Border.all(width: 5, color: AppColors.border),
           ),
-        ),
-        child: const Center(
-          child: Icon(
-            Icons.person_outline,
-            size: 42,
-            color: AppColors.textSecondary,
-          ),
-        ),
-      ),
-      Column(
-        spacing: 4,
-        children: [
-          Text(
-            user?.fullname ?? 'Belum login',
-            style: AppTextStyles.heading4.copyWith(
-              color: AppColors.textPrimary,
-            ),
-          ),
-          Text(
-            user?.username != null
-                ? '@${user!.username}'
-                : '@username',
-            style: AppTextStyles.body.copyWith(
+          child: const Center(
+            child: Icon(
+              Icons.person_outline,
+              size: 42,
               color: AppColors.textSecondary,
             ),
           ),
-        ],
-      ),
-    ],
-  );
-}
-
+        ),
+        Column(
+          spacing: 4,
+          children: [
+            Text(
+              user?.fullname ?? 'Belum login',
+              style: AppTextStyles.heading4.copyWith(
+                color: AppColors.textPrimary,
+              ),
+            ),
+            Text(
+              user?.username != null ? '@${user!.username}' : '@username',
+              style: AppTextStyles.body.copyWith(
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
 
   Widget buildLogout(BuildContext context) {
-  return GestureDetector(
-    onTap: () async {
-      await context.read<AuthService>().logout();
+    return GestureDetector(
+      onTap: () async {
+        await context.read<AuthService>().logout();
 
-      if (!context.mounted) return;
+        if (!context.mounted) return;
 
-      context.go('/login');
-    },
-    child: Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(17.06),
-      decoration: BoxDecoration(
-        color: AppColors.background,
-        borderRadius: BorderRadius.circular(106.61),
-        border: Border.all(
-          width: 1,
-          color: AppColors.accent,
-        ),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x3F000000),
-            blurRadius: 4.26,
-            offset: Offset(4.26, 4.26),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        spacing: 10.66,
-        children: [
-          const Icon(
-            Icons.logout,
-            size: 24,
-            color: AppColors.accent,
-          ),
-          Text(
-            'Logout',
-            style: AppTextStyles.button.copyWith(
-              color: AppColors.accent,
-              fontSize: 14.93,
+        context.go('/login');
+      },
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(17.06),
+        decoration: BoxDecoration(
+          color: AppColors.background,
+          borderRadius: BorderRadius.circular(106.61),
+          border: Border.all(width: 1, color: AppColors.accent),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x3F000000),
+              blurRadius: 4.26,
+              offset: Offset(4.26, 4.26),
             ),
-          ),
-        ],
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          spacing: 10.66,
+          children: [
+            const Icon(Icons.logout, size: 24, color: AppColors.accent),
+            Text(
+              'Logout',
+              style: AppTextStyles.button.copyWith(
+                color: AppColors.accent,
+                fontSize: 14.93,
+              ),
+            ),
+          ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -145,7 +171,7 @@ Widget buildAvatar(User? user) {
                 child: Column(
                   spacing: 16,
                   children: [
-                    buildHeader(),
+                    buildHeader(context),
                     buildAvatar(user),
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 16),
@@ -160,7 +186,7 @@ Widget buildAvatar(User? user) {
                                 icon: Icons.favorite_border,
                                 page: FavoritePage(),
                               ),
-                               ProfileCard(
+                              ProfileCard(
                                 title: 'Travel Badges',
                                 icon: Icons.military_tech_outlined,
                                 page: _PlaceholderPage('Travel Badges'),
@@ -169,7 +195,7 @@ Widget buildAvatar(User? user) {
                           ),
                           Column(
                             spacing: 4,
-                            children:  [
+                            children: [
                               ProfileCard(
                                 title: 'Currency Convert',
                                 icon: Icons.currency_exchange,
@@ -184,7 +210,7 @@ Widget buildAvatar(User? user) {
                           ),
                           Column(
                             spacing: 4,
-                            children:  [
+                            children: [
                               ProfileCard(
                                 title: 'Notification',
                                 icon: Icons.notifications,
@@ -217,9 +243,7 @@ Widget buildAvatar(User? user) {
               } else if (index == 1) {
                 Navigator.pushReplacement(
                   context,
-                  MaterialPageRoute(
-                    builder: (context) => Explorepage(),
-                  ),
+                  MaterialPageRoute(builder: (context) => Explorepage()),
                 );
               }
             },
