@@ -14,6 +14,7 @@ import 'package:waylo/theme/app_text_styles.dart';
 import 'package:waylo/pages/currencyConvertPage.dart';
 import 'package:waylo/pages/timezoneConvertPage.dart';
 import 'package:waylo/pages/aboutMobile.dart';
+import 'package:waylo/pages/notification.dart';
 
 class ProfilePage extends StatelessWidget {
 
@@ -187,7 +188,7 @@ Widget buildAvatar(User? user) {
                               ProfileCard(
                                 title: 'Notification',
                                 icon: Icons.notifications,
-                                page: _PlaceholderPage('Notification'),
+                                page: NotificationPage(),
                               ),
                               ProfileCard(
                                 title: 'About Mobile',
