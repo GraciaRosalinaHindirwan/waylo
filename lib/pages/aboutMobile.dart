@@ -1,17 +1,14 @@
-
 import 'package:flutter/material.dart';
 import '../theme/appColors.dart';
 import '../theme/app_text_styles.dart';
 import '../components/buttomNav.dart';
 import 'home.dart';
 import 'explorePage.dart';
-import 'profile.dart';
 
 class AboutMobilePage extends StatelessWidget {
   const AboutMobilePage({super.key});
 
-  static const String backgroundAsset =
-      '../assets/img/backgroundDown.png';
+  static const String backgroundAsset = '../assets/img/backgroundDown.png';
 
   @override
   Widget build(BuildContext context) {
@@ -86,27 +83,42 @@ class AboutMobilePage extends StatelessWidget {
                         content: 'WAYLO Mobile • Version 1.0.0',
                       ),
                       AboutSection(
-                        title: 'How to use',
+                        title: 'How to Use',
                         content:
-                            'Cari destinasi yang ingin kamu kunjungi, '
-                            'lihat informasi tempat, dan temukan inspirasi '
-                            'perjalanan melalui WAYLO.',
+                            'Search for destinations you would like to visit, '
+                            'explore location details, and discover inspiration '
+                            'for your next adventure with WAYLO.',
                       ),
                       AboutSection(
-                        title: 'Privacy Police',
+                        title: 'Privacy Policy',
                         content:
-                            'Informasi pengguna digunakan untuk mendukung '
-                            'fungsi aplikasi. Kebijakan privasi lengkap '
-                            'akan tersedia di bagian ini.',
+                            'WAYLO respects your privacy. Information is handled '
+                            'to support the functionality and improve your experience '
+                            'with the application. For details about data collection, '
+                            'usage, and protection, please refer to the official '
+                            'WAYLO Privacy Policy when available.',
                       ),
                       AboutSection(
-                        title: 'App info',
+                        title: 'App Information',
                         content:
-                            'WAYLO membantu pengguna menemukan informasi '
-                            'destinasi dan menjelajahi tempat menarik.',
+                            'WAYLO is your companion for discovering destinations '
+                            'and planning your next adventure. From local attractions '
+                            'to new places worth exploring, WAYLO helps you find '
+                            'inspiration and explore destinations that match your '
+                            'interests. Discover new possibilities and make every '
+                            'journey your own.',
                       ),
                       AboutSection(
-                        title: 'Feedback PAM',
+                        title: 'Feedback & Support',
+                        content:
+                            'We value your feedback. Your suggestions and comments '
+                            'help us improve WAYLO and create a better destination '
+                            'discovery experience. If you encounter an issue or have '
+                            'an idea to share, please contact our support team '
+                            'through the available feedback channels.',
+                      ),
+                      AboutSection(
+                        title: 'Feedback Mata Kuliah PAM',
                         content:
                             'terus terang saya tidak diberitahu, saya tidak '
                             'tahu, dan saya bahkan bertanya-tanya, kenapa '
@@ -122,22 +134,22 @@ class AboutMobilePage extends StatelessWidget {
       ),
 
       // Gunakan bottom navigation yang sudah ada
-     bottomNavigationBar:  CustomBottomNavBar(
-            currentIndex: 2,
-            onTap: (index) {
-              if (index == 0) {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => HomePage()),
-                );
-              } else if (index == 1) {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => Explorepage()),
-                );
-              }
-            },
-          ),
+      bottomNavigationBar: CustomBottomNavBar(
+        currentIndex: 2,
+        onTap: (index) {
+          if (index == 0) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => HomePage()),
+            );
+          } else if (index == 1) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => Explorepage()),
+            );
+          }
+        },
+      ),
     );
   }
 }
@@ -146,11 +158,7 @@ class AboutSection extends StatefulWidget {
   final String title;
   final String content;
 
-  const AboutSection({
-    super.key,
-    required this.title,
-    required this.content,
-  });
+  const AboutSection({super.key, required this.title, required this.content});
 
   @override
   State<AboutSection> createState() => _AboutSectionState();
@@ -169,11 +177,7 @@ class _AboutSectionState extends State<AboutSection> {
       ),
       child: ExpansionTile(
         tilePadding: EdgeInsets.zero,
-        childrenPadding: const EdgeInsets.only(
-          left: 0,
-          right: 12,
-          bottom: 18,
-        ),
+        childrenPadding: const EdgeInsets.only(left: 0, right: 12, bottom: 18),
         visualDensity: const VisualDensity(vertical: 1),
         onExpansionChanged: (expanded) {
           setState(() => isExpanded = expanded);
@@ -198,7 +202,7 @@ class _AboutSectionState extends State<AboutSection> {
             child: Text(
               widget.content,
               style: AppTextStyles.body.copyWith(
-                color: AppColors.textSecondary,
+                color: AppColors.textPrimary,
                 fontSize: 12,
                 height: 1.5,
               ),
