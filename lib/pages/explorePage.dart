@@ -22,6 +22,8 @@ import 'package:waylo/theme/appColors.dart';
 import 'package:waylo/theme/app_text_styles.dart';
 import 'package:waylo/pages/profile.dart';
 
+import 'package:waylo/pages/seeAllPage.dart';
+
 class Explorepage extends StatefulWidget {
   const Explorepage({super.key});
 
@@ -94,6 +96,57 @@ class _ExplorepageState extends State<Explorepage> {
     });
   } catch (e) {
     debugPrint('Gagal memuat distrik: $e');
+  }
+}
+
+Future<void> _openExploreNearbySeeAll() async {
+  try {
+    final allDestinations = await _destinationsFuture;
+    final filteredDestinations = _applyFilter(allDestinations);
+
+    // Jika lokasi belum tersedia, tampilkan halaman dengan list kosong.
+    final position = _userPosition;
+
+    final nearbyDestinations = position == null
+        ? <Destination>[]
+        : _filterService.getNearbyDestinations(
+            destinations: filteredDestinations,
+            userLatitude: position.latitude,
+            userLongitude: position.longitude,
+          );
+
+    if (!mounted) return;
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ExploreNearbySeeAllPage(
+          destinations: nearbyDestinations,
+        ),
+      ),
+    );
+  } catch (e) {
+    debugPrint('Gagal membuka Destination Near You: $e');
+  }
+}
+
+Future<void> _openInspiringSeeAll() async {
+  try {
+    final allDestinations = await _destinationsFuture;
+    final filteredDestinations = _applyFilter(allDestinations);
+
+    if (!mounted) return;
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => InspiringSeeAllPage(
+          destinations: filteredDestinations,
+        ),
+      ),
+    );
+  } catch (e) {
+    debugPrint('Gagal membuka Inspiring Destination: $e');
   }
 }
 
@@ -554,9 +607,7 @@ class _ExplorepageState extends State<Explorepage> {
               ),
 
               TextButton(
-                onPressed: () {
-                  //diisi nanti sama page nya
-                },
+                onPressed: _openExploreNearbySeeAll,
                 child: Text(
                   'See All',
                   style: AppTextStyles.body.copyWith(color: AppColors.accent),
@@ -680,9 +731,7 @@ class _ExplorepageState extends State<Explorepage> {
               ),
 
               TextButton(
-                onPressed: () {
-                  //diisi nanti sama page nya
-                },
+                onPressed: _openInspiringSeeAll,
                 child: Text(
                   'See All',
                   style: AppTextStyles.body.copyWith(color: AppColors.accent),

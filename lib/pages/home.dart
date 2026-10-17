@@ -19,6 +19,8 @@ import 'package:waylo/pages/quickCategory.dart';
 import 'package:provider/provider.dart';
 import 'package:waylo/service/auth_service.dart';
 
+import 'package:waylo/pages/seeAllPage.dart';
+
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -27,9 +29,10 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final DestinationRepository _destinationRepository = DestinationRepositoryFactory.create();
+  final DestinationRepository _destinationRepository =
+      DestinationRepositoryFactory.create();
 
-  final DestinationFilterService _filterService = DestinationFilterService(); 
+  final DestinationFilterService _filterService = DestinationFilterService();
   Position? _userPosition;
   bool _loadingNearby = true;
 
@@ -88,62 +91,61 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _loadUserPosition() async {
-  try {
-    final serviceEnabled =
-        await Geolocator.isLocationServiceEnabled();
+    try {
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
 
-    if (!serviceEnabled) {
-      debugPrint('Location service tidak aktif');
-      return;
-    }
+      if (!serviceEnabled) {
+        debugPrint('Location service tidak aktif');
+        return;
+      }
 
-    var permission = await Geolocator.checkPermission();
+      var permission = await Geolocator.checkPermission();
 
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-    }
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
 
-    if (permission == LocationPermission.denied ||
-        permission == LocationPermission.deniedForever) {
-      debugPrint('Izin lokasi ditolak: $permission');
-      return;
-    }
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        debugPrint('Izin lokasi ditolak: $permission');
+        return;
+      }
 
-    final position = await Geolocator.getCurrentPosition();
+      final position = await Geolocator.getCurrentPosition();
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-    setState(() {
-      _userPosition = position;
-    });
-
-    debugPrint(
-      'Koordinat pengguna: '
-      '${position.latitude}, ${position.longitude}',
-    );
-  } catch (e) {
-    debugPrint('Gagal mengambil lokasi pengguna: $e');
-  } finally {
-    if (mounted) {
       setState(() {
-        _loadingNearby = false;
+        _userPosition = position;
       });
+
+      debugPrint(
+        'Koordinat pengguna: '
+        '${position.latitude}, ${position.longitude}',
+      );
+    } catch (e) {
+      debugPrint('Gagal mengambil lokasi pengguna: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _loadingNearby = false;
+        });
+      }
     }
   }
-}
 
-List<Destination> get nearbyDestinations {
-  if (_userPosition == null) {
-    return [];
+  List<Destination> get nearbyDestinations {
+    if (_userPosition == null) {
+      return [];
+    }
+
+    return _filterService.getNearbyDestinations(
+      destinations: destinations,
+      userLatitude: _userPosition!.latitude,
+      userLongitude: _userPosition!.longitude,
+      radiusInMeters: 10000,
+    );
   }
-
-  return _filterService.getNearbyDestinations(
-    destinations: destinations,
-    userLatitude: _userPosition!.latitude,
-    userLongitude: _userPosition!.longitude,
-    radiusInMeters: 10000,
-  );
-}
 
   @override
   Widget build(BuildContext context) {
@@ -173,30 +175,32 @@ List<Destination> get nearbyDestinations {
                       LayoutBuilder(
                         builder: (context, constraints) =>
                             SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          clipBehavior: Clip.none,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          child: ConstrainedBox(
-                            constraints: BoxConstraints(
-                              minWidth: constraints.maxWidth,
+                              scrollDirection: Axis.horizontal,
+                              clipBehavior: Clip.none,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              child: ConstrainedBox(
+                                constraints: BoxConstraints(
+                                  minWidth: constraints.maxWidth,
+                                ),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  spacing: 16,
+                                  children: quickActions
+                                      .map(
+                                        (item) => QuickAction(
+                                          label: item.$1,
+                                          icon: item.$2,
+                                          page: QuickCategoryPage(
+                                            category: item.$1,
+                                          ),
+                                        ),
+                                      )
+                                      .toList(),
+                                ),
+                              ),
                             ),
-                            child: Row(
-                              mainAxisAlignment:
-                                  MainAxisAlignment.spaceBetween,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              spacing: 16,
-                              children: quickActions
-                                  .map(
-                                    (item) => QuickAction(
-                                      label: item.$1,
-                                      icon: item.$2,
-                                      page: QuickCategoryPage(category: item.$1),
-                                    ),
-                                  )
-                                  .toList(),
-                            ),
-                          ),
-                        ),
                       ),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -208,7 +212,16 @@ List<Destination> get nearbyDestinations {
                             ),
                           ),
                           GestureDetector(
-                            onTap: openExplore,
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => HomeSeeAllPage(
+                                    destinations: nearbyDestinations,
+                                  ),
+                                ),
+                              );
+                            },
                             child: Text(
                               'See All',
                               style: AppTextStyles.body.copyWith(
@@ -218,35 +231,35 @@ List<Destination> get nearbyDestinations {
                           ),
                         ],
                       ),
-                      
+
                       SizedBox(
                         height: 265,
                         child: _loadingNearby
-                            ? const Center(
-                                child: CircularProgressIndicator(),
-                              )
+                            ? const Center(child: CircularProgressIndicator())
                             : _userPosition == null
-                                ? const Center(
-                                    child: Text('Lokasi pengguna tidak tersedia'),
-                                  )
-                                : nearbyDestinations.isEmpty
-                                    ? const Center(
-                                        child: Text(
-                                          'Tidak ada destinasi dalam radius 10 km',
-                                        ),
-                                      )
-                                    : ListView.separated(
-                                        scrollDirection: Axis.horizontal,
-                                        clipBehavior: Clip.none,
-                                        padding: const EdgeInsets.symmetric(vertical: 20),
-                                        itemCount: nearbyDestinations.length,
-                                        separatorBuilder: (context, index) =>
-                                            const SizedBox(width: 16),
-                                        itemBuilder: (context, index) {
-                                          final destination = nearbyDestinations[index];
-                                          return buildDestinationCard(destination);
-                                        },
-                                      ),
+                            ? const Center(
+                                child: Text('Lokasi pengguna tidak tersedia'),
+                              )
+                            : nearbyDestinations.isEmpty
+                            ? const Center(
+                                child: Text(
+                                  'Tidak ada destinasi dalam radius 10 km',
+                                ),
+                              )
+                            : ListView.separated(
+                                scrollDirection: Axis.horizontal,
+                                clipBehavior: Clip.none,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 20,
+                                ),
+                                itemCount: nearbyDestinations.length,
+                                separatorBuilder: (context, index) =>
+                                    const SizedBox(width: 16),
+                                itemBuilder: (context, index) {
+                                  final destination = nearbyDestinations[index];
+                                  return buildDestinationCard(destination);
+                                },
+                              ),
                       ),
 
                       const SizedBox(height: 119),
