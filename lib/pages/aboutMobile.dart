@@ -3,12 +3,15 @@ import 'package:flutter/material.dart';
 import '../theme/appColors.dart';
 import '../theme/app_text_styles.dart';
 import '../components/buttomNav.dart';
+import 'home.dart';
+import 'explorePage.dart';
+import 'profile.dart';
 
 class AboutMobilePage extends StatelessWidget {
   const AboutMobilePage({super.key});
 
   static const String backgroundAsset =
-      '../assets/img/backgroundUp.png';
+      '../assets/img/backgroundDown.png';
 
   @override
   Widget build(BuildContext context) {
@@ -119,13 +122,22 @@ class AboutMobilePage extends StatelessWidget {
       ),
 
       // Gunakan bottom navigation yang sudah ada
-      bottomNavigationBar: CustomBottomNavBar(
-        currentIndex: 2,
-        onTap: (index) {
-          if (index == 2) return;
-          // Hubungkan ke halaman Home atau Explore milikmu.
-        },
-      ),
+     bottomNavigationBar:  CustomBottomNavBar(
+            currentIndex: 2,
+            onTap: (index) {
+              if (index == 0) {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => HomePage()),
+                );
+              } else if (index == 1) {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => Explorepage()),
+                );
+              }
+            },
+          ),
     );
   }
 }
