@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -6,9 +7,15 @@ import '../theme/app_text_styles.dart';
 import '../components/toggleSwitch.dart';
 import '../components/buttomNav.dart';
 import '../services/notification_service.dart';
+import 'home.dart';
+import 'explorePage.dart';
+import 'profile.dart';
 
 class NotificationPage extends StatefulWidget {
   const NotificationPage({super.key});
+
+  static const String backgroundAsset =
+      'assets/img/backgroundDown.png';
 
   @override
   State<NotificationPage> createState() => _NotificationPageState();
@@ -32,7 +39,11 @@ class _NotificationPageState extends State<NotificationPage> {
       ignoring: !enabled,
       child: Opacity(
         opacity: enabled ? 1.0 : 0.45,
-        child: _buildToggle(keyName: keyName, value: value, enabled: enabled),
+        child: _buildToggle(
+          keyName: keyName,
+          value: value,
+          enabled: enabled,
+        ),
       ),
     );
   }
@@ -121,9 +132,8 @@ class _NotificationPageState extends State<NotificationPage> {
             child: Opacity(
               opacity: enabled ? 1.0 : 0.45,
               child: ToggleSwitch(
-                // Gunakan key stabil agar state animasi toggle
-                // tidak di-reset setiap kali halaman rebuild.
                 key: ValueKey(keyName),
+                value: value,
                 onChanged: (newValue) {
                   _changeSetting(keyName, newValue);
                 },
@@ -148,7 +158,7 @@ class _NotificationPageState extends State<NotificationPage> {
             bottom: 0,
             child: IgnorePointer(
               child: Image.asset(
-                'assets/img/backgroundUp.jpg',
+                NotificationPage.backgroundAsset,
                 width: double.infinity,
                 fit: BoxFit.fitWidth,
                 alignment: Alignment.bottomCenter,
@@ -202,9 +212,13 @@ class _NotificationPageState extends State<NotificationPage> {
                 // Pengaturan notifikasi.
                 Expanded(
                   child: loading
-                      ? const Center(child: CircularProgressIndicator())
+                      ? const Center(
+                          child: CircularProgressIndicator(),
+                        )
                       : ListView(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                          ),
                           children: [
                             _settingRow(
                               title: 'General Notification',
@@ -248,8 +262,21 @@ class _NotificationPageState extends State<NotificationPage> {
       bottomNavigationBar: CustomBottomNavBar(
         currentIndex: 2,
         onTap: (index) {
-          // Hubungkan dengan halaman Home dan Explore
-          // sesuai konfigurasi navigasi WAYLO milikmu.
+          if (index == 0) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => HomePage(),
+              ),
+            );
+          } else if (index == 1) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => Explorepage(),
+              ),
+            );
+          }
         },
       ),
     );
