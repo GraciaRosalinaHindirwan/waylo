@@ -1,35 +1,24 @@
+
 import 'package:waylo/theme/appColors.dart';
 import 'package:flutter/material.dart';
 
-class ToggleSwitch extends StatefulWidget {
+class ToggleSwitch extends StatelessWidget {
+  final bool value;
   final ValueChanged<bool>? onChanged;
 
   const ToggleSwitch({
     super.key,
+    required this.value,
     this.onChanged,
   });
-
-  @override
-  State<ToggleSwitch> createState() => _ToggleSwitchState();
-}
-
-class _ToggleSwitchState extends State<ToggleSwitch> {
-  bool isOn = false;
 
   static const Duration duration = Duration(milliseconds: 300);
   static const Curve curve = Cubic(0, 0, 0.58, 1);
 
-  void toggle() {
-    setState(() {
-      isOn = !isOn;
-    });
-    widget.onChanged?.call(isOn);
-  }
-
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: toggle,
+      onTap: onChanged == null ? null : () => onChanged!(!value),
       child: AnimatedContainer(
         duration: duration,
         curve: curve,
@@ -37,7 +26,7 @@ class _ToggleSwitchState extends State<ToggleSwitch> {
         height: 24,
         clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
-          color: isOn ? AppColors.primary : AppColors.border,
+          color: value ? AppColors.primary : AppColors.border,
           borderRadius: BorderRadius.circular(9999),
           border: Border.all(
             width: 1,
@@ -49,7 +38,7 @@ class _ToggleSwitchState extends State<ToggleSwitch> {
             AnimatedPositioned(
               duration: duration,
               curve: curve,
-              left: isOn ? 18 : 2,
+              left: value ? 18 : 2,
               top: 2,
               child: Container(
                 width: 18,
