@@ -9,7 +9,6 @@ import '../components/buttomNav.dart';
 import '../services/notification_service.dart';
 import 'home.dart';
 import 'explorePage.dart';
-import 'profile.dart';
 
 class NotificationPage extends StatefulWidget {
   const NotificationPage({super.key});
@@ -29,24 +28,6 @@ class _NotificationPageState extends State<NotificationPage> {
   bool newService = false;
 
   bool loading = true;
-
-  Widget _buildToggle({
-    required String keyName,
-    required bool value,
-    required bool enabled,
-  }) {
-    return IgnorePointer(
-      ignoring: !enabled,
-      child: Opacity(
-        opacity: enabled ? 1.0 : 0.45,
-        child: _buildToggle(
-          keyName: keyName,
-          value: value,
-          enabled: enabled,
-        ),
-      ),
-    );
-  }
 
   @override
   void initState() {
@@ -72,9 +53,13 @@ class _NotificationPageState extends State<NotificationPage> {
   }
 
   Future<void> _changeSetting(String key, bool value) async {
-    final prefs = await SharedPreferences.getInstance();
+    // Minta izin saat pengguna mengaktifkan notifikasi utama.
+    if (key == 'notif_general' && value) {
+      await NotificationService.instance.initialize();
+      await NotificationService.instance.requestPermission();
+    }
 
-    // Simpan status terbaru.
+    final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(key, value);
 
     if (!mounted) return;
@@ -99,8 +84,9 @@ class _NotificationPageState extends State<NotificationPage> {
       }
     });
 
-    if (!general) {
-      await NotificationService.instance.cancelRecommendations();
+    // Sinkronkan jadwal dan preferensi channel.
+    if (key == 'notif_general' && !value) {
+      await NotificationService.instance.cancelAllNotifications();
     } else {
       await NotificationService.instance.updateSchedules();
     }
@@ -151,7 +137,6 @@ class _NotificationPageState extends State<NotificationPage> {
       backgroundColor: AppColors.background,
       body: Stack(
         children: [
-          // Background WAYLO.
           Positioned(
             left: 0,
             right: 0,
@@ -168,12 +153,10 @@ class _NotificationPageState extends State<NotificationPage> {
               ),
             ),
           ),
-
           SafeArea(
             bottom: false,
             child: Column(
               children: [
-                // Header.
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 22, 20, 34),
                   child: Row(
@@ -208,8 +191,6 @@ class _NotificationPageState extends State<NotificationPage> {
                     ],
                   ),
                 ),
-
-                // Pengaturan notifikasi.
                 Expanded(
                   child: loading
                       ? const Center(
@@ -257,8 +238,6 @@ class _NotificationPageState extends State<NotificationPage> {
           ),
         ],
       ),
-
-      // Bottom navigation yang sudah ada.
       bottomNavigationBar: CustomBottomNavBar(
         currentIndex: 2,
         onTap: (index) {

@@ -8,24 +8,31 @@ import 'package:flutter_timezone/flutter_timezone.dart';
 class NotificationService {
   NotificationService._();
 
-  static final NotificationService instance =
-      NotificationService._();
+  static final NotificationService instance = NotificationService._();
 
   final FlutterLocalNotificationsPlugin plugin =
       FlutterLocalNotificationsPlugin();
 
   static const int lunchId = 101;
-  static const int afternoonId = 102;
+  static const int eveningId = 102;
+  static const int appUpdateId = 201;
+  static const int newServiceId = 301;
   static const int testId = 999;
 
-  static const String recommendationChannel =
-      'waylo_recommendations';
+  static const String _generalKey = 'notif_general';
+  static const String _soundKey = 'notif_sound';
+  static const String _vibrateKey = 'notif_vibrate';
+  static const String _updateKey = 'notif_update';
+  static const String _serviceKey = 'notif_service';
+
+  bool _initialized = false;
 
   Future<void> initialize() async {
+    if (_initialized) return;
+
     tz_data.initializeTimeZones();
 
-    final timezoneInfo =
-        await FlutterTimezone.getLocalTimezone();
+    final timezoneInfo = await FlutterTimezone.getLocalTimezone();
 
     tz.setLocalLocation(
       tz.getLocation(timezoneInfo.identifier),
@@ -39,6 +46,8 @@ class NotificationService {
         android: androidSettings,
       ),
     );
+
+    _initialized = true;
   }
 
   Future<bool> requestPermission() async {
@@ -49,40 +58,101 @@ class NotificationService {
     final granted =
         await androidPlugin?.requestNotificationsPermission();
 
-    return granted ?? false;
+    // Android versi lama bisa mengembalikan null karena
+    // tidak memerlukan dialog izin notifikasi.
+    return granted ?? true;
   }
 
-  Future<void> updateSchedules() async {
+  Future<bool> _isEnabled(String key) async {
     final prefs = await SharedPreferences.getInstance();
 
-    final generalEnabled =
-        prefs.getBool('notif_general') ?? true;
+    // Semua preferensi OFF secara default agar konsisten
+    // dengan toggle pada halaman Notification.
+    return prefs.getBool(key) ?? false;
+  }
 
-    final serviceEnabled =
-        prefs.getBool('notif_service') ?? true;
+  Future<String> _createChannel({
+    required String category,
+    required String name,
+    required String description,
+  }) async {
+    final soundEnabled = await _isEnabled(_soundKey);
+    final vibrationEnabled = await _isEnabled(_vibrateKey);
+
+    // ID berbeda untuk setiap kombinasi suara/getaran.
+    // Android mengunci pengaturan channel setelah dibuat.
+    final channelId =
+        'waylo_${category}_s${soundEnabled ? 1 : 0}'
+        '_v${vibrationEnabled ? 1 : 0}';
+
+    final androidPlugin = plugin
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>();
+
+    await androidPlugin?.createNotificationChannel(
+      AndroidNotificationChannel(
+        channelId,
+        name,
+        description: description,
+        importance: Importance.high,
+        playSound: soundEnabled,
+        enableVibration: vibrationEnabled,
+      ),
+    );
+
+    return channelId;
+  }
+
+  Future<NotificationDetails> _notificationDetails({
+    required String category,
+    required String name,
+    required String description,
+  }) async {
+    final channelId = await _createChannel(
+      category: category,
+      name: name,
+      description: description,
+    );
+
+    return NotificationDetails(
+      android: AndroidNotificationDetails(
+        channelId,
+        name,
+        channelDescription: description,
+        importance: Importance.high,
+        priority: Priority.high,
+        playSound: await _isEnabled(_soundKey),
+        enableVibration: await _isEnabled(_vibrateKey),
+      ),
+    );
+  }
+
+  // GENERAL: notifikasi rutin harian.
+  Future<void> updateSchedules() async {
+    await initialize();
 
     await cancelRecommendations();
 
-    if (!generalEnabled || !serviceEnabled) {
-      return;
-    }
+    final generalEnabled = await _isEnabled(_generalKey);
+
+    if (!generalEnabled) return;
 
     await _scheduleDaily(
       id: lunchId,
       hour: 11,
       minute: 30,
-      title: 'Lunch inspiration 🍜',
+      title: 'Lunch inspiration',
       body:
-          'Lagi jam makan siang, yuk temukan tempat menarik di WAYLO!',
+          'Waktunya istirahat! Yuk, temukan tempat menarik di WAYLO.',
     );
 
     await _scheduleDaily(
-      id: afternoonId,
-      hour: 15,
+      id: eveningId,
+      hour: 19,
       minute: 30,
-      title: 'Time to explore 🌿',
+      title: 'Time to explore new places',
       body:
-          'Bosan di rumah? Yuk, temukan destinasi baru bersama WAYLO!',
+          'Punya rencana untuk besok? Temukan destinasi baru bersama WAYLO!',
     );
   }
 
@@ -93,6 +163,12 @@ class NotificationService {
     required String title,
     required String body,
   }) async {
+    final details = await _notificationDetails(
+      category: 'general',
+      name: 'WAYLO Daily Recommendations',
+      description: 'Pengingat dan rekomendasi harian WAYLO',
+    );
+
     final now = tz.TZDateTime.now(tz.local);
 
     var scheduled = tz.TZDateTime(
@@ -113,27 +189,70 @@ class NotificationService {
       title: title,
       body: body,
       scheduledDate: scheduled,
-      notificationDetails: const NotificationDetails(
-        android: AndroidNotificationDetails(
-          recommendationChannel,
-          'WAYLO Recommendations',
-          channelDescription:
-              'Rekomendasi destinasi dari WAYLO',
-          importance: Importance.high,
-          priority: Priority.high,
-          playSound: true,
-          enableVibration: true,
-        ),
-      ),
+      notificationDetails: details,
       androidScheduleMode:
           AndroidScheduleMode.inexactAllowWhileIdle,
       matchDateTimeComponents: DateTimeComponents.time,
     );
   }
 
+  // APP UPDATE: panggil saat aplikasi memiliki informasi update.
+  Future<void> showAppUpdate({
+    required String title,
+    required String body,
+  }) async {
+    await initialize();
+
+    if (!await _isEnabled(_generalKey) ||
+        !await _isEnabled(_updateKey)) {
+      return;
+    }
+
+    final details = await _notificationDetails(
+      category: 'app_update',
+      name: 'WAYLO App Updates',
+      description: 'Informasi pembaruan aplikasi WAYLO',
+    );
+
+    await plugin.show(
+      id: appUpdateId,
+      title: title,
+      body: body,
+      notificationDetails: details,
+      payload: 'app_update',
+    );
+  }
+
+  // NEW SERVICE: panggil saat layanan/fitur baru tersedia.
+  Future<void> showNewServiceAvailable({
+    required String title,
+    required String body,
+  }) async {
+    await initialize();
+
+    if (!await _isEnabled(_generalKey) ||
+        !await _isEnabled(_serviceKey)) {
+      return;
+    }
+
+    final details = await _notificationDetails(
+      category: 'new_service',
+      name: 'WAYLO New Services',
+      description: 'Informasi layanan dan fitur baru WAYLO',
+    );
+
+    await plugin.show(
+      id: newServiceId,
+      title: title,
+      body: body,
+      notificationDetails: details,
+      payload: 'new_service',
+    );
+  }
+
   Future<void> cancelRecommendations() async {
     await plugin.cancel(id: lunchId);
-    await plugin.cancel(id: afternoonId);
+    await plugin.cancel(id: eveningId);
   }
 
   Future<void> cancelAllNotifications() async {
@@ -141,22 +260,21 @@ class NotificationService {
   }
 
   Future<void> showTestNotification() async {
+    await initialize();
+
+    if (!await _isEnabled(_generalKey)) return;
+
+    final details = await _notificationDetails(
+      category: 'test',
+      name: 'WAYLO Test',
+      description: 'Notifikasi pengujian WAYLO',
+    );
+
     await plugin.show(
       id: testId,
       title: 'Welcome to WAYLO ✈️',
       body: 'Notifikasi WAYLO berhasil diaktifkan!',
-      notificationDetails: const NotificationDetails(
-        android: AndroidNotificationDetails(
-          'waylo_test',
-          'WAYLO Test',
-          channelDescription:
-              'Notifikasi pengujian WAYLO',
-          importance: Importance.high,
-          priority: Priority.high,
-          playSound: true,
-          enableVibration: true,
-        ),
-      ),
+      notificationDetails: details,
     );
   }
 }
