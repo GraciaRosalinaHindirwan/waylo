@@ -6,10 +6,11 @@ class User{
   final String username;
   final String password; 
   final List<String> destinations; 
-   final List<Category> categories;
+  final List<Category> categories;
   final DateTime createdAt;
   final DateTime updatedAt;
   final bool hasCompletedPreference;
+  final String? profileImageBase64;
 
   const User({
     required this.id,
@@ -21,5 +22,6 @@ class User{
     required this.createdAt,
     required this.updatedAt,
     this.hasCompletedPreference = false,
+    this.profileImageBase64,
   }); 
 }

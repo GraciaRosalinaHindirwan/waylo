@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
@@ -73,25 +75,33 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
-  Widget buildAvatar(User? user) {
+  Widget buildAvatar(User? user, Uint8List? profileImageBytes) {
     return Column(
       spacing: 8,
       children: [
         Container(
           width: 100,
           height: 100,
+          clipBehavior: Clip.antiAlias,
           decoration: BoxDecoration(
             color: Colors.white,
             shape: BoxShape.circle,
             border: Border.all(width: 5, color: AppColors.border),
           ),
-          child: const Center(
-            child: Icon(
-              Icons.person_outline,
-              size: 42,
-              color: AppColors.textSecondary,
-            ),
-          ),
+          child: profileImageBytes != null
+              ? Image.memory(
+                  profileImageBytes,
+                  fit: BoxFit.cover,
+                  width: 100,
+                  height: 100,
+                )
+              : const Center(
+                  child: Icon(
+                    Icons.person_outline,
+                    size: 42,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
         ),
         Column(
           spacing: 4,
@@ -159,6 +169,7 @@ class ProfilePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final user = context.watch<AuthService>().currentUser;
+    final profileImageBytes = context.watch<AuthService>().profileImageBytes;
     return Scaffold(
       backgroundColor: AppColors.background,
       body: Column(
@@ -172,7 +183,7 @@ class ProfilePage extends StatelessWidget {
                   spacing: 16,
                   children: [
                     buildHeader(context),
-                    buildAvatar(user),
+                    buildAvatar(user, profileImageBytes),
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       child: Column(
