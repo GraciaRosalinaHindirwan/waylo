@@ -1,5 +1,5 @@
 import 'dart:typed_data';
-
+import 'package:waylo/pages/travelBadge.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
@@ -200,7 +200,7 @@ class ProfilePage extends StatelessWidget {
                               ProfileCard(
                                 title: 'Travel Badges',
                                 icon: Icons.military_tech_outlined,
-                                page: _PlaceholderPage('Travel Badges'),
+                                page: TravelBadgePage(),
                               ),
                             ],
                           ),
