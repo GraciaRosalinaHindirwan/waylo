@@ -12,14 +12,50 @@ class BiometricLoginSheet extends StatefulWidget {
       _BiometricLoginSheetState();
 }
 
-class _BiometricLoginSheetState
-    extends State<BiometricLoginSheet> {
+class _BiometricLoginSheetState extends State<BiometricLoginSheet>
+    with SingleTickerProviderStateMixin {
   final LocalAuthentication _auth = LocalAuthentication();
 
+  late final AnimationController _animationController;
+  late final Animation<double> _scaleAnimation;
+
   bool _isAuthenticating = false;
-  String _message = 'Sentuh sensor sidik jari';
+
+  String _message = 'Tekan ikon sidik jari untuk memulai';
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Inisialisasi controller animasi terlebih dahulu.
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
+
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 1.15,
+    ).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: Curves.easeInOut,
+      ),
+    );
+
+    // Animasi berdenyut saat menunggu autentikasi.
+    _animationController.repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
 
   Future<void> _authenticate() async {
+    debugPrint('BIOMETRIC: ikon fingerprint ditekan');
+
     if (_isAuthenticating) return;
 
     setState(() {
@@ -27,55 +63,75 @@ class _BiometricLoginSheetState
       _message = 'Memverifikasi biometrik...';
     });
 
+    // Hentikan animasi berdenyut selama verifikasi.
+    _animationController.stop();
+
     try {
-      final canAuthenticate =
-          await _auth.canCheckBiometrics ||
-          await _auth.isDeviceSupported();
+      final canCheck = await _auth.canCheckBiometrics;
+      final isSupported = await _auth.isDeviceSupported();
 
-      if (!mounted) return;
+      debugPrint('BIOMETRIC: canCheckBiometrics = $canCheck');
+      debugPrint('BIOMETRIC: isDeviceSupported = $isSupported');
 
-      if (!canAuthenticate) {
-        setState(() {
-          _message = 'Perangkat tidak mendukung biometrik';
-        });
-        return;
+      if (!canCheck && !isSupported) {
+        throw Exception('Perangkat tidak mendukung biometrik.');
       }
 
       final biometrics = await _auth.getAvailableBiometrics();
 
-      if (!mounted) return;
+      debugPrint('BIOMETRIC: available = $biometrics');
 
       if (biometrics.isEmpty) {
-        setState(() {
-          _message =
-              'Daftarkan sidik jari di pengaturan perangkat';
-        });
-        return;
+        throw Exception(
+          'Sidik jari belum terdaftar di pengaturan perangkat.',
+        );
       }
 
       final authenticated = await _auth.authenticate(
-        localizedReason: 'Verifikasi identitas untuk masuk ke Waylo',
+        localizedReason:
+            'Verifikasi identitas untuk masuk ke WAYLO',
         options: const AuthenticationOptions(
           biometricOnly: true,
           stickyAuth: true,
         ),
       );
 
+      debugPrint('BIOMETRIC: authenticated = $authenticated');
+
       if (!mounted) return;
 
       if (authenticated) {
+        setState(() {
+          _message = 'Sidik jari berhasil diverifikasi!';
+        });
+
+        await Future<void>.delayed(
+          const Duration(milliseconds: 500),
+        );
+
+        if (!mounted) return;
+
         Navigator.of(context).pop(true);
       } else {
         setState(() {
-          _message = 'Verifikasi dibatalkan. Coba lagi.';
+          _message = 'Verifikasi gagal. Silakan coba lagi.';
         });
+
+        _animationController.repeat(reverse: true);
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      debugPrint('BIOMETRIC ERROR: $e');
+      debugPrintStack(stackTrace: stackTrace);
+
       if (!mounted) return;
 
       setState(() {
-        _message = 'Gagal memverifikasi. Silakan coba lagi.';
+        _message = e
+            .toString()
+            .replaceFirst('Exception: ', '');
       });
+
+      _animationController.repeat(reverse: true);
     } finally {
       if (mounted) {
         setState(() {
@@ -126,15 +182,15 @@ class _BiometricLoginSheetState
               width: double.infinity,
               height: 56,
               child: ElevatedButton(
-                onPressed: () {
-                  Navigator.of(context).pop(false);
-                },
+                onPressed: _isAuthenticating
+                    ? null
+                    : () {
+                        Navigator.of(context).pop(false);
+                      },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.secondary,
                   foregroundColor: Colors.white,
-                  elevation: 4,
-                  shadowColor:
-                      AppColors.textPrimary.withOpacity(0.25),
+                  disabledBackgroundColor: AppColors.secondary,
                   shape: const StadiumBorder(),
                 ),
                 child: Text(
@@ -148,12 +204,16 @@ class _BiometricLoginSheetState
 
             const SizedBox(height: 16),
 
-            Text(
-              _message,
-              textAlign: TextAlign.center,
-              style: AppTextStyles.body.copyWith(
-                color: AppColors.textPrimary,
-                fontSize: 13,
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 200),
+              child: Text(
+                _message,
+                key: ValueKey(_message),
+                textAlign: TextAlign.center,
+                style: AppTextStyles.body.copyWith(
+                  color: AppColors.textPrimary,
+                  fontSize: 13,
+                ),
               ),
             ),
 
@@ -161,10 +221,23 @@ class _BiometricLoginSheetState
 
             GestureDetector(
               onTap: _isAuthenticating ? null : _authenticate,
-              child: Icon(
-                Icons.fingerprint,
-                size: 76,
-                color: AppColors.secondaryLight,
+              child: AnimatedBuilder(
+                animation: _scaleAnimation,
+                builder: (context, child) {
+                  return Transform.scale(
+                    scale: _isAuthenticating
+                        ? 1.0
+                        : _scaleAnimation.value,
+                    child: child,
+                  );
+                },
+                child: Icon(
+                  Icons.fingerprint,
+                  size: 76,
+                  color: _isAuthenticating
+                      ? AppColors.primary
+                      : AppColors.secondaryLight,
+                ),
               ),
             ),
 

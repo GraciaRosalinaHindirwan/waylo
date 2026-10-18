@@ -45,15 +45,87 @@ void initState() {
       if (!mounted) return;
 
       if (result == true) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Biometrik berhasil diverifikasi.'),
-          ),
-        );
+        try {
+          final authService = context.read<AuthService>();
+
+          await authService.restoreSession();
+
+          if (!mounted) return;
+
+          if (authService.isLoggedIn) {
+            context.go(
+              authService.currentUser!.hasCompletedPreference
+                  ? '/home'
+                  : '/preference',
+            );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  'Sesi login tidak ditemukan. Silakan login dengan username dan password.',
+                ),
+              ),
+            );
+          }
+        } catch (e) {
+          if (!mounted) return;
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Gagal memulihkan sesi login.'),
+            ),
+          );
+        }
       }
     });
   });
 }
+
+
+Future<void> _openBiometricLogin() async {
+  final result = await showModalBottomSheet<bool>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (context) => const BiometricLoginSheet(),
+  );
+
+  if (!mounted || result != true) return;
+
+  final authService = context.read<AuthService>();
+
+  try {
+    await authService.restoreSession();
+
+    if (!mounted) return;
+
+    if (authService.isLoggedIn) {
+      context.go(
+        authService.currentUser!.hasCompletedPreference
+            ? '/home'
+            : '/preference',
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Sesi tidak ditemukan atau sudah kedaluwarsa. '
+            'Silakan login dengan username dan password.',
+          ),
+        ),
+      );
+    }
+  } catch (e) {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Gagal memulihkan sesi login.'),
+      ),
+    );
+  }
+}
+
 
 
   @override
@@ -211,6 +283,14 @@ void initState() {
                               text: 'Login',
                               onPressed: _login,
                               height: 56,
+                            ),
+
+                            const SizedBox(height: 16),
+
+                            OutlinedButton.icon(
+                              onPressed: _openBiometricLogin,
+                              icon: const Icon(Icons.fingerprint),
+                              label: const Text('Login dengan Fingerprint'),
                             ),
 
                             const SizedBox(height: 16),

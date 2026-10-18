@@ -50,7 +50,7 @@ try {
       }
 
       if (!user.hasCompletedPreference) {
-        return isPreferencePage ? null : '/preferance';
+        return isPreferencePage ? null : '/preference';
       }
 
       if (isLoginPage || isPreferencePage) {
