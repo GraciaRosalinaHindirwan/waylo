@@ -84,7 +84,7 @@ class _HomePageState extends State<HomePage> {
         name: destination.name,
         city: destination.location.districtName,
         rating: destination.rating,
-        distance: '-',
+        distance: getDistance(destination),
         page: Detaildestination(destination: destination),
       ),
     );
@@ -146,6 +146,19 @@ class _HomePageState extends State<HomePage> {
       radiusInMeters: 10000,
     );
   }
+
+  String getDistance(Destination destination) {
+  if (_userPosition == null) return '-';
+
+  final distanceInMeters = Geolocator.distanceBetween(
+    _userPosition!.latitude,
+    _userPosition!.longitude,
+    destination.coordinate.latitude,
+    destination.coordinate.longitude,
+  );
+
+  return '${(distanceInMeters / 1000).toStringAsFixed(1)} km';
+}
 
   @override
   Widget build(BuildContext context) {
