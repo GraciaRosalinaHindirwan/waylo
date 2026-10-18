@@ -5,21 +5,19 @@ import 'package:waylo/repositories/travel_badge_repository.dart';
 
 class TravelBadgeRepositoryImpl implements TravelBadgeRepository {
   // Dummy data definisi badge WAYLO.
-  
-  // Dummy data definisi badge WAYLO.
   final List<TravelBadge> _badges = const [
     TravelBadge(
       id: 'china_starter',
       name: 'China Starter',
       description: 'Cari atau buka detail destinasi China pertama.',
-      icon: 'explore',
+      icon: 'assets/img/North Asian Travel Explorer Badge.png',
       type: BadgeType.destinationVisit,
     ),
     TravelBadge(
       id: 'curious_explorer',
       name: 'Curious Explorer',
       description: 'Buka detail 5 destinasi China yang berbeda.',
-      icon: 'travel_explore',
+      icon: 'assets/img/Whimsical Chinese Travel Map Emblem.png',
       targetCount: 5,
       type: BadgeType.destinationVisit,
     ),
@@ -27,7 +25,7 @@ class TravelBadgeRepositoryImpl implements TravelBadgeRepository {
       id: 'culture_seeker',
       name: 'Culture Seeker',
       description: 'Buka detail 3 destinasi budaya atau sejarah.',
-      icon: 'account_balance',
+      icon: 'assets/img/Chibi Chinese Temple Emblem.png',
       targetCount: 3,
       type: BadgeType.categoryVisit,
     ),
@@ -35,21 +33,21 @@ class TravelBadgeRepositoryImpl implements TravelBadgeRepository {
       id: 'great_wall_dreamer',
       name: 'Great Wall Dreamer',
       description: 'Cari atau buka detail Great Wall of China.',
-      icon: 'landscape',
+      icon: 'assets/img/Great Wall Celebration Emblem.png',
       type: BadgeType.specificDestination,
     ),
     TravelBadge(
       id: 'panda_fan',
       name: 'Panda Fan',
       description: 'Cari atau buka detail destinasi panda di Chengdu.',
-      icon: 'pets',
+      icon: 'assets/img/Chibi Panda Bamboo Temple Emblem.png',
       type: BadgeType.specificDestination,
     ),
     TravelBadge(
       id: 'food_hunter',
       name: 'Food Hunter',
       description: 'Buka detail 5 destinasi kuliner China yang berbeda.',
-      icon: 'restaurant',
+      icon: 'assets/img/Chinese Culinary Festival Medallion.png',
       targetCount: 5,
       type: BadgeType.categoryVisit,
     ),
@@ -57,7 +55,7 @@ class TravelBadgeRepositoryImpl implements TravelBadgeRepository {
       id: 'ai_traveler',
       name: 'AI Traveler',
       description: 'Berhasil membuat itinerary menggunakan AI Trip Planner.',
-      icon: 'auto_awesome',
+      icon: 'assets/img/AI Travel Adventure Badge.png',
       type: BadgeType.itineraryCreated,
     ),
   ];
