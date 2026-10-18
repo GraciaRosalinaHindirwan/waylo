@@ -76,7 +76,7 @@ try {
         builder: (context, state) => HomePage(),
       ),
       GoRoute(
-        path: '/preferance',
+        path: '/preference',
         builder: (context, state) {
           final user = authService.currentUser!;
           return UserPreferencePage(

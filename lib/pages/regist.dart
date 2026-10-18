@@ -8,6 +8,7 @@ import 'package:waylo/theme/appColors.dart';
 import 'package:waylo/theme/app_text_styles.dart';
 import 'package:waylo/components/button.dart';
 import 'package:waylo/pages/login_page.dart';
+import 'package:waylo/pages/biometric.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -37,67 +38,83 @@ class _RegisterPageState extends State<RegisterPage> {
     super.dispose();
   }
 
-  Future<void> _register() async {
-    //mencegah proses registrasi berulang 
-    if(_isLoading) return; 
+  
+Future<void> _register() async {
+  if (_isLoading) return;
+  if (!_formKey.currentState!.validate()) return;
 
-    //Validasi semua field, termasuk confirm password
-    if(!_formKey.currentState!.validate()) return; 
+  setState(() {
+    _isLoading = true;
+  });
 
-    setState(() {
-      _isLoading = true;
-    });
+  try {
+    final now = DateTime.now();
 
-    try {
-      final now = DateTime.now();
+    final user = User(
+      id: now.millisecondsSinceEpoch,
+      fullname: _fullnameController.text.trim(),
+      username: _usernameController.text.trim(),
+      password: _passwordController.text,
+      destinations: [],
+      categories: [],
+      hasCompletedPreference: false,
+      createdAt: now,
+      updatedAt: now,
+    );
 
-      final user = User(
-         id: now.millisecondsSinceEpoch,
-         fullname: _fullnameController.text.trim(),
-        username: _usernameController.text.trim(),
-        password: _passwordController.text,
-        destinations: [],
-        categories: [],
-        hasCompletedPreference: false,
-        createdAt: now,
-        updatedAt: now,
-      ); 
+    final authService = context.read<AuthService>();
+    final registeredUser = await authService.register(user);
 
-      // Panggil AuthService yang sudah terdaftar di Provider
-      await context.read<AuthService>().register(user);
+    if (!mounted) return;
 
-      if (!mounted) return;
+    // Tampilkan verifikasi fingerprint setelah registrasi berhasil.
+    final biometricEnabled = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const BiometricLoginSheet(),
+    );
 
-      debugPrint('Register berhasil');
+    if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Registrasi berhasil! Silakan login.'),
+    // Simpan akun untuk login fingerprint hanya jika verifikasi berhasil.
+    if (biometricEnabled == true) {
+      await authService.sessionStorage
+          .saveBiometricUserId(registeredUser.id);
+    }
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          biometricEnabled == true
+              ? 'Registrasi berhasil! Fingerprint berhasil diaktifkan.'
+              : 'Registrasi berhasil! Silakan login dengan username dan password.',
         ),
-      );
+      ),
+    );
 
-      debugPrint('Router sebelum navigasi: ${GoRouter.of(context).routerDelegate.currentConfiguration.uri}');
-      GoRouter.of(context).go('/login');
-      debugPrint('Perintah navigasi sudah dipanggil');
+    context.go('/login');
+  } catch (e) {
+    if (!mounted) return;
 
-    } catch (e) {
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            e.toString().replaceFirst('Exception: ', ''),
-          ),
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          e.toString().replaceFirst('Exception: ', ''),
         ),
-      );
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+      ),
+    );
+  } finally {
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
+}
+
 
   @override
   Widget build(BuildContext context) {

@@ -110,7 +110,6 @@ class _BiometricLoginSheetState extends State<BiometricLoginSheet>
         );
 
         if (!mounted) return;
-
         Navigator.of(context).pop(true);
       } else {
         setState(() {

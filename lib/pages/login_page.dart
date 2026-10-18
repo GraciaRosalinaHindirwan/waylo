@@ -27,59 +27,13 @@ void initState() {
   super.initState();
 
   WidgetsBinding.instance.addPostFrameCallback((_) {
-    Future.delayed(const Duration(milliseconds: 800), () async {
+    Future.delayed(const Duration(milliseconds: 800), () {
       if (!mounted) return;
-
-      final result = await showModalBottomSheet<bool>(
-        context: context,
-        isScrollControlled: false,
-        isDismissible: true,
-        enableDrag: true,
-        backgroundColor: Colors.transparent,
-        barrierColor: Colors.black.withOpacity(0.30),
-        builder: (context) {
-          return const BiometricLoginSheet();
-        },
-      );
-
-      if (!mounted) return;
-
-      if (result == true) {
-        try {
-          final authService = context.read<AuthService>();
-
-          await authService.restoreSession();
-
-          if (!mounted) return;
-
-          if (authService.isLoggedIn) {
-            context.go(
-              authService.currentUser!.hasCompletedPreference
-                  ? '/home'
-                  : '/preference',
-            );
-          } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text(
-                  'Sesi login tidak ditemukan. Silakan login dengan username dan password.',
-                ),
-              ),
-            );
-          }
-        } catch (e) {
-          if (!mounted) return;
-
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Gagal memulihkan sesi login.'),
-            ),
-          );
-        }
-      }
+      _openBiometricLogin();
+      });
     });
-  });
 }
+
 
 
 Future<void> _openBiometricLogin() async {
@@ -95,38 +49,55 @@ Future<void> _openBiometricLogin() async {
   final authService = context.read<AuthService>();
 
   try {
-    await authService.restoreSession();
+    // Ambil akun yang sudah ditautkan ke login biometrik.
+    final biometricUserId =
+        await authService.sessionStorage.getBiometricUserId();
 
-    if (!mounted) return;
-
-    if (authService.isLoggedIn) {
-      context.go(
-        authService.currentUser!.hasCompletedPreference
-            ? '/home'
-            : '/preference',
-      );
-    } else {
+    if (biometricUserId == null) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            'Sesi tidak ditemukan atau sudah kedaluwarsa. '
-            'Silakan login dengan username dan password.',
+            'Akun biometrik belum terdaftar. Silakan login biasa terlebih dahulu.',
           ),
         ),
       );
+      return;
     }
-  } catch (e) {
+
+    // Ambil data akun.
+    final user = await authService.repository.getUserById(
+      biometricUserId,
+    );
+
+    if (user == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Akun tidak ditemukan. Silakan login biasa.'),
+        ),
+      );
+      return;
+    }
+
+    // Buat sesi login baru.
+    await authService.sessionStorage.saveUserId(user.id);
+    await authService.sessionStorage.saveLastActivity();
+    authService.setCurrentUser(user);
+    authService.startSessionTimer();
+
     if (!mounted) return;
 
+    context.go(
+      user.hasCompletedPreference ? '/home' : '/preference',
+    );
+  } catch (e) {
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Gagal memulihkan sesi login.'),
-      ),
+      SnackBar(content: Text('Login biometrik gagal: $e')),
     );
   }
 }
-
-
 
   @override
   void dispose() {
@@ -135,30 +106,38 @@ Future<void> _openBiometricLogin() async {
     super.dispose();
   }
 
-  Future<void>_login()async{
-    if(!_formKey.currentState!.validate())return; 
+  
+Future<void> _login() async {
+  if (!_formKey.currentState!.validate()) return;
 
-    try {
-      final authService = context.read<AuthService>();
-      await authService.login(
-        _usernameController.text.trim(),
-        _passwordController.text,
-      );
+  try {
+    final authService = context.read<AuthService>();
 
-      if(!mounted) return; 
-      context.go('/home'); //login berhasil pindah ke home 
-    } catch (e) {
-      if (!mounted) return;
+    final user = await authService.login(
+      _usernameController.text.trim(),
+      _passwordController.text,
+    );
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            e.toString().replaceFirst('Exception: ', ''),
-          ),
+    if (!mounted) return;
+
+    context.go(
+      user.hasCompletedPreference
+          ? '/home'
+          : '/preferance',
+    );
+  } catch (e) {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          e.toString().replaceFirst('Exception: ', ''),
         ),
-      );
-    }
+      ),
+    );
   }
+}
+
 
   @override
   Widget build(BuildContext context) {

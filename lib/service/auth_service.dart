@@ -58,6 +58,10 @@ class AuthService extends ChangeNotifier {
     return await repository.createUser(newUser);
   }
 
+  Future<void> enableBiometricLogin(int userId) async {
+  await sessionStorage.saveBiometricUserId(userId);
+}
+
   Future<User> login(
     String username,
     String password,
@@ -78,7 +82,10 @@ class AuthService extends ChangeNotifier {
     }
 
     await sessionStorage.saveUserId(user.id); 
-    await sessionStorage.saveLastActivity(); 
+    await sessionStorage.saveLastActivity();
+
+    // Simpan akun untuk login biometrik.
+    // await sessionStorage.saveBiometricUserId(user.id); 
 
     _currentUser = user; 
     startSessionTimer();
