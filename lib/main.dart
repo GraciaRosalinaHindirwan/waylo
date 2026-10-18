@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:waylo/pages/regist.dart';
 import 'package:waylo/service/auth_service.dart';
 import 'package:timezone/data/latest.dart' as tzdata;
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:waylo/pages/home.dart';
 import 'package:waylo/pages/login_page.dart';
@@ -19,7 +20,13 @@ Future<void> main() async{
 
   
 try {
+  await Supabase.initialize(
+    url: 'https://hardbbxlyzwdunrfaaib.supabase.co',
+    publishableKey: 'sb_publishable_LWGQD8hLHrvS2q2cbm2vMA_jxmXsVZE',
+  );
 
+  final supabase = Supabase.instance.client;
+  
   final repository = await UserRepositoryFactory.create();
 
   final authService = AuthService(
