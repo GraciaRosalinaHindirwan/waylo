@@ -207,6 +207,7 @@ Future<User?> getUserById(int id) async {
       createdAt: _users[index].createdAt,
       updatedAt: DateTime.now(),
       hasCompletedPreference: user.hasCompletedPreference,
+      profileImageBase64: user.profileImageBase64,
     );
 
     _users[index] = updatedUser;

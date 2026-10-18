@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'dart:async';
+import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:waylo/models/user.dart';
 import 'package:waylo/repositories/user_repository.dart';
@@ -16,6 +18,13 @@ class AuthService extends ChangeNotifier {
   // Akses untuk membaca session dari halaman lain.
   User? get currentUser => _currentUser;
 
+  // Foto profil diturunkan dari data user yang sedang login (tersimpan di repository).
+  Uint8List? get profileImageBytes {
+    final base64Image = _currentUser?.profileImageBase64;
+    if (base64Image == null) return null;
+    return base64Decode(base64Image);
+  }
+
   bool get isLoggedIn => _currentUser != null;
 
   AuthService(
@@ -27,6 +36,32 @@ class AuthService extends ChangeNotifier {
   void setCurrentUser(User user) {
     _currentUser = user;
     notifyListeners(); //changeNotifer supaya kasih tau state udah berubah 
+  }
+
+  // Dipanggil saat user ganti foto profil di EditProfilePage
+  Future<void> setProfileImage(Uint8List bytes) async {
+    final user = _currentUser;
+    if (user == null) return;
+
+    final base64Image = base64Encode(bytes);
+
+    final updatedUser = await repository.updateUser(
+      User(
+        id: user.id,
+        fullname: user.fullname,
+        username: user.username,
+        password: user.password,
+        destinations: user.destinations,
+        categories: user.categories,
+        hasCompletedPreference: user.hasCompletedPreference,
+        createdAt: user.createdAt,
+        updatedAt: DateTime.now(),
+        profileImageBase64: base64Image,
+      ),
+    );
+
+    _currentUser = updatedUser;
+    notifyListeners();
   }
 
   Future<User> register(User user) async {

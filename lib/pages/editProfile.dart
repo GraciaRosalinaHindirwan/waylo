@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:waylo/components/inputfield.dart';
 import 'package:waylo/components/button.dart';
@@ -31,6 +32,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
   bool _obscureNew = true;
   bool _obscureConfirm = true;
 
+  final ImagePicker _picker = ImagePicker();
+
   @override
   void initState() {
     super.initState();
@@ -52,6 +55,59 @@ class _EditProfilePageState extends State<EditProfilePage> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
     );
+  }
+
+  Future<void> pickProfileImage() async {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.card,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(
+                Icons.camera_alt_outlined,
+                color: AppColors.textPrimary,
+              ),
+              title: const Text('Ambil Foto'),
+              onTap: () {
+                Navigator.pop(context);
+                _getImage(ImageSource.camera);
+              },
+            ),
+            ListTile(
+              leading: const Icon(
+                Icons.photo_library_outlined,
+                color: AppColors.textPrimary,
+              ),
+              title: const Text('Pilih dari Galeri'),
+              onTap: () {
+                Navigator.pop(context);
+                _getImage(ImageSource.gallery);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _getImage(ImageSource source) async {
+    final picked = await _picker.pickImage(
+      source: source,
+      imageQuality: 80,
+    );
+
+    if (picked == null) return;
+
+    final bytes = await picked.readAsBytes();
+    if (!mounted) return;
+
+    await context.read<AuthService>().setProfileImage(bytes);
   }
 
   Future<void> save() async {
@@ -115,6 +171,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
           hasCompletedPreference: user.hasCompletedPreference,
           createdAt: user.createdAt,
           updatedAt: DateTime.now(),
+          profileImageBase64: user.profileImageBase64,
         ),
       );
 
@@ -308,36 +365,75 @@ class _EditProfilePageState extends State<EditProfilePage> {
   }
 
   Widget buildAvatar() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.end,
-      spacing: 10,
-      children: [
-        // Spacer selebar tombol kamera + jarak, supaya foto tetap di tengah.
-        const SizedBox(width: 50),
-        Container(
-          width: 100,
-          height: 100,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            shape: BoxShape.circle,
-            border: Border.all(width: 5, color: AppColors.border),
-          ),
-          child: const Center(
-            child: Icon(
-              Icons.person_outline,
-              size: 42,
-              color: AppColors.textSecondary,
+    final profileImageBytes = context.watch<AuthService>().profileImageBytes;
+
+    return Center(
+      child: SizedBox(
+        width: 150,
+        height: 150,
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Container(
+              width: 150,
+              height: 150,
+              clipBehavior: Clip.antiAlias,
+              decoration: ShapeDecoration(
+                color: Colors.white,
+                shape: RoundedRectangleBorder(
+                  side: const BorderSide(
+                    width: 5,
+                    color: AppColors.border,
+                  ),
+                  borderRadius: BorderRadius.circular(100),
+                ),
+              ),
+              child: Center(
+                child: SizedBox(
+                  width: 92,
+                  height: 92,
+                  child: ClipOval(
+                    child: profileImageBytes != null
+                        ? Image.memory(
+                            profileImageBytes,
+                            fit: BoxFit.cover,
+                            width: 92,
+                            height: 92,
+                          )
+                        : const Icon(
+                            Icons.person_outline,
+                            size: 92,
+                            color: AppColors.secondary,
+                          ),
+                  ),
+                ),
+              ),
             ),
-          ),
+            Positioned(
+              right: 4,
+              bottom: 4,
+              child: GestureDetector(
+                onTap: pickProfileImage,
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: const BoxDecoration(
+                    color: AppColors.border,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Center(
+                    child: Icon(
+                      Icons.camera_alt_outlined,
+                      size: 20,
+                      color: AppColors.secondary,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
-        buildRoundButton(
-          icon: Icons.camera_alt_outlined,
-          color: AppColors.border,
-          size: 40,
-          onTap: () {},
-        ),
-      ],
+      ),
     );
   }
 
