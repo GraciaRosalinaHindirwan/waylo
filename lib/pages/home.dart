@@ -20,6 +20,7 @@ import 'package:provider/provider.dart';
 import 'package:waylo/service/auth_service.dart';
 
 import 'package:waylo/pages/seeAllPage.dart';
+import 'package:waylo/pages/game_intro.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -148,17 +149,17 @@ class _HomePageState extends State<HomePage> {
   }
 
   String getDistance(Destination destination) {
-  if (_userPosition == null) return '-';
+    if (_userPosition == null) return '-';
 
-  final distanceInMeters = Geolocator.distanceBetween(
-    _userPosition!.latitude,
-    _userPosition!.longitude,
-    destination.coordinate.latitude,
-    destination.coordinate.longitude,
-  );
+    final distanceInMeters = Geolocator.distanceBetween(
+      _userPosition!.latitude,
+      _userPosition!.longitude,
+      destination.coordinate.latitude,
+      destination.coordinate.longitude,
+    );
 
-  return '${(distanceInMeters / 1000).toStringAsFixed(1)} km';
-}
+    return '${(distanceInMeters / 1000).toStringAsFixed(1)} km';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -215,6 +216,156 @@ class _HomePageState extends State<HomePage> {
                               ),
                             ),
                       ),
+                      const SizedBox(height: 8),
+
+                      // WayBi game banner — menyatu dengan warna dan gaya Home.
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => GameIntro(
+                                onStart: () {
+                                  debugPrint('WayBi game started');
+                                },
+                              ),
+                            ),
+                          );
+                        },
+                        child: Container(
+                          width: double.infinity,
+                          height: 142,
+                          padding: const EdgeInsets.fromLTRB(18, 14, 10, 14),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(24),
+                            gradient: const LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                Color(0xFFFFE8C8),
+                                Color(0xFFFFD7B5),
+                                Color(0xFFFFF1D9),
+                              ],
+                            ),
+                            border: Border.all(
+                              color: const Color(0xFFF4C49B),
+                              width: 1,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(
+                                  0xFFE99A65,
+                                ).withOpacity(0.12),
+                                blurRadius: 14,
+                                offset: const Offset(0, 5),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                flex: 6,
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 9,
+                                        vertical: 4,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withOpacity(0.72),
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                      child: const Text(
+                                        'WAYLO MINI GAME',
+                                        style: TextStyle(
+                                          color: Color(0xFFB85B35),
+                                          fontSize: 9,
+                                          fontWeight: FontWeight.w800,
+                                          letterSpacing: 1.0,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 7),
+                                    const Text(
+                                      'Fly with WayBi!',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        color: Color(0xFF603B2B),
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 3),
+                                    const Text(
+                                      'Collect coins and explore the sky',
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        color: Color(0xFF805B48),
+                                        fontSize: 11,
+                                        height: 1.2,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 6,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFE8753D),
+                                        borderRadius: BorderRadius.circular(18),
+                                      ),
+                                      child: const Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            'Play now',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                          ),
+                                          SizedBox(width: 5),
+                                          Icon(
+                                            Icons.arrow_forward_rounded,
+                                            color: Colors.white,
+                                            size: 14,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              Expanded(
+                                flex: 4,
+                                child: Image.asset(
+                                  'assets/img/waybi.png',
+                                  height: 126,
+                                  fit: BoxFit.contain,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return const Icon(
+                                      Icons.flutter_dash_rounded,
+                                      size: 76,
+                                      color: Color(0xFFE8753D),
+                                    );
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 20),
+
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
