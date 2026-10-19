@@ -9,7 +9,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:waylo/pages/home.dart';
 import 'package:waylo/pages/login_page.dart';
 import 'package:waylo/service/session_storage.dart';
-import 'package:waylo/factories/user_repository_factory.dart';
+import 'package:waylo/repositories/user/user_repository_factory.dart';
 import 'package:waylo/pages/userPreference.dart';
 
 Future<void> main() async{
@@ -28,6 +28,7 @@ try {
   final supabase = Supabase.instance.client;
   
   final repository = await UserRepositoryFactory.create();
+  debugPrint('Repository aktif: ${repository.runtimeType}');
 
   final authService = AuthService(
     repository,

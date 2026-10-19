@@ -1,6 +1,6 @@
 import 'package:waylo/models/user.dart';
 import 'package:waylo/models/category.dart';
-import 'package:waylo/repositories/user_repository.dart';
+import 'package:waylo/repositories/user/user_repository.dart';
 import 'package:waylo/service/password_hasher.dart';
 import 'package:flutter/foundation.dart' hide Category;
 
