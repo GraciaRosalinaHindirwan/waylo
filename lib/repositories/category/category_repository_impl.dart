@@ -1,5 +1,5 @@
 import 'package:waylo/models/category.dart';
-import 'package:waylo/repositories/category_repository.dart';
+import 'package:waylo/repositories/category/category_repository.dart';
 
 class CategoryRepositoryImpl implements CategoryRepository {
   final List<Category> _categories = [

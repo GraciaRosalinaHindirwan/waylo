@@ -2,6 +2,7 @@ import 'package:waylo/models/destination.dart';
 import 'package:geolocator/geolocator.dart';
 
 class DestinationFilterService {
+  //ambil distric yang ada di destination 
   List<String> getDistricts(List<Destination> destinations) {
     final districts = destinations
         .map((destination) =>

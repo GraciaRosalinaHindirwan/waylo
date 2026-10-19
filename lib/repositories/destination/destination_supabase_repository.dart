@@ -13,18 +13,6 @@ class DestinationSupabaseRepository implements DestinationRepository {
 
   //constructor 
   DestinationSupabaseRepository(this._supabase);
-
-    Future<void> testImages() async {
-    try {
-      final response = await _supabase
-          .from('images')
-          .select();
-
-      print('TEST IMAGES: $response');
-    } catch (e) {
-      print('ERROR IMAGES: $e');
-    }
-  }
   
   @override
   Future<List<Destination>> getAllDestinations() async {
