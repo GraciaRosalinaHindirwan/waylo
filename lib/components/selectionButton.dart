@@ -4,13 +4,22 @@ import 'package:waylo/theme/app_text_styles.dart';
 
 class SelectionButton extends StatefulWidget {
   final List<String> options;
-  final ValueChanged<String> onChanged;
+  final bool multiSelect;
+  final ValueChanged<String>? onChanged;
+  final ValueChanged<List<String>>? onMultiChanged;
 
   const SelectionButton({
     super.key,
     required this.options,
-    required this.onChanged,
-  });
+    this.multiSelect = false,
+    this.onChanged,
+    this.onMultiChanged,
+  }) : assert(
+          multiSelect
+              ? onMultiChanged != null
+              : onChanged != null,
+          'Isi onChanged untuk single select, atau onMultiChanged untuk multiSelect.',
+        );
 
   @override
   State<SelectionButton> createState() => _SelectionButtonState();
@@ -18,10 +27,10 @@ class SelectionButton extends StatefulWidget {
 
 class _SelectionButtonState extends State<SelectionButton> {
   String? selectedValue;
+  final List<String> selectedValues = [];
 
   @override
   Widget build(BuildContext context) {
-    // Other selalu ada
     final options = [
       ...widget.options.where((item) => item != 'Other'),
       'Other',
@@ -31,16 +40,33 @@ class _SelectionButtonState extends State<SelectionButton> {
       spacing: 36,
       runSpacing: 18,
       children: options.map((option) {
-        final isSelected = selectedValue == option;
+        final isSelected = widget.multiSelect
+            ? selectedValues.contains(option)
+            : selectedValue == option;
+
         final isOther = option == 'Other';
 
         return GestureDetector(
           onTap: () {
-            setState(() {
-              selectedValue = option;
-            });
+            if (widget.multiSelect) {
+              setState(() {
+                if (selectedValues.contains(option)) {
+                  selectedValues.remove(option);
+                } else {
+                  selectedValues.add(option);
+                }
+              });
 
-            widget.onChanged(option);
+              widget.onMultiChanged!(
+                List<String>.from(selectedValues),
+              );
+            } else {
+              setState(() {
+                selectedValue = option;
+              });
+
+              widget.onChanged!(option);
+            }
           },
           child: Container(
             height: 40,
@@ -77,17 +103,3 @@ class _SelectionButtonState extends State<SelectionButton> {
     );
   }
 }
-
-// makenya nanti gini 
-// SelectionButton(
-//   options: [
-//     'Japan',
-//     'Indonesia',
-//     'South Korea',
-//     'Thailand',
-//     'China',
-//   ],
-//   onChanged: (value) {
-//     print(value);
-//   },
-// ),

@@ -3,56 +3,89 @@ import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
 import 'package:waylo/service/auth_service.dart';
 
-import 'package:waylo/layouts/subPageLayout.dart';
 import 'package:waylo/components/selectionButton.dart';
 import 'package:waylo/components/button.dart';
 import 'package:waylo/models/category.dart';
+import 'package:waylo/models/destination.dart';
 import 'package:waylo/models/user.dart';
 import 'package:waylo/repositories/category/category_repository.dart';
 import 'package:waylo/repositories/category/category_repository_factory.dart';
 import 'package:waylo/repositories/user/user_repository.dart';
+import 'package:waylo/repositories/destination/destination_repository.dart';
+import 'package:waylo/repositories/destination/destination_repository_factory.dart';
+import 'package:waylo/theme/appColors.dart';
 import 'package:waylo/theme/app_text_styles.dart';
 
 class UserPreferencePage extends StatefulWidget {
   final User user;
   final UserRepository userRepository;
 
-  const UserPreferencePage({super.key, required this.user, required this.userRepository});
+  const UserPreferencePage({
+    super.key,
+    required this.user,
+    required this.userRepository,
+  });
 
   @override
   State<UserPreferencePage> createState() => _UserPreferencePageState();
 }
 
 class _UserPreferencePageState extends State<UserPreferencePage> {
-  late final UserRepository _userRepository; 
+  late final UserRepository _userRepository;
+
   final CategoryRepository _categoryRepository =
       CategoryRepositoryFactory.create();
 
-  static const List<String> destinationOptions = [
-    'Japan',
-    'Indonesia',
-    'South Korea',
-    'Thailand',
-    'China',
-  ];
+  final DestinationRepository _destinationRepository =
+      DestinationRepositoryFactory.create();
 
   List<Category> categoryOptions = [];
-  String? selectedDestination;
-  String? selectedCategory;
+  List<String> districtOptions = [];
+
+  List<String> selectedDistricts = [];
+  List<String> selectedCategories = [];
+
   bool isSaving = false;
+  bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
     _userRepository = widget.userRepository;
-    loadCategories();
+    loadOptions();
   }
 
-  Future<void> loadCategories() async {
-    final result = await _categoryRepository.getAllCategories();
-    if (!mounted) return;
-    setState(() => categoryOptions = result);
+  Future<void> loadOptions() async {
+    try {
+      final categories = await _categoryRepository.getAllCategories();
+      final destinations =
+          await _destinationRepository.getAllDestinations();
+
+      final districts = destinations
+          .map((Destination d) => d.location.districtName)
+          .toSet()
+          .toList();
+
+      if (!mounted) return;
+
+      setState(() {
+        categoryOptions = categories;
+        districtOptions = districts;
+        isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() => isLoading = false);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal memuat preferensi: $e')),
+      );
+    }
   }
+
+  bool get canSave =>
+      selectedDistricts.isNotEmpty && selectedCategories.isNotEmpty;
 
   Future<void> save() async {
     if (isSaving) return;
@@ -62,17 +95,9 @@ class _UserPreferencePageState extends State<UserPreferencePage> {
     try {
       final user = widget.user;
 
-      final destinations = selectedDestination == null
-          ? user.destinations
-          : [selectedDestination!];
-
-      final categories = selectedCategory == null
-          ? user.categories
-          : categoryOptions
-              .where((c) => c.name == selectedCategory)
-              .toList();
-      
-      debugPrint('1. Tombol Save ditekan');
+      final categories = categoryOptions
+          .where((c) => selectedCategories.contains(c.name))
+          .toList();
 
       final updatedUser = await _userRepository.updateUser(
         User(
@@ -80,7 +105,7 @@ class _UserPreferencePageState extends State<UserPreferencePage> {
           fullname: user.fullname,
           username: user.username,
           password: user.password,
-          destinations: destinations,
+          destinations: selectedDistricts,
           categories: categories,
           createdAt: user.createdAt,
           updatedAt: user.updatedAt,
@@ -88,17 +113,11 @@ class _UserPreferencePageState extends State<UserPreferencePage> {
         ),
       );
 
-      debugPrint('2. Preferensi berhasil disimpan');
-
       if (!mounted) return;
 
       context.read<AuthService>().setCurrentUser(updatedUser);
-      debugPrint('3. Current user diperbarui');
       context.go('/home');
-      debugPrint('4. Navigasi ke Home dijalankan');
     } catch (e) {
-      debugPrint('Gagal menyimpan preferensi: $e');
-
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Gagal menyimpan preferensi: $e')),
@@ -130,9 +149,9 @@ class _UserPreferencePageState extends State<UserPreferencePage> {
 
   @override
   Widget build(BuildContext context) {
-    return SubPageLayout(
-      title: 'Tell us what you’re looking for',
-      content: Stack(
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: Stack(
         children: [
           Positioned(
             left: 0,
@@ -143,45 +162,87 @@ class _UserPreferencePageState extends State<UserPreferencePage> {
               fit: BoxFit.fitWidth,
             ),
           ),
-          Column(
-            children: [
-              Expanded(
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      buildSection(
-                        'Destination',
-                        SelectionButton(
-                          options: destinationOptions,
-                          onChanged: (value) => selectedDestination = value,
-                        ),
-                      ),
-                      if (categoryOptions.isNotEmpty)
-                        buildSection(
-                          'Category',
-                          SelectionButton(
-                            options:
-                                categoryOptions.map((c) => c.name).toList(),
-                            onChanged: (value) => selectedCategory = value,
-                          ),
-                        ),
-                    ],
+          SafeArea(
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 24,
+                  ),
+                  child: Text(
+                    'Tell us what you’re looking for',
+                    style: AppTextStyles.heading3.copyWith(
+                      color: Colors.black,
+                    ),
                   ),
                 ),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 16,
+                Expanded(
+                  child: isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : SingleChildScrollView(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              buildSection(
+                                'District',
+                                SelectionButton(
+                                  options: districtOptions,
+                                  multiSelect: true,
+                                  onMultiChanged: (values) {
+                                    setState(() {
+                                      selectedDistricts = values;
+                                    });
+                                  },
+                                ),
+                              ),
+                              if (categoryOptions.isNotEmpty)
+                                buildSection(
+                                  'Category',
+                                  SelectionButton(
+                                    options: categoryOptions
+                                        .map((c) => c.name)
+                                        .toList(),
+                                    multiSelect: true,
+                                    onMultiChanged: (values) {
+                                      setState(() {
+                                        selectedCategories = values;
+                                      });
+                                    },
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
                 ),
-                child: CustomButton(
-                  text: isSaving ? 'Saving...' : 'Save',
-                  borderRadius: 106.61,
-                  onPressed: isSaving ? () {} : save,
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 16,
+                  ),
+                  child: CustomButton(
+                    text: isSaving ? 'Saving...' : 'Save',
+                    borderRadius: 106.61,
+                    onPressed: isSaving
+                        ? () {}
+                        : () {
+                            if (!canSave) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Pilih minimal 1 district dan 1 category terlebih dahulu',
+                                  ),
+                                ),
+                              );
+                              return;
+                            }
+
+                            save();
+                          },
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
