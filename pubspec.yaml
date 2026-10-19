@@ -50,6 +50,7 @@ dependencies:
   latlong2: ^0.10.1
   geocoding: ^5.0.0
   image_picker: ^1.1.2
+  audioplayers: ^6.8.1
 
 dev_dependencies:
   flutter_test:
@@ -69,6 +70,17 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
+    - assets/game/background.png
+    - assets/game/birdUp.png
+    - assets/game/birdDown.png
+    - assets/game/coin.png
+    - assets/game/play.png
+    - assets/game/replay.png
+    - assets/game/pause.png
+    - assets/game/home.png
+    - assets/game/obstacle_body.png
+    - assets/game/obstacle_cap.png
+    - assets/game/(1)Across_the_Jade_Ridge.mp3
     - assets/img/
   fonts:
     - family: Fraunces
