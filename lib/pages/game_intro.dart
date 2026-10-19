@@ -92,6 +92,40 @@ class _GameIntroState extends State<GameIntro> {
             children: [
               // Background.
               Image.asset(widget.backgroundAsset, fit: BoxFit.fill),
+              // Tombol kembali ke Home.
+Positioned(
+  top: h * 0.04,
+  left: w * 0.04,
+  child: GestureDetector(
+    onTap: () {
+      Navigator.of(context).pop();
+    },
+    child: Container(
+      width: w * 0.08,
+      height: w * 0.08,
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF8E7).withOpacity(0.92),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: const Color(0xFFE6DCC8),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.15),
+            blurRadius: 6,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: const Icon(
+        Icons.home_rounded,
+        color: Color(0xFFE8753D),
+        size: 20,
+      ),
+    ),
+  ),
+),
 
               Positioned(
                 top: h * 0.12,
