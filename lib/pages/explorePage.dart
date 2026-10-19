@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:waylo/components/button.dart';
 import 'package:waylo/components/infoChip.dart';
+import 'package:waylo/repositories/destination/destination_supabase_repository.dart';
 import 'package:waylo/service/location_service.dart';
 import 'package:waylo/service/destination_filter_service.dart';
 import 'package:geolocator/geolocator.dart';
@@ -17,7 +18,7 @@ import 'package:waylo/pages/home.dart';
 import 'package:waylo/pages/detailDestination.dart';
 import 'package:waylo/repositories/category_repository.dart';
 import 'package:waylo/repositories/category_repository_factory.dart';
-import 'package:waylo/factories/destination_repository_factory.dart';
+import 'package:waylo/repositories/destination/destination_repository_factory.dart';
 import 'package:waylo/theme/appColors.dart';
 import 'package:waylo/theme/app_text_styles.dart';
 import 'package:waylo/pages/profile.dart';
@@ -64,7 +65,20 @@ class _ExplorepageState extends State<Explorepage> {
     super.initState();
 
     final repository = DestinationRepositoryFactory.create();
+
+    if (repository is DestinationSupabaseRepository) {
+      repository.testImages();
+    }
+
     _destinationsFuture = repository.getAllDestinations();
+    _destinationsFuture.then((destinations) {
+  debugPrint('Jumlah destinasi dari Supabase: ${destinations.length}');
+      for (final destination in destinations) {
+        debugPrint('Destinasi: ${destination.name}');
+      }
+    }).catchError((error) {
+      debugPrint('Error Supabase: $error');
+    });
     _loadCurrentCity(); 
     _loadCategories();
     _loadUserPosition();
@@ -686,12 +700,14 @@ String getDistance(Destination destination) {
                   userLongitude: _userPosition!.longitude,
                 );
 
-                if (destinations.isEmpty) {
-                  return Center(
-                    child: Text(
-                      _filterActive
-                          ? "Tidak ada destinasi yang cocok"
-                          : "Belum ada destinasi",
+                if (nearbyDestinations.isEmpty) {
+                  return const Center(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16),
+                      child: Text(
+                        'Tidak ada destinasi dalam radius 10 km',
+                        textAlign: TextAlign.center,
+                      ),
                     ),
                   );
                 }
@@ -765,9 +781,20 @@ String getDistance(Destination destination) {
                 }
 
                 if (snapshot.hasError) {
-                  return const Center(child: Text('Gagal memuat destinasi'));
-                }
+                  debugPrint(
+                    'Error Inspiring Destination: ${snapshot.error}',
+                  );
+                  debugPrint(
+                    'Stack trace: ${snapshot.stackTrace}',
+                  );
 
+                  return Center(
+                    child: Text(
+                      'Gagal memuat: ${snapshot.error}',
+                      textAlign: TextAlign.center,
+                    ),
+                  );
+                }
                 final destinations = _applyFilter(snapshot.data ?? []);
 
                 if (destinations.isEmpty) {

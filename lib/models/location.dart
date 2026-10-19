@@ -1,7 +1,6 @@
 class Location {
   // Province
   final int idProvince;
-  final int idCountry;
   final String provinceName;
 
   // District
@@ -22,7 +21,6 @@ class Location {
 
   const Location({
     required this.idProvince,
-    required this.idCountry,
     required this.provinceName,
     required this.idDistrict,
     required this.districtName,

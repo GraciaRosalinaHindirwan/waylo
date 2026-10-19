@@ -4,8 +4,8 @@ import 'package:waylo/pages/detailDestination.dart';
 import 'package:waylo/pages/explorePage.dart';
 import 'package:waylo/pages/home.dart';
 import 'package:waylo/pages/profile.dart';
-import 'package:waylo/repositories/destination_repository.dart';
-import 'package:waylo/factories/destination_repository_factory.dart';
+import 'package:waylo/repositories/destination/destination_repository.dart';
+import 'package:waylo/repositories/destination/destination_repository_factory.dart';
 import 'package:waylo/repositories/favorite_repository.dart';
 import 'package:waylo/repositories/favorite_repository_factory.dart';
 import 'package:waylo/theme/appColors.dart';
@@ -37,21 +37,47 @@ class _QuickCategoryPageState extends State<QuickCategoryPage> {
   }
 
   Future<void> loadDestinations() async {
-    final all = await _destinationRepository.getAllDestinations();
-    final filtered = all
-        .where(
-          (destination) => destination.categories.any(
-            (category) =>
-                category.name.toLowerCase() == widget.category.toLowerCase(),
-          ),
-        )
-        .toList();
+    try {
+      final all = await _destinationRepository.getAllDestinations();
 
-    if (!mounted) return;
-    setState(() {
-      destinations = filtered;
-      isLoading = false;
-    });
+      debugPrint('Total destinasi: ${all.length}');
+      debugPrint('Kategori yang dipilih: ${widget.category}');
+
+      for (final destination in all) {
+        debugPrint(
+          '${destination.name} - '
+          'Kategori: ${destination.categories.map((c) => c.name).toList()}',
+        );
+      }
+
+      final filtered = all
+          .where(
+            (destination) => destination.categories.any(
+              (category) =>
+                  category.name.trim().toLowerCase() ==
+                  widget.category.trim().toLowerCase(),
+            ),
+          )
+          .toList();
+
+      debugPrint('Total setelah filter kategori: ${filtered.length}');
+
+      if (!mounted) return;
+
+      setState(() {
+        destinations = filtered;
+        isLoading = false;
+      });
+    } catch (e, stackTrace) {
+      debugPrint('Gagal memuat kategori: $e');
+      debugPrint('$stackTrace');
+
+      if (!mounted) return;
+
+      setState(() {
+        isLoading = false;
+      });
+    }
   }
 
   Widget buildImage(Destination destination) {

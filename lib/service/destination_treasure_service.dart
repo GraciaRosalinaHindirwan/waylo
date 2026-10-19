@@ -1,8 +1,8 @@
 import 'dart:math';
 
-import 'package:waylo/factories/destination_repository_factory.dart';
+import 'package:waylo/repositories/destination/destination_repository_factory.dart';
 import 'package:waylo/models/destination.dart';
-import 'package:waylo/repositories/destination_repository.dart';
+import 'package:waylo/repositories/destination/destination_repository.dart';
 
 /// Service untuk mengambil data destinasi dari sumber data utama Waylo.
 /// Menggunakan repository yang sama dengan halaman Home/Explore.

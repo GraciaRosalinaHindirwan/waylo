@@ -3,7 +3,7 @@ import 'package:waylo/models/coordinate.dart';
 import 'package:waylo/models/destination.dart';
 import 'package:waylo/models/destinationImage.dart';
 import 'package:waylo/models/location.dart';
-import 'package:waylo/repositories/destination_repository.dart';
+import 'package:waylo/repositories/destination/destination_repository.dart';
 
 
 class DestinationRepositoryImpl implements DestinationRepository {
@@ -49,7 +49,6 @@ class DestinationRepositoryImpl implements DestinationRepository {
   final List<Location> _locations = [
     Location(
       idProvince: 34,
-      idCountry: 1,
       provinceName: 'DI Yogyakarta',
       idDistrict: 3471,
       districtName: 'Kota Yogyakarta',
@@ -64,7 +63,6 @@ class DestinationRepositoryImpl implements DestinationRepository {
     ),
     Location(
       idProvince: 34,
-      idCountry: 1,
       provinceName: 'DI Yogyakarta',
       idDistrict: 3471,
       districtName: 'Kota Yogyakarta',
@@ -79,7 +77,6 @@ class DestinationRepositoryImpl implements DestinationRepository {
     ),
     Location(
       idProvince: 34,
-      idCountry: 1,
       provinceName: 'DI Yogyakarta',
       idDistrict: 3402,
       districtName: 'Kabupaten Bantul',
@@ -94,7 +91,6 @@ class DestinationRepositoryImpl implements DestinationRepository {
     ),
     Location(
       idProvince: 34,
-      idCountry: 1,
       provinceName: 'DI Yogyakarta',
       idDistrict: 3402,
       districtName: 'Kabupaten Bantul',
@@ -109,7 +105,6 @@ class DestinationRepositoryImpl implements DestinationRepository {
     ),
     Location(
       idProvince: 34,
-      idCountry: 1,
       provinceName: 'DI Yogyakarta',
       idDistrict: 3404,
       districtName: 'Kabupaten Sleman',
