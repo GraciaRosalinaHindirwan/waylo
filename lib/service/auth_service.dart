@@ -8,10 +8,13 @@ import 'package:waylo/models/user.dart';
 import 'package:waylo/repositories/user/user_repository.dart';
 import 'package:waylo/service/password_hasher.dart';
 import 'package:waylo/service/session_storage.dart';
+import 'package:waylo/service/biometric_credentials.dart';
 
 class AuthService extends ChangeNotifier {
   final UserRepository repository;
   final SessionStorage sessionStorage; 
+  final BiometricCredentials biometricCredentials =
+    BiometricCredentials();
 
   // User yang sedang login pada aplikasi.
   User? _currentUser;
@@ -93,8 +96,35 @@ class AuthService extends ChangeNotifier {
   }
 
 
-  Future<void> enableBiometricLogin(int userId) async {
-  await sessionStorage.saveBiometricUserId(userId);
+  Future<void> enableBiometricLogin({
+    required int userId,
+    required String username,
+    required String password,
+  }) async {
+    await biometricCredentials.saveCredentials(
+      username: username,
+      password: password,
+    );
+
+    await sessionStorage.saveBiometricUserId(userId);
+  } 
+
+  Future<User> loginWithBiometric() async {
+  final credentials =
+      await biometricCredentials.readCredentials();
+
+  if (credentials == null) {
+    throw Exception(
+      'Login fingerprint belum diaktifkan. '
+      'Silakan login menggunakan username dan password.',
+    );
+  }
+
+  // Memanggil login biasa akan meminta token JWT baru dari server.
+  return login(
+    credentials['username']!,
+    credentials['password']!,
+  );
 }
 
   

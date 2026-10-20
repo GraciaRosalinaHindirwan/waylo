@@ -75,6 +75,21 @@ Future<void> _register() async {
       builder: (_) => const BiometricLoginSheet(),
     );
 
+    // Simpan kredensial hanya jika verifikasi fingerprint berhasil.
+    if (biometricEnabled == true) {
+      await authService.enableBiometricLogin(
+        userId: registeredUser.id,
+        username: _usernameController.text.trim(),
+        password: _passwordController.text,
+      );
+    }
+
+    await authService.enableBiometricLogin(
+      userId: registeredUser.id,
+      username: _usernameController.text.trim(),
+      password: _passwordController.text,
+    );
+
     if (!mounted) return;
 
     // Simpan akun untuk login fingerprint hanya jika verifikasi berhasil.

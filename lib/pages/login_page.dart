@@ -35,56 +35,20 @@ void initState() {
 }
 
 
-
 Future<void> _openBiometricLogin() async {
   final result = await showModalBottomSheet<bool>(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
-    builder: (context) => const BiometricLoginSheet(),
+    builder: (_) => const BiometricLoginSheet(),
   );
 
   if (!mounted || result != true) return;
 
-  final authService = context.read<AuthService>();
-
   try {
-    // Ambil akun yang sudah ditautkan ke login biometrik.
-    final biometricUserId =
-        await authService.sessionStorage.getBiometricUserId();
+    final authService = context.read<AuthService>();
 
-    if (biometricUserId == null) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Akun biometrik belum terdaftar. Silakan login biasa terlebih dahulu.',
-          ),
-        ),
-      );
-      return;
-    }
-
-    // Ambil data akun.
-    final user = await authService.repository.getUserById(
-      biometricUserId,
-    );
-
-    if (user == null) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Akun tidak ditemukan. Silakan login biasa.'),
-        ),
-      );
-      return;
-    }
-
-    // Buat sesi login baru.
-    await authService.sessionStorage.saveUserId(user.id);
-    await authService.sessionStorage.saveLastActivity();
-    authService.setCurrentUser(user);
-    authService.startSessionTimer();
+    final user = await authService.loginWithBiometric();
 
     if (!mounted) return;
 
@@ -93,11 +57,17 @@ Future<void> _openBiometricLogin() async {
     );
   } catch (e) {
     if (!mounted) return;
+
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Login biometrik gagal: $e')),
+      SnackBar(
+        content: Text(
+          e.toString().replaceFirst('Exception: ', ''),
+        ),
+      ),
     );
   }
 }
+
 
   @override
   void dispose() {
