@@ -22,7 +22,7 @@ import 'package:waylo/repositories/destination/destination_repository_factory.da
 import 'package:waylo/theme/appColors.dart';
 import 'package:waylo/theme/app_text_styles.dart';
 import 'package:waylo/pages/profile.dart';
-
+import 'package:waylo/pages/aiRecommendation.dart';
 import 'package:waylo/pages/seeAllPage.dart';
 
 class Explorepage extends StatefulWidget {
@@ -579,259 +579,283 @@ String getDistance(Destination destination) {
 
   @override
   Widget build(BuildContext context) {
-    return Homelayout(
-      greeting: "Let's Find a Place",
-      title: 'Explore',
-      subtitle: 'Discover your next destination',
-      bottomNavigationBar: CustomBottomNavBar(
-        currentIndex: 1,
-        onTap: (index) {
-          switch (index) {
-            case 0:
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => HomePage()),
-              );
-              break;
-            case 1:
-              // Sudah berada di Explore
-              break;
-            case 2:
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => ProfilePage()),
-              );
-              break;
-          }
-        },
-      ),
+    return Stack(
+      children: [
+        Homelayout(
+          greeting: "Let's Find a Place",
+          title: 'Explore',
+          subtitle: 'Discover your next destination',
+          bottomNavigationBar: CustomBottomNavBar(
+            currentIndex: 1,
+            onTap: (index) {
+              switch (index) {
+                case 0:
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => HomePage()),
+                  );
+                  break;
+                case 1:
+                  // Sudah berada di Explore
+                  break;
+                case 2:
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => ProfilePage()),
+                  );
+                  break;
+              }
+            },
+          ),
 
-      // Bagian ini saja yang menimpa gambar
-      searchBar: Row(
-        children: [
-          const Expanded(child: CustomSearchBar()),
-          const SizedBox(width: 8),
-          _buildFilterButton(),
-        ],
-      ),
-
-      content: Column(
-        children: [
-          //destination near you
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          // Bagian ini saja yang menimpa gambar
+          searchBar: Row(
             children: [
-              Text(
-                'Destination Near You',
-                style: AppTextStyles.heading4.copyWith(
-                  color: AppColors.textPrimary,
-                  fontSize: 18,
+              const Expanded(child: CustomSearchBar()),
+              const SizedBox(width: 8),
+              _buildFilterButton(),
+            ],
+          ),
+
+          content: Column(
+            children: [
+              //destination near you
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Destination Near You',
+                    style: AppTextStyles.heading4.copyWith(
+                      color: AppColors.textPrimary,
+                      fontSize: 18,
+                    ),
+                  ),
+
+                  TextButton(
+                    onPressed: _openExploreNearbySeeAll,
+                    child: Text(
+                      'See All',
+                      style: AppTextStyles.body.copyWith(color: AppColors.accent),
+                    ),
+                  ),
+                ],
+              ),
+
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Infochip(
+                  icon: const Icon(
+                    Icons.near_me_rounded,
+                    size: 18,
+                    color: AppColors.secondaryLight,
+                  ),
+                  value: _currentCity,
+                  textColor: AppColors.textSecondary,
                 ),
               ),
 
-              TextButton(
-                onPressed: _openExploreNearbySeeAll,
-                child: Text(
-                  'See All',
-                  style: AppTextStyles.body.copyWith(color: AppColors.accent),
+              const SizedBox(height: 20),
+
+              SizedBox(
+                height: 225,
+                child: FutureBuilder<List<Destination>>(
+                  future: _destinationsFuture,
+                  builder: ((context, snapshot) {
+                    //loading
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+
+                    //error
+                    if (snapshot.hasError) {
+                      return const Center(child: Text("Gagal memuat destinasi"));
+                    }
+
+                    if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                      return const Center(
+                        child: Text('Belum ada destinasi'),
+                      );
+                    }
+
+                    if (_loadingNearby) {
+                      return const Center(
+                        child: CircularProgressIndicator(),
+                      );
+                    }
+
+                    if (_userPosition == null) {
+                      return const Center(
+                        child: Text('Lokasi pengguna tidak tersedia'),
+                      );
+                    }
+
+                    final destinations = _applyFilter(snapshot.data ?? []);
+
+                    final nearbyDestinations =
+                        _filterService.getNearbyDestinations(
+                      destinations: destinations,
+                      userLatitude: _userPosition!.latitude,
+                      userLongitude: _userPosition!.longitude,
+                    );
+
+                    if (nearbyDestinations.isEmpty) {
+                      return const Center(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 16),
+                          child: Text(
+                            'Tidak ada destinasi dalam radius 10 km',
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      );
+                    }
+
+                    return ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: nearbyDestinations.length,
+                      separatorBuilder: (context, index) =>
+                          const SizedBox(width: 16),
+                      itemBuilder: (context, index) {
+                        final destination = nearbyDestinations[index];
+                        final bannerImages = destination.images
+                            .where((image) => image.isBanner)
+                            .toList();
+
+                        final imageUrl = bannerImages.isNotEmpty
+                            ? bannerImages.first.imageUrl
+                            : null;
+
+                        return SizedBox(
+                          width: 196,
+                          height: 225,
+                          child: RecommendCard(
+                            image: imageUrl,
+                            name: destination.name,
+                            city: destination.location.districtName,
+                            rating: destination.rating,
+                            distance: getDistance(destination),
+                            page: Detaildestination(destination: destination),
+                          ),
+                        );
+                      },
+                    );
+                  }),
+                ),
+              ),
+
+              SizedBox(height: 24), 
+
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+
+                children: [
+                  Text(
+                    'Inspiring Destination',
+                    style: AppTextStyles.heading4.copyWith(
+                      color: AppColors.textPrimary,
+                      fontSize: 18,
+                    ),
+                  ),
+
+                  TextButton(
+                    onPressed: _openInspiringSeeAll,
+                    child: Text(
+                      'See All',
+                      style: AppTextStyles.body.copyWith(color: AppColors.accent),
+                    ),
+                  ),
+                ],
+              ),
+
+              SizedBox(height: 16),
+
+              SizedBox(
+                height: 160,
+                child: FutureBuilder<List<Destination>>(
+                  future: _destinationsFuture,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+
+                    if (snapshot.hasError) {
+                      debugPrint(
+                        'Error Inspiring Destination: ${snapshot.error}',
+                      );
+                      debugPrint(
+                        'Stack trace: ${snapshot.stackTrace}',
+                      );
+
+                      return Center(
+                        child: Text(
+                          'Gagal memuat: ${snapshot.error}',
+                          textAlign: TextAlign.center,
+                        ),
+                      );
+                    }
+                    final destinations = _applyFilter(snapshot.data ?? []);
+
+                    if (destinations.isEmpty) {
+                      return Center(
+                        child: Text(
+                          _filterActive
+                              ? 'Tidak ada destinasi yang cocok'
+                              : 'Belum ada destinasi',
+                        ),
+                      );
+                    }
+
+                    return ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      clipBehavior: Clip.none,
+                      itemCount: destinations.length,
+                      separatorBuilder: (context, index) =>
+                          const SizedBox(width: 16),
+                      itemBuilder: (context, index) {
+                        final destination = destinations[index];
+
+                        final bannerImages = destination.images
+                            .where((image) => image.isBanner)
+                            .toList();
+
+                        final imageUrl = bannerImages.isNotEmpty
+                            ? bannerImages.first.imageUrl
+                            : null;
+
+                        return Inspiringcard(
+                          destination: destination,
+                          image: imageUrl,
+                          location: destination.location.subdistrictName,
+                        );
+                      },
+                    );
+                  },
                 ),
               ),
             ],
           ),
+        ),
 
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Infochip(
-              icon: const Icon(
-                Icons.near_me_rounded,
-                size: 18,
-                color: AppColors.secondaryLight,
-              ),
-              value: _currentCity,
-              textColor: AppColors.textSecondary,
+        // Floating AI icon
+        Positioned(
+          right: 20,
+          bottom: 100,
+          child: GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const AiRecommendationPage()),
+              );
+            },
+            child: Image.asset(
+              'assets/img/waylo_AI.png',
+              width: 103,
+              height: 103,
+              fit: BoxFit.cover,
             ),
           ),
-
-          const SizedBox(height: 20),
-
-          SizedBox(
-            height: 225,
-            child: FutureBuilder<List<Destination>>(
-              future: _destinationsFuture,
-              builder: ((context, snapshot) {
-                //loading
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                //error
-                if (snapshot.hasError) {
-                  return const Center(child: Text("Gagal memuat destinasi"));
-                }
-
-                if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return const Center(
-                    child: Text('Belum ada destinasi'),
-                  );
-                }
-
-                if (_loadingNearby) {
-                  return const Center(
-                    child: CircularProgressIndicator(),
-                  );
-                }
-
-                if (_userPosition == null) {
-                  return const Center(
-                    child: Text('Lokasi pengguna tidak tersedia'),
-                  );
-                }
-
-                final destinations = _applyFilter(snapshot.data ?? []);
-
-                final nearbyDestinations =
-                    _filterService.getNearbyDestinations(
-                  destinations: destinations,
-                  userLatitude: _userPosition!.latitude,
-                  userLongitude: _userPosition!.longitude,
-                );
-
-                if (nearbyDestinations.isEmpty) {
-                  return const Center(
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 16),
-                      child: Text(
-                        'Tidak ada destinasi dalam radius 10 km',
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  );
-                }
-
-                return ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: nearbyDestinations.length,
-                  separatorBuilder: (context, index) =>
-                      const SizedBox(width: 16),
-                  itemBuilder: (context, index) {
-                    final destination = nearbyDestinations[index];
-                    final bannerImages = destination.images
-                        .where((image) => image.isBanner)
-                        .toList();
-
-                    final imageUrl = bannerImages.isNotEmpty
-                        ? bannerImages.first.imageUrl
-                        : null;
-
-                    return SizedBox(
-                      width: 196,
-                      height: 225,
-                      child: RecommendCard(
-                        image: imageUrl,
-                        name: destination.name,
-                        city: destination.location.districtName,
-                        rating: destination.rating,
-                        distance: getDistance(destination),
-                        page: Detaildestination(destination: destination),
-                      ),
-                    );
-                  },
-                );
-              }),
-            ),
-          ),
-
-          SizedBox(height: 24), 
-
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-
-            children: [
-              Text(
-                'Inspiring Destination',
-                style: AppTextStyles.heading4.copyWith(
-                  color: AppColors.textPrimary,
-                  fontSize: 18,
-                ),
-              ),
-
-              TextButton(
-                onPressed: _openInspiringSeeAll,
-                child: Text(
-                  'See All',
-                  style: AppTextStyles.body.copyWith(color: AppColors.accent),
-                ),
-              ),
-            ],
-          ),
-
-          SizedBox(height: 16),
-
-          SizedBox(
-            height: 160,
-            child: FutureBuilder<List<Destination>>(
-              future: _destinationsFuture,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                if (snapshot.hasError) {
-                  debugPrint(
-                    'Error Inspiring Destination: ${snapshot.error}',
-                  );
-                  debugPrint(
-                    'Stack trace: ${snapshot.stackTrace}',
-                  );
-
-                  return Center(
-                    child: Text(
-                      'Gagal memuat: ${snapshot.error}',
-                      textAlign: TextAlign.center,
-                    ),
-                  );
-                }
-                final destinations = _applyFilter(snapshot.data ?? []);
-
-                if (destinations.isEmpty) {
-                  return Center(
-                    child: Text(
-                      _filterActive
-                          ? 'Tidak ada destinasi yang cocok'
-                          : 'Belum ada destinasi',
-                    ),
-                  );
-                }
-
-                return ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  clipBehavior: Clip.none,
-                  itemCount: destinations.length,
-                  separatorBuilder: (context, index) =>
-                      const SizedBox(width: 16),
-                  itemBuilder: (context, index) {
-                    final destination = destinations[index];
-
-                    final bannerImages = destination.images
-                        .where((image) => image.isBanner)
-                        .toList();
-
-                    final imageUrl = bannerImages.isNotEmpty
-                        ? bannerImages.first.imageUrl
-                        : null;
-
-                    return Inspiringcard(
-                      destination: destination,
-                      image: imageUrl,
-                      location: destination.location.subdistrictName,
-                    );
-                  },
-                );
-              },
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
