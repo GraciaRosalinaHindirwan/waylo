@@ -282,6 +282,7 @@ class _NotificationPageState extends State<NotificationPage> {
 
                             const SizedBox(height: 24),
 
+                            // button untuk mengirim notifikasi tes
                             // ElevatedButton.icon(
                             //   onPressed: () async {
                             //     try {
@@ -336,6 +337,38 @@ class _NotificationPageState extends State<NotificationPage> {
                             //   },
                             //   icon: const Icon(Icons.notifications_active),
                             //   label: const Text('Test Notification'),
+                            // ),
+
+                            //test berjalan di background
+                            // const SizedBox(height: 16),
+
+                            // ElevatedButton.icon(
+                            //   icon: const Icon(Icons.timer_outlined),
+                            //   label: const Text('Test Background Notification'),
+                            //   onPressed: () async {
+                            //     try {
+                            //       await NotificationService.instance
+                            //           .scheduleTestInOneMinute();
+
+                            //       if (!context.mounted) return;
+
+                            //       ScaffoldMessenger.of(context).showSnackBar(
+                            //         const SnackBar(
+                            //           content: Text(
+                            //             'Terjadwal! Tutup WAYLO dan tunggu sekitar 1 menit.',
+                            //           ),
+                            //         ),
+                            //       );
+                            //     } catch (e) {
+                            //       if (!context.mounted) return;
+
+                            //       ScaffoldMessenger.of(context).showSnackBar(
+                            //         SnackBar(
+                            //           content: Text('Gagal menjadwalkan: $e'),
+                            //         ),
+                            //       );
+                            //     }
+                            //   },
                             // ),
                           ],
                         ),
