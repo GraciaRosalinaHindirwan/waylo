@@ -1,6 +1,6 @@
 import 'package:waylo/models/currency.dart';
 import 'package:waylo/models/currencyConversion.dart';
-import 'package:waylo/repositories/currency_repository.dart';
+import 'package:waylo/repositories/currency/currency_repository.dart';
 
 class CurrencyService {
   final CurrencyRepository currencyRepository;
