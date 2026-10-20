@@ -180,7 +180,7 @@ class _UserPreferencePageState extends State<UserPreferencePage> {
                                   },
                                 ),
                               ),
-                              if (categoryOptions.isNotEmpty)
+                              if (categoryOptions.isNotEmpty) 
                                 buildSection(
                                   'Category',
                                   SelectionButton(
