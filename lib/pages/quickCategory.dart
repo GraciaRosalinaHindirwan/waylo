@@ -1,5 +1,7 @@
-
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:waylo/service/auth_service.dart';
+
 import 'package:waylo/components/buttomNav.dart';
 import 'package:waylo/models/destination.dart';
 import 'package:waylo/pages/detailDestination.dart';
@@ -29,8 +31,7 @@ class _QuickCategoryPageState extends State<QuickCategoryPage> {
   final DestinationRepository _destinationRepository =
       DestinationRepositoryFactory.create();
 
-  final FavoriteRepository _favoriteRepository =
-      FavoriteRepositoryFactory.create();
+  late final FavoriteRepository _favoriteRepository;
 
   List<Destination> destinations = [];
   Set<int> favoriteIds = {};
@@ -43,6 +44,20 @@ class _QuickCategoryPageState extends State<QuickCategoryPage> {
   void initState() {
     super.initState();
     loadDestinations();
+    final authService = Provider.of<AuthService>(
+      context,
+      listen: false,
+    );
+
+    final userId = authService.currentUser?.id;
+
+    if (userId == null) {
+      throw Exception('Sesi user tidak ditemukan.');
+    }
+
+    _favoriteRepository = FavoriteRepositoryFactory.create(
+      userId: userId,
+    );
   }
 
   Future<void> loadDestinations() async {
