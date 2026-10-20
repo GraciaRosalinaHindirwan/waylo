@@ -196,6 +196,14 @@ Deno.serve(async (req) => {
 
     if (insertCategoryError) throw insertCategoryError;
 
+    const { error: updateUserError } = await supabase
+      .from("users")
+      .update({ has_completed_preference: true })
+      .eq("id", userId);
+
+    if (updateUserError) throw updateUserError;
+
+
     return Response.json(
       { success: true },
       { status: 200, headers: corsHeaders },

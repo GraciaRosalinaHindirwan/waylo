@@ -229,7 +229,7 @@ class AuthService extends ChangeNotifier {
     final user = _currentUser;
 
     if (user == null) {
-      throw Exception('User belum login');
+      throw Exception('Silakan login terlebih dahulu.');
     }
 
     await repository.savePreferences(
@@ -243,14 +243,11 @@ class AuthService extends ChangeNotifier {
       fullname: user.fullname,
       username: user.username,
       password: user.password,
-      districts: districtIds
-          .map((id) => id.toString())
-          .toList(),
+      districts: user.districts,
       categories: user.categories,
       createdAt: user.createdAt,
-      updatedAt: DateTime.now(),
+      updatedAt: user.updatedAt,
       hasCompletedPreference: true,
-      profileImageBase64: user.profileImageBase64,
     );
 
     notifyListeners();
