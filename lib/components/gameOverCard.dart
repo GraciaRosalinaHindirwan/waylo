@@ -55,14 +55,14 @@ class GameOverCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 _GameOverButton(
-                  imagePath: '../assets/game/home.png',
+                  imagePath: 'assets/game/home.png',
                   onTap: onHome,
                 ),
 
                 const SizedBox(width: 34),
 
                 _GameOverButton(
-                  imagePath: '../assets/game/replay.png',
+                  imagePath: 'assets/game/replay.png',
                   onTap: onReplay,
                 ),
               ],
