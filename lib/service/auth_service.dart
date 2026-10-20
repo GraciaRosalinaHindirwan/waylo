@@ -266,7 +266,7 @@ class AuthService extends ChangeNotifier {
       categories: const [],
       createdAt: DateTime.parse(row['created_at'] as String),
       updatedAt: DateTime.parse(row['updated_at'] as String),
-      hasCompletedPreference: false,
+      hasCompletedPreference: row['has_completed_preference'] as bool? ?? false,
       profileImageBase64: null,
     );
   }
