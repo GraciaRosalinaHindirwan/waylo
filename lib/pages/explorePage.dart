@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:waylo/components/button.dart';
 import 'package:waylo/components/infoChip.dart';
-import 'package:waylo/repositories/destination/destination_supabase_repository.dart';
 import 'package:waylo/service/location_service.dart';
 import 'package:waylo/service/destination_filter_service.dart';
 import 'package:geolocator/geolocator.dart';
