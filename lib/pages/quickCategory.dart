@@ -1,3 +1,5 @@
+
+import 'package:flutter/material.dart';
 import 'package:waylo/components/buttomNav.dart';
 import 'package:waylo/models/destination.dart';
 import 'package:waylo/pages/detailDestination.dart';
@@ -6,16 +8,18 @@ import 'package:waylo/pages/home.dart';
 import 'package:waylo/pages/profile.dart';
 import 'package:waylo/repositories/destination/destination_repository.dart';
 import 'package:waylo/repositories/destination/destination_repository_factory.dart';
-import 'package:waylo/repositories/favorite_repository.dart';
-import 'package:waylo/repositories/favorite_repository_factory.dart';
+import 'package:waylo/repositories/favorite/favorite_repository.dart';
+import 'package:waylo/repositories/favorite/favorite_repository_factory.dart';
 import 'package:waylo/theme/appColors.dart';
 import 'package:waylo/theme/app_text_styles.dart';
-import 'package:flutter/material.dart';
 
 class QuickCategoryPage extends StatefulWidget {
   final String category;
 
-  const QuickCategoryPage({super.key, required this.category});
+  const QuickCategoryPage({
+    super.key,
+    required this.category,
+  });
 
   @override
   State<QuickCategoryPage> createState() => _QuickCategoryPageState();
@@ -24,11 +28,16 @@ class QuickCategoryPage extends StatefulWidget {
 class _QuickCategoryPageState extends State<QuickCategoryPage> {
   final DestinationRepository _destinationRepository =
       DestinationRepositoryFactory.create();
+
   final FavoriteRepository _favoriteRepository =
       FavoriteRepositoryFactory.create();
 
   List<Destination> destinations = [];
+  Set<int> favoriteIds = {};
+  final Set<int> updatingFavoriteIds = {};
+
   bool isLoading = true;
+  bool isFavoriteLoading = true;
 
   @override
   void initState() {
@@ -40,27 +49,13 @@ class _QuickCategoryPageState extends State<QuickCategoryPage> {
     try {
       final all = await _destinationRepository.getAllDestinations();
 
-      debugPrint('Total destinasi: ${all.length}');
-      debugPrint('Kategori yang dipilih: ${widget.category}');
-
-      for (final destination in all) {
-        debugPrint(
-          '${destination.name} - '
-          'Kategori: ${destination.categories.map((c) => c.name).toList()}',
+      final filtered = all.where((destination) {
+        return destination.categories.any(
+          (category) =>
+              category.name.trim().toLowerCase() ==
+              widget.category.trim().toLowerCase(),
         );
-      }
-
-      final filtered = all
-          .where(
-            (destination) => destination.categories.any(
-              (category) =>
-                  category.name.trim().toLowerCase() ==
-                  widget.category.trim().toLowerCase(),
-            ),
-          )
-          .toList();
-
-      debugPrint('Total setelah filter kategori: ${filtered.length}');
+      }).toList();
 
       if (!mounted) return;
 
@@ -68,6 +63,8 @@ class _QuickCategoryPageState extends State<QuickCategoryPage> {
         destinations = filtered;
         isLoading = false;
       });
+
+      await loadFavoriteIds();
     } catch (e, stackTrace) {
       debugPrint('Gagal memuat kategori: $e');
       debugPrint('$stackTrace');
@@ -76,7 +73,86 @@ class _QuickCategoryPageState extends State<QuickCategoryPage> {
 
       setState(() {
         isLoading = false;
+        isFavoriteLoading = false;
       });
+    }
+  }
+
+  Future<void> loadFavoriteIds() async {
+    try {
+      final ids = await _favoriteRepository.getFavoriteIds();
+
+      if (!mounted) return;
+
+      setState(() {
+        favoriteIds = ids.toSet();
+        isFavoriteLoading = false;
+      });
+    } catch (e) {
+      debugPrint('Gagal memuat favorite: $e');
+
+      if (!mounted) return;
+
+      setState(() {
+        isFavoriteLoading = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Gagal memuat favorite: $e'),
+        ),
+      );
+    }
+  }
+
+  Future<void> toggleFavorite(Destination destination) async {
+    final destinationId = destination.id;
+
+    // Cegah klik berulang ketika request masih berjalan.
+    if (updatingFavoriteIds.contains(destinationId)) return;
+
+    final wasFavorite = favoriteIds.contains(destinationId);
+
+    setState(() {
+      updatingFavoriteIds.add(destinationId);
+
+      // Update ikon secara langsung.
+      if (wasFavorite) {
+        favoriteIds.remove(destinationId);
+      } else {
+        favoriteIds.add(destinationId);
+      }
+    });
+
+    try {
+      if (wasFavorite) {
+        await _favoriteRepository.removeFavorite(destinationId);
+      } else {
+        await _favoriteRepository.addFavorite(destinationId);
+      }
+    } catch (e) {
+      // Jika gagal, kembalikan status sebelumnya.
+      if (!mounted) return;
+
+      setState(() {
+        if (wasFavorite) {
+          favoriteIds.add(destinationId);
+        } else {
+          favoriteIds.remove(destinationId);
+        }
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Gagal memperbarui favorite: $e'),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          updatingFavoriteIds.remove(destinationId);
+        });
+      }
     }
   }
 
@@ -88,7 +164,10 @@ class _QuickCategoryPageState extends State<QuickCategoryPage> {
       width: 88,
       height: 88,
       color: AppColors.border,
-      child: const Icon(Icons.image_outlined, color: AppColors.textSecondary),
+      child: const Icon(
+        Icons.image_outlined,
+        color: AppColors.textSecondary,
+      ),
     );
 
     return Container(
@@ -97,7 +176,10 @@ class _QuickCategoryPageState extends State<QuickCategoryPage> {
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(width: 2, color: AppColors.border),
+        border: Border.all(
+          width: 2,
+          color: AppColors.border,
+        ),
       ),
       child: imageUrl == null
           ? placeholder
@@ -110,18 +192,23 @@ class _QuickCategoryPageState extends State<QuickCategoryPage> {
   }
 
   Widget buildCard(Destination destination) {
-    final isFavorited = _favoriteRepository.isFavorite(destination.id);
+    final isFavorited = favoriteIds.contains(destination.id);
+    final isUpdating = updatingFavoriteIds.contains(destination.id);
 
     return GestureDetector(
-      onTap: () {
-        Navigator.push(
+      onTap: () async {
+        await Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => Detaildestination(destination: destination),
+            builder: (context) =>
+                Detaildestination(destination: destination),
           ),
-        ).then((_) {
-          if (mounted) setState(() {});
-        });
+        );
+
+        // Sinkronkan kembali jika favorite berubah di halaman detail.
+        if (mounted) {
+          await loadFavoriteIds();
+        }
       },
       child: Container(
         width: double.infinity,
@@ -178,22 +265,25 @@ class _QuickCategoryPageState extends State<QuickCategoryPage> {
                     ],
                   ),
                   Text(
-                    '${destination.location.districtName}, ${destination.location.provinceName}',
+                    '${destination.location.districtName}, '
+                    '${destination.location.provinceName}',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: AppTextStyles.label.copyWith(color: Colors.black),
+                    style: AppTextStyles.label.copyWith(
+                      color: Colors.black,
+                    ),
                   ),
                   GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        _favoriteRepository.toggleFavorite(destination);
-                      });
-                    },
+                    onTap: isUpdating
+                        ? null
+                        : () => toggleFavorite(destination),
                     child: Row(
                       spacing: 4,
                       children: [
                         Icon(
-                          isFavorited ? Icons.favorite : Icons.favorite_border,
+                          isFavorited
+                              ? Icons.favorite
+                              : Icons.favorite_border,
                           size: 24,
                           color: AppColors.accent,
                         ),
@@ -203,6 +293,14 @@ class _QuickCategoryPageState extends State<QuickCategoryPage> {
                             color: AppColors.textSecondary,
                           ),
                         ),
+                        if (isUpdating)
+                          const SizedBox(
+                            width: 12,
+                            height: 12,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                            ),
+                          ),
                       ],
                     ),
                   ),
@@ -225,7 +323,10 @@ class _QuickCategoryPageState extends State<QuickCategoryPage> {
           Container(
             width: double.infinity,
             height: 124,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 20,
+              vertical: 24,
+            ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               spacing: 32,
@@ -258,7 +359,9 @@ class _QuickCategoryPageState extends State<QuickCategoryPage> {
                 Expanded(
                   child: Text(
                     widget.category,
-                    style: AppTextStyles.heading3.copyWith(color: Colors.black),
+                    style: AppTextStyles.heading3.copyWith(
+                      color: Colors.black,
+                    ),
                   ),
                 ),
               ],
@@ -266,24 +369,26 @@ class _QuickCategoryPageState extends State<QuickCategoryPage> {
           ),
           Expanded(
             child: isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : destinations.isEmpty
-                ? Center(
-                    child: Text(
-                      'Belum ada destinasi untuk kategori ini',
-                      style: AppTextStyles.body.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
+                ? const Center(
+                    child: CircularProgressIndicator(),
                   )
-                : ListView.separated(
-                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-                    itemCount: destinations.length,
-                    separatorBuilder: (context, index) =>
-                        const SizedBox(height: 16),
-                    itemBuilder: (context, index) =>
-                        buildCard(destinations[index]),
-                  ),
+                : destinations.isEmpty
+                    ? Center(
+                        child: Text(
+                          'Belum ada destinasi untuk kategori ini',
+                          style: AppTextStyles.body.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      )
+                    : ListView.separated(
+                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+                        itemCount: destinations.length,
+                        separatorBuilder: (context, index) =>
+                            const SizedBox(height: 16),
+                        itemBuilder: (context, index) =>
+                            buildCard(destinations[index]),
+                      ),
           ),
           CustomBottomNavBar(
             currentIndex: 0,
