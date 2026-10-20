@@ -1,6 +1,10 @@
+
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+
 import 'package:waylo/components/inputfield.dart';
 import 'package:waylo/components/button.dart';
 import 'package:waylo/components/buttomNav.dart';
@@ -22,7 +26,9 @@ class EditProfilePage extends StatefulWidget {
 class _EditProfilePageState extends State<EditProfilePage> {
   late final TextEditingController _fullnameController;
   late final TextEditingController _usernameController;
-  final TextEditingController _newPasswordController = TextEditingController();
+
+  final TextEditingController _newPasswordController =
+      TextEditingController();
   final TextEditingController _confirmPasswordController =
       TextEditingController();
 
@@ -37,9 +43,13 @@ class _EditProfilePageState extends State<EditProfilePage> {
   @override
   void initState() {
     super.initState();
+
     final user = context.read<AuthService>().currentUser;
-    _fullnameController = TextEditingController(text: user?.fullname ?? '');
-    _usernameController = TextEditingController(text: user?.username ?? '');
+
+    _fullnameController =
+        TextEditingController(text: user?.fullname ?? '');
+    _usernameController =
+        TextEditingController(text: user?.username ?? '');
   }
 
   @override
@@ -52,6 +62,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
   }
 
   void showMessage(String message) {
+    if (!mounted) return;
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
     );
@@ -62,7 +74,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
       context: context,
       backgroundColor: AppColors.card,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(20),
+        ),
       ),
       builder: (context) => SafeArea(
         child: Column(
@@ -97,17 +111,23 @@ class _EditProfilePageState extends State<EditProfilePage> {
   }
 
   Future<void> _getImage(ImageSource source) async {
-    final picked = await _picker.pickImage(
-      source: source,
-      imageQuality: 80,
-    );
+    try {
+      final picked = await _picker.pickImage(
+        source: source,
+        imageQuality: 80,
+      );
 
-    if (picked == null) return;
+      if (picked == null || !mounted) return;
 
-    final bytes = await picked.readAsBytes();
-    if (!mounted) return;
+      final bytes = await picked.readAsBytes();
 
-    await context.read<AuthService>().setProfileImage(bytes);
+      if (!mounted) return;
+
+      await context.read<AuthService>().setProfileImage(bytes);
+    } catch (e) {
+      if (!mounted) return;
+      showMessage('Gagal memilih foto profil');
+    }
   }
 
   Future<void> save() async {
@@ -134,6 +154,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
         showMessage('Password minimal 8 karakter');
         return;
       }
+
       if (newPassword != confirmPassword) {
         showMessage('Konfirmasi password tidak cocok');
         return;
@@ -143,22 +164,28 @@ class _EditProfilePageState extends State<EditProfilePage> {
     setState(() => isSaving = true);
 
     try {
-      // Cek username baru belum dipakai user lain.
       if (username != user.username) {
         final existing =
             await authService.repository.getUserByUsername(username);
-        if (existing != null) {
-          if (!mounted) return;
-          setState(() => isSaving = false);
+
+        if (existing != null && existing.id != user.id) {
           showMessage('Username sudah digunakan');
           return;
         }
       }
 
-      // Password di database tersimpan dalam bentuk hash, jadi hash dulu.
       final passwordToSave = newPassword.isEmpty
           ? user.password
           : await PasswordHasher.hashPassword(newPassword);
+
+      // ngambil foto terbaru dari AuthService
+      final currentImageBytes = authService.profileImageBytes;
+
+      // Jika foto tersedia, simpan sebagai Base64 pada data user.
+      // Jika tidak, pertahankan foto yang sudah tersimpan.
+      final profileImageBase64 = currentImageBytes != null
+          ? base64Encode(currentImageBytes)
+          : user.profileImageBase64;
 
       final updatedUser = await authService.repository.updateUser(
         User(
@@ -171,23 +198,25 @@ class _EditProfilePageState extends State<EditProfilePage> {
           hasCompletedPreference: user.hasCompletedPreference,
           createdAt: user.createdAt,
           updatedAt: DateTime.now(),
-          profileImageBase64: user.profileImageBase64,
+          profileImageBase64: profileImageBase64,
         ),
       );
 
       authService.setCurrentUser(updatedUser);
+
+      if (!mounted) return;
+
+      showMessage('Profile berhasil diperbarui');
+      Navigator.pop(context);
     } catch (e) {
       if (!mounted) return;
-      setState(() => isSaving = false);
-      showMessage('Gagal memperbarui profile');
-      return;
+
+      showMessage('Gagal memperbarui profile: $e');
+    } finally {
+      if (mounted) {
+        setState(() => isSaving = false);
+      }
     }
-
-    if (!mounted) return;
-
-    setState(() => isSaving = false);
-    showMessage('Profile berhasil diperbarui');
-    Navigator.pop(context);
   }
 
   Widget buildHeader() {
@@ -201,7 +230,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
             child: Text(
               'EDIT PROFILE',
               textAlign: TextAlign.center,
-              style: AppTextStyles.heading3.copyWith(color: Colors.black),
+              style: AppTextStyles.heading3.copyWith(
+                color: Colors.black,
+              ),
             ),
           ),
           Align(
@@ -242,7 +273,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
       width: double.infinity,
       child: Text(
         title,
-        style: AppTextStyles.heading4.copyWith(color: Colors.black),
+        style: AppTextStyles.heading4.copyWith(
+          color: Colors.black,
+        ),
       ),
     );
   }
@@ -272,7 +305,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
             ],
           ),
           child: Center(
-            child: Icon(icon, size: 20, color: AppColors.textPrimary),
+            child: Icon(
+              icon,
+              size: 20,
+              color: AppColors.textPrimary,
+            ),
           ),
         ),
       ),
@@ -291,7 +328,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
       children: [
         Text(
           label,
-          style: AppTextStyles.label.copyWith(color: AppColors.textSecondary),
+          style: AppTextStyles.label.copyWith(
+            color: AppColors.textSecondary,
+          ),
         ),
         Row(
           spacing: 8,
@@ -299,7 +338,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
             Expanded(
               child: IgnorePointer(
                 ignoring: !editing,
-                child: Inputfield(label: '', controller: controller),
+                child: Inputfield(
+                  label: '',
+                  controller: controller,
+                ),
               ),
             ),
             buildRoundButton(
@@ -329,7 +371,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
       children: [
         Text(
           label,
-          style: AppTextStyles.label.copyWith(color: AppColors.textSecondary),
+          style: AppTextStyles.label.copyWith(
+            color: AppColors.textSecondary,
+          ),
         ),
         TextField(
           controller: controller,
@@ -346,7 +390,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
             border: border,
             enabledBorder: border,
             focusedBorder: border.copyWith(
-              borderSide: const BorderSide(color: AppColors.accent),
+              borderSide: const BorderSide(
+                color: AppColors.accent,
+              ),
             ),
             suffixIcon: IconButton(
               onPressed: onToggleObscure,
@@ -365,7 +411,17 @@ class _EditProfilePageState extends State<EditProfilePage> {
   }
 
   Widget buildAvatar() {
-    final profileImageBytes = context.watch<AuthService>().profileImageBytes;
+    final authService = context.watch<AuthService>();
+    final user = authService.currentUser;
+    final profileImageBytes = authService.profileImageBytes;
+
+    // Gunakan foto terbaru, atau foto Base64 yang tersimpan.
+    final savedImage = user?.profileImageBase64;
+
+    final imageBytes = profileImageBytes ??
+        (savedImage != null && savedImage.isNotEmpty
+            ? base64Decode(savedImage)
+            : null);
 
     return Center(
       child: SizedBox(
@@ -393,12 +449,19 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   width: 92,
                   height: 92,
                   child: ClipOval(
-                    child: profileImageBytes != null
+                    child: imageBytes != null
                         ? Image.memory(
-                            profileImageBytes,
+                            imageBytes,
                             fit: BoxFit.cover,
                             width: 92,
                             height: 92,
+                            errorBuilder: (context, error, stackTrace) {
+                              return const Icon(
+                                Icons.person_outline,
+                                size: 92,
+                                color: AppColors.secondary,
+                              );
+                            },
                           )
                         : const Icon(
                             Icons.person_outline,
@@ -447,7 +510,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
             child: SafeArea(
               bottom: false,
               child: SingleChildScrollView(
-                padding: const EdgeInsets.only(top: 24, left: 20, right: 20),
+                padding: const EdgeInsets.only(
+                  top: 24,
+                  left: 20,
+                  right: 20,
+                ),
                 child: Column(
                   spacing: 16,
                   children: [
@@ -459,15 +526,17 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       label: 'Fullname',
                       controller: _fullnameController,
                       editing: editFullname,
-                      onToggle: () =>
-                          setState(() => editFullname = !editFullname),
+                      onToggle: () => setState(
+                        () => editFullname = !editFullname,
+                      ),
                     ),
                     buildEditableField(
                       label: 'Username',
                       controller: _usernameController,
                       editing: editUsername,
-                      onToggle: () =>
-                          setState(() => editUsername = !editUsername),
+                      onToggle: () => setState(
+                        () => editUsername = !editUsername,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     buildSectionTitle('Edit Password'),
@@ -475,15 +544,17 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       label: 'New Password',
                       controller: _newPasswordController,
                       obscure: _obscureNew,
-                      onToggleObscure: () =>
-                          setState(() => _obscureNew = !_obscureNew),
+                      onToggleObscure: () => setState(
+                        () => _obscureNew = !_obscureNew,
+                      ),
                     ),
                     buildPasswordField(
                       label: 'Confirm New Password',
                       controller: _confirmPasswordController,
                       obscure: _obscureConfirm,
-                      onToggleObscure: () =>
-                          setState(() => _obscureConfirm = !_obscureConfirm),
+                      onToggleObscure: () => setState(
+                        () => _obscureConfirm = !_obscureConfirm,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     CustomButton(
@@ -503,13 +574,17 @@ class _EditProfilePageState extends State<EditProfilePage> {
               if (index == 0) {
                 Navigator.pushAndRemoveUntil(
                   context,
-                  MaterialPageRoute(builder: (context) => HomePage()),
+                  MaterialPageRoute(
+                    builder: (context) => HomePage(),
+                  ),
                   (route) => false,
                 );
               } else if (index == 1) {
                 Navigator.pushAndRemoveUntil(
                   context,
-                  MaterialPageRoute(builder: (context) => Explorepage()),
+                  MaterialPageRoute(
+                    builder: (context) => Explorepage(),
+                  ),
                   (route) => false,
                 );
               } else {
