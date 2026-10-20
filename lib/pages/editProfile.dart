@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:waylo/repositories/user/user_repository_factory.dart';
+import 'package:go_router/go_router.dart';
+
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:waylo/components/inputfield.dart';
@@ -110,8 +113,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
     await context.read<AuthService>().setProfileImage(bytes);
   }
 
+  
   Future<void> save() async {
     final authService = context.read<AuthService>();
+    final repository = await UserRepositoryFactory.create();
     final user = authService.currentUser;
 
     if (user == null) {
@@ -134,6 +139,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
         showMessage('Password minimal 8 karakter');
         return;
       }
+
       if (newPassword != confirmPassword) {
         showMessage('Konfirmasi password tidak cocok');
         return;
@@ -143,24 +149,25 @@ class _EditProfilePageState extends State<EditProfilePage> {
     setState(() => isSaving = true);
 
     try {
-      // Cek username baru belum dipakai user lain.
+      // Periksa apakah username sudah digunakan.
       if (username != user.username) {
-        final existing =
-            await authService.repository.getUserByUsername(username);
+        final existing = await repository.getUserByUsername(username);
+
         if (existing != null) {
           if (!mounted) return;
+
           setState(() => isSaving = false);
           showMessage('Username sudah digunakan');
           return;
         }
       }
 
-      // Password di database tersimpan dalam bentuk hash, jadi hash dulu.
+      // Pertahankan password lama jika tidak diganti.
       final passwordToSave = newPassword.isEmpty
           ? user.password
           : await PasswordHasher.hashPassword(newPassword);
 
-      final updatedUser = await authService.repository.updateUser(
+      final updatedUser = await repository.updateUser(
         User(
           id: user.id,
           fullname: fullname,
@@ -175,19 +182,35 @@ class _EditProfilePageState extends State<EditProfilePage> {
         ),
       );
 
+      // Perbarui user aktif setelah database berhasil di-update.
+      debugPrint(
+        'BEFORE: ${authService.currentUser?.hasCompletedPreference}',
+      );
+      debugPrint(
+        'UPDATED USER: ${updatedUser.hasCompletedPreference}',
+      );
+
       authService.setCurrentUser(updatedUser);
-    } catch (e) {
+
+      debugPrint(
+        'AFTER: ${authService.currentUser?.hasCompletedPreference}',
+      );
+
+
       if (!mounted) return;
+
       setState(() => isSaving = false);
-      showMessage('Gagal memperbarui profile');
-      return;
+      Navigator.pop(context);
+
+    } catch (e, stackTrace) {
+      debugPrint('Gagal memperbarui profile: $e');
+      debugPrintStack(stackTrace: stackTrace);
+
+      if (!mounted) return;
+
+      setState(() => isSaving = false);
+      showMessage('Gagal memperbarui profile: $e');
     }
-
-    if (!mounted) return;
-
-    setState(() => isSaving = false);
-    showMessage('Profile berhasil diperbarui');
-    Navigator.pop(context);
   }
 
   Widget buildHeader() {
