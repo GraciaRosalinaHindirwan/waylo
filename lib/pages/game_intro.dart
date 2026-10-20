@@ -10,7 +10,7 @@ class GameIntro extends StatefulWidget {
   const GameIntro({
     super.key,
     required this.onStart,
-    this.backgroundAsset = '../assets/game/background.png',
+    this.backgroundAsset = 'assets/game/background.png',
   });
 
   @override
@@ -48,7 +48,7 @@ class _GameIntroState extends State<GameIntro> {
             top: isTop ? 0 : capHeight - overlap,
             bottom: isTop ? capHeight - overlap : 0,
             child: Image.asset(
-              '../assets/game/obstacle_body.png',
+              'assets/game/obstacle_body.png',
               fit: BoxFit.fill,
               filterQuality: FilterQuality.none,
             ),
@@ -211,16 +211,16 @@ Positioned(
                             onHome: () {
                               Navigator.of(context).pop();
                             },
-                            backgroundPath: '../assets/game/background.png',
-                            birdUpPath: '../assets/game/birdUp.png',
-                            birdDownPath: '../assets/game/birdDown.png',
-                            coinPath: '../assets/game/coin.png',
+                            backgroundPath: 'assets/game/background.png',
+                            birdUpPath: 'assets/game/birdUp.png',
+                            birdDownPath: 'assets/game/birdDown.png',
+                            coinPath: 'assets/game/coin.png',
                           ),
                         ),
                       );
                     },
                     child: Image.asset(
-                      '../assets/game/play.png',
+                      'assets/game/play.png',
                       fit: BoxFit.contain,
                       filterQuality: FilterQuality.none,
                     ),
