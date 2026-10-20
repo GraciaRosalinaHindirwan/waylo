@@ -91,9 +91,6 @@ class _SmartCompassState extends State<SmartCompass> {
   }
 
   /// Menghitung heading dengan accelerometer dan magnetometer.
-  ///
-  /// Hasil berupa sudut 0–360 derajat.
-  /// 0° = utara, 90° = timur, 180° = selatan, 270° = barat.
   double? _calculateHeading(
     double ax,
     double ay,
