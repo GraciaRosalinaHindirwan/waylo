@@ -83,7 +83,9 @@ flutter:
     - assets/game/obstacle_body.png
     - assets/game/obstacle_cap.png
     - assets/game/(1)Across_the_Jade_Ridge.mp3
-    - assets/img/
+    - assets/img/WayBi.png
+    - assets/img/logo.png
+
   fonts:
     - family: Fraunces
       fonts:
