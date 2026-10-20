@@ -17,4 +17,11 @@ abstract class UserRepository {
   Future<void> deleteUser(int id);
 
   Future<void> initializeDummyUsers();
+
+  //preferance
+  Future<void> savePreferences({
+    required int userId,
+    required List<int> districtIds,
+    required List<int> categoryIds,
+  });
 }

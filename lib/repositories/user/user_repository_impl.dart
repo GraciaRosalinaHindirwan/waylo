@@ -99,7 +99,7 @@ class UserRepositoryImpl implements UserRepository {
         fullname: 'Eko Saputra',
         username: 'eko',
         password: 'eko123',
-        destinations: ['China'],
+        districts: ['China'],
         categories: [_categories[2], _categories[4]],
         createdAt: DateTime(2026, 1, 5),
         updatedAt: DateTime(2026, 1, 5),
@@ -109,7 +109,7 @@ class UserRepositoryImpl implements UserRepository {
         fullname: 'test',
         username: 'test',
         password: 'test123',
-        destinations: ['China'],
+        districts: ['China'],
         categories: [_categories[2], _categories[4]],
         createdAt: DateTime(2026, 1, 5),
         updatedAt: DateTime(2026, 1, 5),
@@ -131,7 +131,7 @@ class UserRepositoryImpl implements UserRepository {
           fullname: user.fullname,
           username: user.username,
           password: hashedPassword,
-          destinations: List<String>.from(user.destinations),
+          districts: List<String>.from(user.districts),
           categories: List<Category>.from(user.categories),
           createdAt: user.createdAt,
           updatedAt: user.updatedAt,
@@ -202,7 +202,7 @@ Future<User?> getUserById(int id) async {
       fullname: user.fullname,
       username: user.username,
       password: user.password,
-      destinations: List<String>.from(user.destinations),
+      districts: List<String>.from(user.districts),
       categories: List<Category>.from(user.categories),
       createdAt: _users[index].createdAt,
       updatedAt: DateTime.now(),
@@ -213,6 +213,13 @@ Future<User?> getUserById(int id) async {
     _users[index] = updatedUser;
 
     return updatedUser;
+  }
+
+  Future<void> savePreferences({
+    required int userId,
+    required List<int> districtIds,
+    required List<int> categoryIds,
+  }) async {
   }
 
   @override

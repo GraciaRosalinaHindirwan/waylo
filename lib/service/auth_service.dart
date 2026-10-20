@@ -52,7 +52,7 @@ class AuthService extends ChangeNotifier {
         fullname: user.fullname,
         username: user.username,
         password: user.password,
-        destinations: user.destinations,
+        districts: user.districts,
         categories: user.categories,
         hasCompletedPreference: user.hasCompletedPreference,
         createdAt: user.createdAt,
@@ -110,13 +110,22 @@ class AuthService extends ChangeNotifier {
 
     final data = response.data;
 
-    if (response.status != 200 || data is! Map || data['user'] is! Map) {
+    print('LOGIN STATUS: ${response.status}');
+    print('LOGIN RESPONSE: $data');
+
+    if (response.status != 200 ||
+        data is! Map ||
+        data['user'] is! Map ||
+        data['sessionToken'] is! String) {
       final message = data is Map && data['error'] is String
           ? data['error'] as String
-          : 'Username atau password salah';
+          : 'Login gagal: respons user atau sessionToken tidak valid';
 
       throw Exception(message);
     }
+
+    final sessionToken = data['sessionToken'] as String;
+    await sessionStorage.saveSessionToken(sessionToken);
 
     final row = Map<String, dynamic>.from(data['user'] as Map);
     final user = _mapFunctionUser(row);
@@ -212,13 +221,48 @@ class AuthService extends ChangeNotifier {
     }
   }
 
+  //preference
+  Future<void> savePreferences({
+    required List<int> districtIds,
+    required List<int> categoryIds,
+  }) async {
+    final user = _currentUser;
+
+    if (user == null) {
+      throw Exception('User belum login');
+    }
+
+    await repository.savePreferences(
+      userId: user.id,
+      districtIds: districtIds,
+      categoryIds: categoryIds,
+    );
+
+    _currentUser = User(
+      id: user.id,
+      fullname: user.fullname,
+      username: user.username,
+      password: user.password,
+      districts: districtIds
+          .map((id) => id.toString())
+          .toList(),
+      categories: user.categories,
+      createdAt: user.createdAt,
+      updatedAt: DateTime.now(),
+      hasCompletedPreference: true,
+      profileImageBase64: user.profileImageBase64,
+    );
+
+    notifyListeners();
+  }
+
   User _mapFunctionUser(Map<String, dynamic> row) {
     return User(
       id: (row['id'] as num).toInt(),
-      fullname: row['fullname'] as String,
-      username: row['username'] as String,
+      fullname: row['fullname'] as String? ?? '',
+      username: row['username'] as String? ?? '',
       password: '',
-      destinations: const [],
+      districts: const [],
       categories: const [],
       createdAt: DateTime.parse(row['created_at'] as String),
       updatedAt: DateTime.parse(row['updated_at'] as String),

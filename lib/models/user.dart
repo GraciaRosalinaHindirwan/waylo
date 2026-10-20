@@ -1,11 +1,11 @@
 import 'package:waylo/models/category.dart';
 
-class User{
-  final int id; 
-  final String fullname; 
+class User {
+  final int id;
+  final String fullname;
   final String username;
-  final String password; 
-  final List<String> destinations; 
+  final String password;
+  final List<String> districts;
   final List<Category> categories;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -17,11 +17,11 @@ class User{
     required this.fullname,
     required this.username,
     required this.password,
-    this.destinations = const [],
+    this.districts = const [],
     this.categories = const [],
     required this.createdAt,
     required this.updatedAt,
     this.hasCompletedPreference = false,
     this.profileImageBase64,
-  }); 
+  });
 }

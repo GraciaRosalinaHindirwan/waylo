@@ -55,7 +55,7 @@ Future<void> _register() async {
       fullname: _fullnameController.text.trim(),
       username: _usernameController.text.trim(),
       password: _passwordController.text,
-      destinations: [],
+      districts: [],
       categories: [],
       hasCompletedPreference: false,
       createdAt: now,

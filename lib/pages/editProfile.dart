@@ -166,7 +166,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
           fullname: fullname,
           username: username,
           password: passwordToSave,
-          destinations: user.destinations,
+          districts: user.districts,
           categories: user.categories,
           hasCompletedPreference: user.hasCompletedPreference,
           createdAt: user.createdAt,

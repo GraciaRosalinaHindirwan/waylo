@@ -101,6 +101,57 @@ async function verifyPassword(
   }
 }
 
+
+function toBase64Url(bytes: Uint8Array): string {
+  return toBase64(bytes)
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
+}
+
+async function createSessionToken(userId: number): Promise<string> {
+  const secret = Deno.env.get("WAYLO_SESSION_SECRET");
+
+  if (!secret) {
+    throw new Error("WAYLO_SESSION_SECRET belum dikonfigurasi");
+  }
+
+  const now = Math.floor(Date.now() / 1000);
+
+  const header = toBase64Url(
+    encoder.encode(JSON.stringify({ alg: "HS256", typ: "JWT" })),
+  );
+
+  const payload = toBase64Url(
+    encoder.encode(
+      JSON.stringify({
+        sub: String(userId),
+        iat: now,
+        exp: now + 60 * 60 * 24 * 7,
+      }),
+    ),
+  );
+
+  const message = `${header}.${payload}`;
+
+  const key = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+
+  const signature = await crypto.subtle.sign(
+    "HMAC",
+    key,
+    encoder.encode(message),
+  );
+
+  return `${message}.${toBase64Url(new Uint8Array(signature))}`;
+}
+
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -204,7 +255,13 @@ Deno.serve(async (req) => {
     }
 
     const { password: _passwordHash, ...safeUser } = user;
-    return response({ user: safeUser });
+    const sessionToken = await createSessionToken(user.id);
+
+    return response({
+      user: safeUser,
+      sessionToken,
+      expiresIn: 60 * 60 * 24 * 7,
+    });
   } catch {
     return response({ error: "Request tidak valid" }, 400);
   }
