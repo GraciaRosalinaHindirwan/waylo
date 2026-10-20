@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -13,8 +12,7 @@ import 'explorePage.dart';
 class NotificationPage extends StatefulWidget {
   const NotificationPage({super.key});
 
-  static const String backgroundAsset =
-      'assets/img/backgroundDown.png';
+  static const String backgroundAsset = 'assets/img/backgroundDown.png';
 
   @override
   State<NotificationPage> createState() => _NotificationPageState();
@@ -35,63 +33,111 @@ class _NotificationPageState extends State<NotificationPage> {
     _loadSettings();
   }
 
+  // Memuat pengaturan notifikasi yang tersimpan.
   Future<void> _loadSettings() async {
-    final prefs = await SharedPreferences.getInstance();
+    try {
+      final prefs = await SharedPreferences.getInstance();
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-    setState(() {
-      general = prefs.getBool('notif_general') ?? false;
-      sound = prefs.getBool('notif_sound') ?? false;
-      vibrate = prefs.getBool('notif_vibrate') ?? false;
-      appUpdate = prefs.getBool('notif_update') ?? false;
-      newService = prefs.getBool('notif_service') ?? false;
-      loading = false;
-    });
+      setState(() {
+        general = prefs.getBool('notif_general') ?? false;
+        sound = prefs.getBool('notif_sound') ?? false;
+        vibrate = prefs.getBool('notif_vibrate') ?? false;
+        appUpdate = prefs.getBool('notif_update') ?? false;
+        newService = prefs.getBool('notif_service') ?? false;
+        loading = false;
+      });
 
-    await NotificationService.instance.updateSchedules();
-  }
-
-  Future<void> _changeSetting(String key, bool value) async {
-    // Minta izin saat pengguna mengaktifkan notifikasi utama.
-    if (key == 'notif_general' && value) {
       await NotificationService.instance.initialize();
-      await NotificationService.instance.requestPermission();
-    }
-
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(key, value);
-
-    if (!mounted) return;
-
-    setState(() {
-      switch (key) {
-        case 'notif_general':
-          general = value;
-          break;
-        case 'notif_sound':
-          sound = value;
-          break;
-        case 'notif_vibrate':
-          vibrate = value;
-          break;
-        case 'notif_update':
-          appUpdate = value;
-          break;
-        case 'notif_service':
-          newService = value;
-          break;
-      }
-    });
-
-    // Sinkronkan jadwal dan preferensi channel.
-    if (key == 'notif_general' && !value) {
-      await NotificationService.instance.cancelAllNotifications();
-    } else {
       await NotificationService.instance.updateSchedules();
+    } catch (e) {
+      debugPrint('Gagal memuat pengaturan notifikasi: $e');
+
+      if (mounted) {
+        setState(() {
+          loading = false;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Pengaturan notifikasi gagal dimuat.')),
+        );
+      }
     }
   }
 
+  // Menyimpan dan menerapkan perubahan pengaturan.
+  Future<void> _changeSetting(String key, bool value) async {
+    try {
+      // Minta izin Android ketika notifikasi utama diaktifkan.
+      if (key == 'notif_general' && value) {
+        await NotificationService.instance.initialize();
+
+        final allowed = await NotificationService.instance.requestPermission();
+
+        if (!allowed) {
+          if (!mounted) return;
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Izin notifikasi belum diberikan. '
+                'Periksa pengaturan aplikasi di Android.',
+              ),
+            ),
+          );
+
+          return;
+        }
+      }
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(key, value);
+
+      if (!mounted) return;
+
+      setState(() {
+        switch (key) {
+          case 'notif_general':
+            general = value;
+            break;
+          case 'notif_sound':
+            sound = value;
+            break;
+          case 'notif_vibrate':
+            vibrate = value;
+            break;
+          case 'notif_update':
+            appUpdate = value;
+            break;
+          case 'notif_service':
+            newService = value;
+            break;
+        }
+      });
+
+      if (key == 'notif_general' && !value) {
+        // Batalkan seluruh notifikasi yang sudah dijadwalkan
+        // atau sedang ditampilkan.
+        await NotificationService.instance.cancelAllNotifications();
+      } else {
+        // Perbarui jadwal setelah pengaturan berubah.
+        await NotificationService.instance.updateSchedules();
+      }
+    } catch (e) {
+      debugPrint('Gagal mengubah pengaturan notifikasi: $e');
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Pengaturan notifikasi gagal diperbarui.'),
+          ),
+        );
+      }
+    }
+  }
+
+  // Komponen baris pengaturan.
   Widget _settingRow({
     required String title,
     required String keyName,
@@ -120,9 +166,11 @@ class _NotificationPageState extends State<NotificationPage> {
               child: ToggleSwitch(
                 key: ValueKey(keyName),
                 value: value,
-                onChanged: (newValue) {
-                  _changeSetting(keyName, newValue);
-                },
+                onChanged: enabled
+                    ? (newValue) {
+                        _changeSetting(keyName, newValue);
+                      }
+                    : null,
               ),
             ),
           ),
@@ -137,6 +185,7 @@ class _NotificationPageState extends State<NotificationPage> {
       backgroundColor: AppColors.background,
       body: Stack(
         children: [
+          // Background bagian bawah halaman.
           Positioned(
             left: 0,
             right: 0,
@@ -153,10 +202,12 @@ class _NotificationPageState extends State<NotificationPage> {
               ),
             ),
           ),
+
           SafeArea(
             bottom: false,
             child: Column(
               children: [
+                // Header halaman.
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 22, 20, 34),
                   child: Row(
@@ -191,15 +242,13 @@ class _NotificationPageState extends State<NotificationPage> {
                     ],
                   ),
                 ),
+
+                // Daftar pengaturan.
                 Expanded(
                   child: loading
-                      ? const Center(
-                          child: CircularProgressIndicator(),
-                        )
+                      ? const Center(child: CircularProgressIndicator())
                       : ListView(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
                           children: [
                             _settingRow(
                               title: 'General Notification',
@@ -230,6 +279,64 @@ class _NotificationPageState extends State<NotificationPage> {
                               value: newService,
                               enabled: general,
                             ),
+
+                            const SizedBox(height: 24),
+
+                            // ElevatedButton.icon(
+                            //   onPressed: () async {
+                            //     try {
+                            //       final service = NotificationService.instance;
+
+                            //       await service.initialize();
+
+                            //       final allowed = await service.requestPermission();
+
+                            //       if (!context.mounted) return;
+
+                            //       if (!allowed) {
+                            //         ScaffoldMessenger.of(context).showSnackBar(
+                            //           const SnackBar(
+                            //             content: Text('Izin notifikasi belum diberikan.'),
+                            //           ),
+                            //         );
+                            //         return;
+                            //       }
+
+                            //       if (!general) {
+                            //         ScaffoldMessenger.of(context).showSnackBar(
+                            //           const SnackBar(
+                            //             content: Text(
+                            //               'Aktifkan General Notification terlebih dahulu.',
+                            //             ),
+                            //           ),
+                            //         );
+                            //         return;
+                            //       }
+
+                            //       await service.showTestNotification();
+
+                            //       if (!context.mounted) return;
+
+                            //       ScaffoldMessenger.of(context).showSnackBar(
+                            //         const SnackBar(
+                            //           content: Text('Notifikasi tes sudah dikirim.'),
+                            //         ),
+                            //       );
+                            //     } catch (e) {
+                            //       debugPrint('Test notification error: $e');
+
+                            //       if (!context.mounted) return;
+
+                            //       ScaffoldMessenger.of(context).showSnackBar(
+                            //         SnackBar(
+                            //           content: Text('Gagal mengirim notifikasi: $e'),
+                            //         ),
+                            //       );
+                            //     }
+                            //   },
+                            //   icon: const Icon(Icons.notifications_active),
+                            //   label: const Text('Test Notification'),
+                            // ),
                           ],
                         ),
                 ),
@@ -238,22 +345,20 @@ class _NotificationPageState extends State<NotificationPage> {
           ),
         ],
       ),
+
+      // Navigasi bawah.
       bottomNavigationBar: CustomBottomNavBar(
         currentIndex: 2,
         onTap: (index) {
           if (index == 0) {
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(
-                builder: (context) => HomePage(),
-              ),
+              MaterialPageRoute(builder: (context) => HomePage()),
             );
           } else if (index == 1) {
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(
-                builder: (context) => Explorepage(),
-              ),
+              MaterialPageRoute(builder: (context) => Explorepage()),
             );
           }
         },
