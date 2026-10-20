@@ -1,6 +1,6 @@
 
-import 'package:waylo/theme/appColors.dart';
 import 'package:flutter/material.dart';
+import '../theme/appColors.dart';
 
 class ToggleSwitch extends StatelessWidget {
   final bool value;
@@ -18,7 +18,9 @@ class ToggleSwitch extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onChanged == null ? null : () => onChanged!(!value),
+      onTap: onChanged == null
+          ? null
+          : () => onChanged!(!value),
       child: AnimatedContainer(
         duration: duration,
         curve: curve,
