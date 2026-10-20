@@ -157,7 +157,7 @@ Future<void> _register() async {
                       child: Column(
                         children: [
                           Image.asset(
-                            '../assets/img/logo.png',
+                            'assets/img/logo.png',
                             width: 104,
                             height: 88,
                             fit: BoxFit.contain,

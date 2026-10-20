@@ -347,7 +347,7 @@ class _HomePageState extends State<HomePage> {
                               Expanded(
                                 flex: 4,
                                 child: Image.asset(
-                                  'assets/img/waybi.png',
+                                  'assets/img/WayBi.png',
                                   height: 126,
                                   fit: BoxFit.contain,
                                   errorBuilder: (context, error, stackTrace) {

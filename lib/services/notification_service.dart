@@ -63,13 +63,10 @@ class NotificationService {
     return granted ?? true;
   }
 
-  Future<bool> _isEnabled(String key) async {
-    final prefs = await SharedPreferences.getInstance();
-
-    // Semua preferensi OFF secara default agar konsisten
-    // dengan toggle pada halaman Notification.
-    return prefs.getBool(key) ?? false;
-  }
+Future<bool> _isEnabled(String key) async {
+  final prefs = await SharedPreferences.getInstance();
+  return prefs.getBool(key) ?? true;
+}
 
   Future<String> _createChannel({
     required String category,
