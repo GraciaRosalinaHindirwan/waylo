@@ -86,7 +86,8 @@ class UserSupabaseRepository implements UserRepository {
         })
         .eq('id', user.id)
         .select(
-          'id, fullname, username, created_at, updated_at, profile_image_url',
+          'id, fullname, username, created_at, updated_at, '
+          'profile_image_url, has_completed_preference',
         )
         .single();
 

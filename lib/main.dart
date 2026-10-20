@@ -41,26 +41,30 @@ try {
     initialLocation: '/login',
     refreshListenable: authService,
     redirect: (context, state) {
-      final user = authService.currentUser; 
+      final user = authService.currentUser;
+      final location = state.matchedLocation;
+
+      final isLoginPage = location == '/login';
+      final isRegisterPage = location == '/register';
+      final isPreferencePage = location == '/preference';
 
       debugPrint('=== ROUTER REDIRECT ===');
-      debugPrint('Current location: ${state.matchedLocation}');
-      debugPrint('User: $user');
+      debugPrint('Current location: $location');
+      debugPrint('User ID: ${user?.id}');
       debugPrint('hasCompletedPreference: ${user?.hasCompletedPreference}');
 
-      final isLoginPage = state.matchedLocation == '/login';
-      final isRegisterPage = state.matchedLocation == '/register'; //apakah skrg halaman login
-      final isPreferencePage = state.matchedLocation == '/preference';
-
-      if(user == null) {
+      // Belum login: hanya boleh membuka login dan register.
+      if (user == null) {
         return (isLoginPage || isRegisterPage) ? null : '/login';
-        //user yang blm login bisa akses register dan login 
       }
 
-      if (!user.hasCompletedPreference) {
+      // Sudah login, tetapi belum mengisi preferensi.
+      if (user.hasCompletedPreference == false) {
         return isPreferencePage ? null : '/preference';
       }
 
+      // Sudah login dan preferensi selesai.
+      // Jangan arahkan ulang jika sedang membuka halaman lain.
       if (isLoginPage || isPreferencePage) {
         return '/home';
       }
@@ -108,9 +112,6 @@ try {
   debugPrintStack(stackTrace: stackTrace);
   rethrow;
 }
-
-
-  
 
 }
 
