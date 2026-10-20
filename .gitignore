@@ -47,3 +47,4 @@ app.*.map.json
 .packages
 
 node_modules/
+.lab-jif
