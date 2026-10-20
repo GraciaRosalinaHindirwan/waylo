@@ -8,7 +8,7 @@ import 'explorePage.dart';
 class AboutMobilePage extends StatelessWidget {
   const AboutMobilePage({super.key});
 
-  static const String backgroundAsset = '../assets/img/backgroundDown.png';
+  static const String backgroundAsset = 'assets/img/backgroundDown.png';
 
   @override
   Widget build(BuildContext context) {
