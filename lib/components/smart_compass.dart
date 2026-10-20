@@ -14,65 +14,152 @@ class SmartCompass extends StatefulWidget {
 }
 
 class _SmartCompassState extends State<SmartCompass> {
-  StreamSubscription<MagnetometerEvent>? _magSubscription;
   StreamSubscription<AccelerometerEvent>? _accSubscription;
+  StreamSubscription<MagnetometerEvent>? _magSubscription;
 
   AccelerometerEvent? _acceleration;
+
   double? _heading;
+  String? _sensorError;
+
+  // Mengurangi perubahan sudut yang terlalu mendadak.
+  static const double _smoothFactor = 0.2;
 
   @override
   void initState() {
     super.initState();
+    _startSensors();
+  }
 
+  void _startSensors() {
     _accSubscription = accelerometerEventStream().listen(
       (event) {
         _acceleration = event;
       },
-      onError: (error) {
+      onError: (Object error) {
         debugPrint('Accelerometer error: $error');
+
+        if (mounted) {
+          setState(() {
+            _sensorError = 'Accelerometer tidak tersedia';
+          });
+        }
       },
     );
 
     _magSubscription = magnetometerEventStream().listen(
       (event) {
         final acc = _acceleration;
+
         if (acc == null) return;
 
-        final roll = math.atan2(acc.y, acc.z);
-        final pitch = math.atan2(
-          -acc.x,
-          math.sqrt(acc.y * acc.y + acc.z * acc.z),
+        final calculatedHeading = _calculateHeading(
+          acc.x,
+          acc.y,
+          acc.z,
+          event.x,
+          event.y,
+          event.z,
         );
 
-        final x = event.x * math.cos(pitch) +
-            event.z * math.sin(pitch);
-
-        final y = event.x * math.sin(roll) *
-                math.sin(pitch) +
-            event.y * math.cos(roll) -
-            event.z * math.sin(roll) *
-                math.cos(pitch);
-
-        final degrees =
-            (math.atan2(-y, x) * 180 / math.pi + 360) %
-                360;
-
-        if (!mounted) return;
+        if (calculatedHeading == null || !mounted) return;
 
         setState(() {
-          _heading = degrees;
+          _sensorError = null;
+
+          if (_heading == null) {
+            _heading = calculatedHeading;
+          } else {
+            _heading = _smoothHeading(
+              _heading!,
+              calculatedHeading,
+              _smoothFactor,
+            );
+          }
         });
       },
-      onError: (error) {
+      onError: (Object error) {
         debugPrint('Magnetometer error: $error');
+
+        if (mounted) {
+          setState(() {
+            _sensorError = 'Magnetometer tidak tersedia';
+          });
+        }
       },
     );
   }
 
+  /// Menghitung heading dengan accelerometer dan magnetometer.
+  ///
+  /// Hasil berupa sudut 0–360 derajat.
+  /// 0° = utara, 90° = timur, 180° = selatan, 270° = barat.
+  double? _calculateHeading(
+    double ax,
+    double ay,
+    double az,
+    double mx,
+    double my,
+    double mz,
+  ) {
+    // Normalisasi vektor gravitasi.
+    final gravityMagnitude = math.sqrt(ax * ax + ay * ay + az * az);
+
+    if (gravityMagnitude < 0.1) return null;
+
+    ax /= gravityMagnitude;
+    ay /= gravityMagnitude;
+    az /= gravityMagnitude;
+
+    // H = magnetic field x gravity.
+    var hx = my * az - mz * ay;
+    var hy = mz * ax - mx * az;
+    var hz = mx * ay - my * ax;
+
+    // Normalisasi komponen horizontal medan magnet.
+    final horizontalMagnitude = math.sqrt(
+      hx * hx + hy * hy + hz * hz,
+    );
+
+    // Jika medan magnet terlalu kecil atau sejajar dengan gravitasi,
+    // arah kompas tidak dapat dihitung dengan andal.
+    if (horizontalMagnitude < 0.000001) return null;
+
+    hx /= horizontalMagnitude;
+    hy /= horizontalMagnitude;
+    hz /= horizontalMagnitude;
+
+    // M = gravity x H.
+    final mx2 = ay * hz - az * hy;
+    final my2 = az * hx - ax * hz;
+
+    // Sudut azimuth dalam radian.
+    final azimuth = math.atan2(-hx, hy);
+
+    // Konversi menjadi derajat 0–360.
+    final degrees = (azimuth * 180 / math.pi + 360) % 360;
+
+    // Pastikan hasil valid.
+    if (!degrees.isFinite) return null;
+
+    return degrees;
+  }
+
+  /// Menghaluskan perubahan heading, termasuk saat melewati 0°/360°.
+  double _smoothHeading(
+    double previous,
+    double current,
+    double factor,
+  ) {
+    final difference = ((current - previous + 540) % 360) - 180;
+
+    return (previous + difference * factor + 360) % 360;
+  }
+
   @override
   void dispose() {
-    _magSubscription?.cancel();
     _accSubscription?.cancel();
+    _magSubscription?.cancel();
     super.dispose();
   }
 
@@ -80,7 +167,14 @@ class _SmartCompassState extends State<SmartCompass> {
   Widget build(BuildContext context) {
     final heading = _heading;
 
+    final tooltipMessage = _sensorError ??
+        (heading == null
+            ? 'Membaca sensor kompas...'
+            : 'Arah: ${heading.toStringAsFixed(0)}°');
+
     return Container(
+      width: 46,
+      height: 46,
       decoration: BoxDecoration(
         color: AppColors.card,
         shape: BoxShape.circle,
@@ -93,28 +187,27 @@ class _SmartCompassState extends State<SmartCompass> {
         ],
       ),
       child: Tooltip(
-        message: heading == null
-            ? 'Membaca kompas...'
-            : 'Arah: ${heading.toStringAsFixed(0)}°',
-        child: SizedBox(
-          width: 46,
-          height: 46,
-          child: Center(
-            child: heading == null
-                ? const Icon(
-                    Icons.explore_outlined,
-                    color: AppColors.textSecondary,
+        message: tooltipMessage,
+        child: Center(
+          child: heading == null
+              ? Icon(
+                  _sensorError != null
+                      ? Icons.explore_off_outlined
+                      : Icons.explore_outlined,
+                  color: _sensorError != null
+                      ? AppColors.error
+                      : AppColors.textSecondary,
+                  size: 28,
+                )
+              : Transform.rotate(
+                  // Panah mengikuti arah hadap perangkat.
+                  angle: heading * math.pi / 180,
+                  child: const Icon(
+                    Icons.navigation_rounded,
+                    color: AppColors.accent,
                     size: 28,
-                  )
-                : Transform.rotate(
-                    angle: -heading * math.pi / 180,
-                    child: const Icon(
-                      Icons.navigation_rounded,
-                      color: AppColors.accent,
-                      size: 28,
-                    ),
                   ),
-          ),
+                ),
         ),
       ),
     );
