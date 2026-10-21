@@ -1,5 +1,8 @@
-
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:waylo/local/destination/destination_cache_service.dart';
+import 'package:waylo/service/auth_service.dart';
+
 import 'package:waylo/components/buttomNav.dart';
 import 'package:waylo/models/destination.dart';
 import 'package:waylo/pages/detailDestination.dart';
@@ -20,30 +23,81 @@ class FavoritePage extends StatefulWidget {
 }
 
 class _FavoritePageState extends State<FavoritePage> {
-  final FavoriteRepository _favoriteRepository =
-      FavoriteRepositoryFactory.create();
+  late final FavoriteRepository _favoriteRepository;
 
-  final DestinationRepository _destinationRepository =
-      DestinationRepositoryFactory.create();
+final DestinationRepository _destinationRepository =
+    DestinationRepositoryFactory.create();
 
-  late Future<List<Destination>> _favoritesFuture;
+final DestinationCacheService _destinationCacheService =
+    DestinationCacheService();
+
+late Future<List<Destination>> _favoritesFuture;
 
   @override
   void initState() {
     super.initState();
+
+    final authService = Provider.of<AuthService>(
+      context,
+      listen: false,
+    );
+
+    final userId = authService.currentUser?.id;
+
+    if (userId == null) {
+      _favoritesFuture = Future.error(
+        Exception('Sesi user tidak ditemukan.'),
+      );
+      return;
+    }
+
+    _favoriteRepository = FavoriteRepositoryFactory.create(
+      userId: userId,
+    );
+
     _favoritesFuture = _loadFavorites();
   }
 
   Future<List<Destination>> _loadFavorites() async {
+    // Ambil ID favorit, menggunakan fallback Hive dari repository favorit.
     final favoriteIds = await _favoriteRepository.getFavoriteIds();
 
     if (favoriteIds.isEmpty) {
       return [];
     }
 
-    final destinations =
-        await _destinationRepository.getAllDestinations();
+    late List<Destination> destinations;
 
+    try {
+      // Coba ambil data terbaru dari repository destinasi.
+      destinations = await _destinationRepository.getAllDestinations();
+
+      // Jika berhasil, perbarui cache Hive.
+      await _destinationCacheService.saveDestinationModels(
+        destinations,
+      );
+    } catch (error) {
+      debugPrint(
+        '[Favorite Page] Gagal mengambil destinasi online: $error',
+      );
+
+      // Jika online gagal, gunakan cache destinasi.
+      final cachedDestinations =
+          await _destinationCacheService.getCachedDestinationModels();
+
+      if (cachedDestinations == null) {
+        // Belum pernah ada data destinasi yang disimpan.
+        rethrow;
+      }
+
+      destinations = cachedDestinations;
+
+      debugPrint(
+        '[Favorite Page] Menggunakan cache destinasi Hive.',
+      );
+    }
+
+    // Cocokkan ID favorit dengan data destinasi.
     final destinationsById = {
       for (final destination in destinations)
         destination.id: destination,

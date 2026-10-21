@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:waylo/service/auth_service.dart';
+
 import 'package:waylo/components/buttomNav.dart';
 import 'package:waylo/components/enteranceFeeCard.dart';
 import 'package:waylo/components/favoriteButton.dart';
@@ -39,8 +42,25 @@ class _DetaildestinationState extends State<Detaildestination> {
   void initState() {
     super.initState();
 
-    _favoriteStatusFuture =
-        FavoriteRepositoryFactory.create().isFavorite(
+    final authService = Provider.of<AuthService>(
+      context,
+      listen: false,
+    );
+
+    final userId = authService.currentUser?.id;
+
+    if (userId == null) {
+      _favoriteStatusFuture = Future.error(
+        Exception('Sesi user tidak ditemukan.'),
+      );
+      return;
+    }
+
+    final favoriteRepository = FavoriteRepositoryFactory.create(
+      userId: userId,
+    );
+
+    _favoriteStatusFuture = favoriteRepository.isFavorite(
       widget.destination.id,
     );
   }
@@ -156,7 +176,20 @@ class _DetaildestinationState extends State<Detaildestination> {
                               return FavoriteButton(
                                 initialFavorite: snapshot.data ?? false,
                                 onChanged: (isFavorite) async {
-                                  final repository = FavoriteRepositoryFactory.create();
+                                  final authService = Provider.of<AuthService>(
+                                    context,
+                                    listen: false,
+                                  );
+
+                                  final userId = authService.currentUser?.id;
+
+                                  if (userId == null) {
+                                    throw Exception('Sesi user tidak ditemukan.');
+                                  }
+
+                                  final repository = FavoriteRepositoryFactory.create(
+                                    userId: userId,
+                                  );
 
                                   try {
                                     if (isFavorite) {
