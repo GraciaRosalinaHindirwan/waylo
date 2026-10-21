@@ -55,7 +55,7 @@ Future<void> _register() async {
       fullname: _fullnameController.text.trim(),
       username: _usernameController.text.trim(),
       password: _passwordController.text,
-      destinations: [],
+      districts: [],
       categories: [],
       hasCompletedPreference: false,
       createdAt: now,
@@ -73,6 +73,21 @@ Future<void> _register() async {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => const BiometricLoginSheet(),
+    );
+
+    // Simpan kredensial hanya jika verifikasi fingerprint berhasil.
+    if (biometricEnabled == true) {
+      await authService.enableBiometricLogin(
+        userId: registeredUser.id,
+        username: _usernameController.text.trim(),
+        password: _passwordController.text,
+      );
+    }
+
+    await authService.enableBiometricLogin(
+      userId: registeredUser.id,
+      username: _usernameController.text.trim(),
+      password: _passwordController.text,
     );
 
     if (!mounted) return;
@@ -142,7 +157,7 @@ Future<void> _register() async {
                       child: Column(
                         children: [
                           Image.asset(
-                            '../assets/img/logo.png',
+                            'assets/img/logo.png',
                             width: 104,
                             height: 88,
                             fit: BoxFit.contain,

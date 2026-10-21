@@ -103,7 +103,7 @@ class _WanderFlyGamePageState extends State<WanderFlyGamePage> {
       if (!mounted || _bgmDisposed) return;
 
       await _bgmPlayer.play(
-        AssetSource('../assets/game/(1)Across_the_Jade_Ridge.mp3'),
+        AssetSource('assets/game/(1)Across_the_Jade_Ridge.mp3'),
       );
     } catch (e) {
       debugPrint('Failed to play WanderFly BGM: $e');
@@ -460,7 +460,7 @@ class _WanderFlyGamePageState extends State<WanderFlyGamePage> {
       width: _obstacleWidth,
       height: height,
       child: Image.asset(
-        '../assets/game/obstacle_body.png',
+        'assets/game/obstacle_body.png',
         fit: BoxFit.fill,
         filterQuality: FilterQuality.none,
       ),
@@ -598,7 +598,7 @@ class _WanderFlyGamePageState extends State<WanderFlyGamePage> {
                     child: GestureDetector(
                       onTap: _pauseGame,
                       child: Image.asset(
-                        '../assets/game/pause.png',
+                        'assets/game/pause.png',
                         fit: BoxFit.contain,
                       ),
                     ),

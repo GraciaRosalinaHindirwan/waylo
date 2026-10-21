@@ -2,19 +2,18 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
 import 'package:waylo/service/auth_service.dart';
+import 'package:waylo/theme/appColors.dart';
+import 'package:waylo/theme/app_text_styles.dart';
 
 import 'package:waylo/components/selectionButton.dart';
 import 'package:waylo/components/button.dart';
 import 'package:waylo/models/category.dart';
-import 'package:waylo/models/destination.dart';
 import 'package:waylo/models/user.dart';
 import 'package:waylo/repositories/category/category_repository.dart';
 import 'package:waylo/repositories/category/category_repository_factory.dart';
-import 'package:waylo/repositories/destination/destination_repository.dart';
-import 'package:waylo/repositories/destination/destination_repository_factory.dart';
-import 'package:waylo/repositories/user_repository.dart';
-import 'package:waylo/theme/appColors.dart';
-import 'package:waylo/theme/app_text_styles.dart';
+import 'package:waylo/repositories/user/user_repository.dart';
+import 'package:waylo/repositories/district/district_repository.dart';
+import 'package:waylo/repositories/district/district_repository_factory.dart';
 
 class UserPreferencePage extends StatefulWidget {
   final User user;
@@ -33,16 +32,14 @@ class UserPreferencePage extends StatefulWidget {
 class _UserPreferencePageState extends State<UserPreferencePage> {
   late final UserRepository _userRepository;
 
-  final CategoryRepository _categoryRepository =
-      CategoryRepositoryFactory.create();
+  final CategoryRepository _categoryRepository = CategoryRepositoryFactory.create();
 
-  final DestinationRepository _destinationRepository =
-      DestinationRepositoryFactory.create();
+  final DistrictRepository _districtRepository = DistrictRepositoryFactory.create();
+
+  List<District> districtOptions = [];
+  List<District> selectedDistricts = [];
 
   List<Category> categoryOptions = [];
-  List<String> districtOptions = [];
-
-  List<String> selectedDistricts = [];
   List<String> selectedCategories = [];
 
   bool isSaving = false;
@@ -57,14 +54,11 @@ class _UserPreferencePageState extends State<UserPreferencePage> {
 
   Future<void> loadOptions() async {
     try {
-      final categories = await _categoryRepository.getAllCategories();
-      final destinations =
-          await _destinationRepository.getAllDestinations();
+      final categories =
+          await _categoryRepository.getAllCategories();
 
-      final districts = destinations
-          .map((Destination d) => d.location.districtName)
-          .toSet()
-          .toList();
+      final districts =
+          await _districtRepository.getAllDistricts();
 
       if (!mounted) return;
 
@@ -79,7 +73,9 @@ class _UserPreferencePageState extends State<UserPreferencePage> {
       setState(() => isLoading = false);
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal memuat preferensi: $e')),
+        SnackBar(
+          content: Text('Gagal memuat preferensi: $e'),
+        ),
       );
     }
   }
@@ -88,47 +84,33 @@ class _UserPreferencePageState extends State<UserPreferencePage> {
       selectedDistricts.isNotEmpty && selectedCategories.isNotEmpty;
 
   Future<void> save() async {
-    if (isSaving) return;
+  if (isSaving) return;
 
-    setState(() => isSaving = true);
+  setState(() => isSaving = true);
 
-    try {
-      final user = widget.user;
-
-      final categories = categoryOptions
+  try {
+    await context.read<AuthService>().savePreferences(
+      districtIds: selectedDistricts.map((d) => d.id).toList(),
+      categoryIds: categoryOptions
           .where((c) => selectedCategories.contains(c.name))
-          .toList();
+          .map((c) => c.id)
+          .toList(),
+    );
 
-      final updatedUser = await _userRepository.updateUser(
-        User(
-          id: user.id,
-          fullname: user.fullname,
-          username: user.username,
-          password: user.password,
-          destinations: selectedDistricts,
-          categories: categories,
-          createdAt: user.createdAt,
-          updatedAt: user.updatedAt,
-          hasCompletedPreference: true,
-        ),
+    if (!mounted) return;
+    context.go('/home');
+  } catch (e) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal menyimpan preferensi: $e')),
       );
-
-      if (!mounted) return;
-
-      context.read<AuthService>().setCurrentUser(updatedUser);
-      context.go('/home');
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal menyimpan preferensi: $e')),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() => isSaving = false);
-      }
+    }
+  } finally {
+    if (mounted) {
+      setState(() => isSaving = false);
     }
   }
+}
 
   Widget buildSection(String title, Widget child) {
     return Padding(
@@ -187,16 +169,18 @@ class _UserPreferencePageState extends State<UserPreferencePage> {
                               buildSection(
                                 'District',
                                 SelectionButton(
-                                  options: districtOptions,
+                                  options: districtOptions.map((d) => d.name).toList(),
                                   multiSelect: true,
                                   onMultiChanged: (values) {
                                     setState(() {
-                                      selectedDistricts = values;
+                                      selectedDistricts = districtOptions
+                                          .where((d) => values.contains(d.name))
+                                          .toList();
                                     });
                                   },
                                 ),
                               ),
-                              if (categoryOptions.isNotEmpty)
+                              if (categoryOptions.isNotEmpty) 
                                 buildSection(
                                   'Category',
                                   SelectionButton(

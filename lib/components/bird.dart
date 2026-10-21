@@ -93,8 +93,8 @@ class _GoldenPheasantState extends State<GoldenPheasant>
           offset: Offset(0, bobOffset),
           child: Image.asset(
             wingUp
-                ? '../assets/game/birdUp.png'
-                : '../assets/game/birdDown.png',
+                ? 'assets/game/birdUp.png'
+                : 'assets/game/birdDown.png',
             width: widget.size,
             height: widget.size,
             fit: BoxFit.contain,

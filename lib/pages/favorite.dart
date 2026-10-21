@@ -1,13 +1,19 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:waylo/local/destination/destination_cache_service.dart';
+import 'package:waylo/service/auth_service.dart';
+
 import 'package:waylo/components/buttomNav.dart';
 import 'package:waylo/models/destination.dart';
 import 'package:waylo/pages/detailDestination.dart';
 import 'package:waylo/pages/explorePage.dart';
 import 'package:waylo/pages/home.dart';
-import 'package:waylo/repositories/favorite_repository.dart';
-import 'package:waylo/repositories/favorite_repository_factory.dart';
+import 'package:waylo/repositories/destination/destination_repository.dart';
+import 'package:waylo/repositories/destination/destination_repository_factory.dart';
+import 'package:waylo/repositories/favorite/favorite_repository.dart';
+import 'package:waylo/repositories/favorite/favorite_repository_factory.dart';
 import 'package:waylo/theme/appColors.dart';
 import 'package:waylo/theme/app_text_styles.dart';
-import 'package:flutter/material.dart';
 
 class FavoritePage extends StatefulWidget {
   const FavoritePage({super.key});
@@ -17,12 +23,104 @@ class FavoritePage extends StatefulWidget {
 }
 
 class _FavoritePageState extends State<FavoritePage> {
-  final FavoriteRepository _favoriteRepository =
-      FavoriteRepositoryFactory.create();
+  late final FavoriteRepository _favoriteRepository;
+
+final DestinationRepository _destinationRepository =
+    DestinationRepositoryFactory.create();
+
+final DestinationCacheService _destinationCacheService =
+    DestinationCacheService();
+
+late Future<List<Destination>> _favoritesFuture;
+
+  @override
+  void initState() {
+    super.initState();
+
+    final authService = Provider.of<AuthService>(
+      context,
+      listen: false,
+    );
+
+    final userId = authService.currentUser?.id;
+
+    if (userId == null) {
+      _favoritesFuture = Future.error(
+        Exception('Sesi user tidak ditemukan.'),
+      );
+      return;
+    }
+
+    _favoriteRepository = FavoriteRepositoryFactory.create(
+      userId: userId,
+    );
+
+    _favoritesFuture = _loadFavorites();
+  }
+
+  Future<List<Destination>> _loadFavorites() async {
+    // Ambil ID favorit, menggunakan fallback Hive dari repository favorit.
+    final favoriteIds = await _favoriteRepository.getFavoriteIds();
+
+    if (favoriteIds.isEmpty) {
+      return [];
+    }
+
+    late List<Destination> destinations;
+
+    try {
+      // Coba ambil data terbaru dari repository destinasi.
+      destinations = await _destinationRepository.getAllDestinations();
+
+      // Jika berhasil, perbarui cache Hive.
+      await _destinationCacheService.saveDestinationModels(
+        destinations,
+      );
+    } catch (error) {
+      debugPrint(
+        '[Favorite Page] Gagal mengambil destinasi online: $error',
+      );
+
+      // Jika online gagal, gunakan cache destinasi.
+      final cachedDestinations =
+          await _destinationCacheService.getCachedDestinationModels();
+
+      if (cachedDestinations == null) {
+        // Belum pernah ada data destinasi yang disimpan.
+        rethrow;
+      }
+
+      destinations = cachedDestinations;
+
+      debugPrint(
+        '[Favorite Page] Menggunakan cache destinasi Hive.',
+      );
+    }
+
+    // Cocokkan ID favorit dengan data destinasi.
+    final destinationsById = {
+      for (final destination in destinations)
+        destination.id: destination,
+    };
+
+    return favoriteIds
+        .map((id) => destinationsById[id])
+        .whereType<Destination>()
+        .toList();
+  }
+
+  void _refreshFavorites() {
+    setState(() {
+      _favoritesFuture = _loadFavorites();
+    });
+  }
 
   Widget buildImage(Destination destination) {
-    final banners = destination.images.where((i) => i.isBanner).toList();
-    final imageUrl = banners.isNotEmpty ? banners.first.imageUrl : null;
+    final banners =
+        destination.images.where((image) => image.isBanner).toList();
+
+    final imageUrl =
+        banners.isNotEmpty ? banners.first.imageUrl : null;
 
     final placeholder = Container(
       width: 88,
@@ -40,31 +138,55 @@ class _FavoritePageState extends State<FavoritePage> {
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(width: 2, color: AppColors.border),
+        border: Border.all(
+          width: 2,
+          color: AppColors.border,
+        ),
       ),
       child: imageUrl == null
           ? placeholder
           : Image.network(
               imageUrl,
               fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) => placeholder,
+              errorBuilder: (context, error, stackTrace) =>
+                  placeholder,
             ),
     );
   }
 
+  Future<void> _removeFavorite(Destination destination) async {
+    try {
+      await _favoriteRepository.removeFavorite(destination.id);
+
+      if (!mounted) return;
+
+      _refreshFavorites();
+    } catch (error) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Gagal menghapus favorite: $error'),
+        ),
+      );
+    }
+  }
+
   Widget buildCard(Destination destination) {
     return GestureDetector(
-      onTap: () {
-        Navigator.push(
+      onTap: () async {
+        await Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => Detaildestination(
               destination: destination,
             ),
           ),
-        ).then((_) {
-          if (mounted) setState(() {});
-        });
+        );
+
+        if (mounted) {
+          _refreshFavorites();
+        }
       },
       child: Container(
         width: double.infinity,
@@ -121,17 +243,16 @@ class _FavoritePageState extends State<FavoritePage> {
                     ],
                   ),
                   Text(
-                    '${destination.location.districtName}, ${destination.location.provinceName}',
+                    '${destination.location.districtName}, '
+                    '${destination.location.provinceName}',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: AppTextStyles.label.copyWith(color: Colors.black),
+                    style: AppTextStyles.label.copyWith(
+                      color: Colors.black,
+                    ),
                   ),
                   GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        _favoriteRepository.toggleFavorite(destination);
-                      });
-                    },
+                    onTap: () => _removeFavorite(destination),
                     child: Row(
                       spacing: 4,
                       children: [
@@ -158,10 +279,68 @@ class _FavoritePageState extends State<FavoritePage> {
     );
   }
 
+  Widget _buildFavoritesContent() {
+    return FutureBuilder<List<Destination>>(
+      future: _favoritesFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(
+            child: CircularProgressIndicator(),
+          );
+        }
+
+        if (snapshot.hasError) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Gagal memuat favorite.',
+                    style: AppTextStyles.body.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 12),
+                  ElevatedButton(
+                    onPressed: _refreshFavorites,
+                    child: const Text('Coba lagi'),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        final favorites = snapshot.data ?? [];
+
+        if (favorites.isEmpty) {
+          return Center(
+            child: Text(
+              'Belum ada destinasi favorit',
+              style: AppTextStyles.body.copyWith(
+                color: AppColors.textSecondary,
+              ),
+            ),
+          );
+        }
+
+        return ListView.separated(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+          itemCount: favorites.length,
+          separatorBuilder: (context, index) =>
+              const SizedBox(height: 16),
+          itemBuilder: (context, index) =>
+              buildCard(favorites[index]),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final favorites = _favoriteRepository.getFavorites();
-
     return Scaffold(
       backgroundColor: AppColors.background,
       body: Column(
@@ -170,7 +349,10 @@ class _FavoritePageState extends State<FavoritePage> {
           Container(
             width: double.infinity,
             height: 124,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 20,
+              vertical: 24,
+            ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               spacing: 32,
@@ -212,22 +394,7 @@ class _FavoritePageState extends State<FavoritePage> {
             ),
           ),
           Expanded(
-            child: favorites.isEmpty
-                ? Center(
-                    child: Text(
-                      'Belum ada destinasi favorit',
-                      style: AppTextStyles.body.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  )
-                : ListView.separated(
-                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-                    itemCount: favorites.length,
-                    separatorBuilder: (context, index) =>
-                        const SizedBox(height: 16),
-                    itemBuilder: (context, index) => buildCard(favorites[index]),
-                  ),
+            child: _buildFavoritesContent(),
           ),
           CustomBottomNavBar(
             currentIndex: 2,

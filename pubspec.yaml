@@ -53,6 +53,10 @@ dependencies:
   supabase_flutter: ^2.18.3
   audioplayers: ^6.8.1
   google_generative_ai: ^0.4.6
+  flutter_secure_storage: ^11.2.0
+  sensors_plus: ^6.1.2
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
 
 dev_dependencies:
   flutter_test:
@@ -83,7 +87,9 @@ flutter:
     - assets/game/obstacle_body.png
     - assets/game/obstacle_cap.png
     - assets/game/(1)Across_the_Jade_Ridge.mp3
+    - assets/img/WayBi.png
     - assets/img/
+
   fonts:
     - family: Fraunces
       fonts:

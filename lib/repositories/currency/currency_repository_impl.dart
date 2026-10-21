@@ -4,7 +4,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http; //kirim requrest API melalui http 
 import 'package:waylo/models/currency.dart';
 import 'package:waylo/models/exchangeRate.dart';
-import 'package:waylo/repositories/currency_repository.dart';
+import 'package:waylo/repositories/currency/currency_repository.dart';
 
 class CurrencyRepositoryImpl implements CurrencyRepository {
   @override

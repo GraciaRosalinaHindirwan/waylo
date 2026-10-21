@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:waylo/components/button.dart';
 import 'package:waylo/components/infoChip.dart';
-import 'package:waylo/repositories/destination/destination_supabase_repository.dart';
 import 'package:waylo/service/location_service.dart';
 import 'package:waylo/service/destination_filter_service.dart';
 import 'package:geolocator/geolocator.dart';
@@ -23,6 +22,13 @@ import 'package:waylo/theme/appColors.dart';
 import 'package:waylo/theme/app_text_styles.dart';
 import 'package:waylo/pages/profile.dart';
 import 'package:waylo/pages/aiRecommendation.dart';
+
+// Import dari branch main
+import 'package:waylo/service/user_preference_service.dart';
+import 'package:waylo/service/recommendation_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:waylo/service/session_storage.dart';
+
 import 'package:waylo/pages/seeAllPage.dart';
 
 class Explorepage extends StatefulWidget {
@@ -34,10 +40,22 @@ class Explorepage extends StatefulWidget {
 
 class _ExplorepageState extends State<Explorepage> {
   late final Future<List<Destination>> _destinationsFuture;
+  
   final CategoryRepository _categoryRepository = CategoryRepositoryFactory.create();
   final DestinationFilterService _filterService = DestinationFilterService();
   Position? _userPosition;
   bool _loadingNearby = true;
+
+  final UserPreferenceService _userPreferenceService =
+    UserPreferenceService(
+    Supabase.instance.client,
+    SessionStorage(),
+  );
+
+  final RecommendationService _recommendationService =
+      RecommendationService();
+
+  late final Future<List<Destination>> _recommendedDestinationsFuture;
 
   final TextEditingController _minController = TextEditingController();
   final TextEditingController _maxController = TextEditingController();
@@ -66,19 +84,25 @@ class _ExplorepageState extends State<Explorepage> {
 
     final repository = DestinationRepositoryFactory.create();
 
+    // 1. Inisialisasi daftar destinasi terlebih dahulu
     _destinationsFuture = repository.getAllDestinations();
-    _destinationsFuture.then((destinations) {
-  debugPrint('Jumlah destinasi dari Supabase: ${destinations.length}');
-      for (final destination in destinations) {
-        debugPrint('Destinasi: ${destination.name}');
-      }
-    }).catchError((error) {
-      debugPrint('Error Supabase: $error');
-    });
-    _loadCurrentCity(); 
+
+    // 2. Baru ambil rekomendasi berdasarkan preferensi
+    _recommendedDestinationsFuture = _getRecommendedDestinations();
+
+    // Inisialisasi lainnya tetap seperti kode kamu
+    _destinationsFuture
+        .then((destinations) {
+          // Pertahankan kode debug yang sudah ada di sini
+        })
+        .catchError((e) {
+          // Pertahankan penanganan error yang sudah ada di sini
+        });
+
+    _loadCurrentCity();
     _loadCategories();
     _loadUserPosition();
-    _loadDistricts(); 
+    _loadDistricts();
   }
 
   @override
@@ -95,70 +119,78 @@ class _ExplorepageState extends State<Explorepage> {
   }
 
   Future<void> _loadDistricts() async {
-  try {
-    final destinations = await _destinationsFuture;
-    final districts = _filterService.getDistricts(destinations);
+    try {
+      final destinations = await _destinationsFuture;
+      final districts = _filterService.getDistricts(destinations);
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-    setState(() {
-      _districts = districts;
-    });
-  } catch (e) {
-    debugPrint('Gagal memuat distrik: $e');
+      setState(() {
+        _districts = districts;
+      });
+    } catch (e) {
+      debugPrint('Gagal memuat distrik: $e');
+    }
   }
-}
 
-Future<void> _openExploreNearbySeeAll() async {
-  try {
-    final allDestinations = await _destinationsFuture;
-    final filteredDestinations = _applyFilter(allDestinations);
+  Future<void> _openExploreNearbySeeAll() async {
+    try {
+      final allDestinations = await _destinationsFuture;
+      final filteredDestinations = _applyFilter(allDestinations);
 
-    // Jika lokasi belum tersedia, tampilkan halaman dengan list kosong.
-    final position = _userPosition;
+      // Jika lokasi belum tersedia, tampilkan halaman dengan list kosong.
+      final position = _userPosition;
 
-    final nearbyDestinations = position == null
-        ? <Destination>[]
-        : _filterService.getNearbyDestinations(
-            destinations: filteredDestinations,
-            userLatitude: position.latitude,
-            userLongitude: position.longitude,
-          );
+      final nearbyDestinations = position == null
+          ? <Destination>[]
+          : _filterService.getNearbyDestinations(
+              destinations: filteredDestinations,
+              userLatitude: position.latitude,
+              userLongitude: position.longitude,
+            );
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ExploreNearbySeeAllPage(
-          destinations: nearbyDestinations,
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ExploreNearbySeeAllPage(
+            destinations: nearbyDestinations,
+          ),
         ),
-      ),
-    );
-  } catch (e) {
-    debugPrint('Gagal membuka Destination Near You: $e');
+      );
+    } catch (e) {
+      debugPrint('Gagal membuka Destination Near You: $e');
+    }
   }
-}
 
-Future<void> _openInspiringSeeAll() async {
-  try {
-    final allDestinations = await _destinationsFuture;
-    final filteredDestinations = _applyFilter(allDestinations);
+  Future<void> _openInspiringSeeAll() async {
+    try {
+      final recommendedDestinations =
+          await _recommendedDestinationsFuture;
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => InspiringSeeAllPage(
-          destinations: filteredDestinations,
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => InspiringSeeAllPage(
+            destinations: recommendedDestinations,
+          ),
         ),
-      ),
-    );
-  } catch (e) {
-    debugPrint('Gagal membuka Inspiring Destination: $e');
+      );
+    } catch (e) {
+      debugPrint('Gagal membuka Inspiring Destination: $e');
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Gagal memuat rekomendasi destinasi.'),
+        ),
+      );
+    }
   }
-}
 
   bool get _filterActive =>
       _selectedCategoryIds.isNotEmpty ||
@@ -520,63 +552,88 @@ Future<void> _openInspiringSeeAll() async {
   }
 
   Future<void> _loadUserPosition() async {
-  try {
-    final serviceEnabled =
-        await Geolocator.isLocationServiceEnabled();
+    try {
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
 
-    if (!serviceEnabled) {
-      debugPrint('GPS/location service tidak aktif');
-      return;
-    }
+      if (!serviceEnabled) {
+        debugPrint('GPS/location service tidak aktif');
+        return;
+      }
 
-    var permission = await Geolocator.checkPermission();
+      var permission = await Geolocator.checkPermission();
 
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-    }
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
 
-    if (permission == LocationPermission.denied ||
-        permission == LocationPermission.deniedForever) {
-      debugPrint('Izin lokasi ditolak: $permission');
-      return;
-    }
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        debugPrint('Izin lokasi ditolak: $permission');
+        return;
+      }
 
-    final position = await Geolocator.getCurrentPosition();
+      final position = await Geolocator.getCurrentPosition();
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-    setState(() {
-      _userPosition = position;
-    });
-
-    debugPrint(
-      'Koordinat pengguna: '
-      '${position.latitude}, ${position.longitude}',
-    );
-  } catch (e) {
-    debugPrint('Gagal mengambil koordinat pengguna: $e');
-  } finally {
-    if (mounted) {
       setState(() {
-        _loadingNearby = false;
+        _userPosition = position;
       });
+
+      debugPrint(
+        'Koordinat pengguna: '
+        '${position.latitude}, ${position.longitude}',
+      );
+    } catch (e) {
+      debugPrint('Gagal mengambil koordinat pengguna: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _loadingNearby = false;
+        });
+      }
     }
   }
-}
 
-String getDistance(Destination destination) {
-  if (_userPosition == null) return '-';
+  String getDistance(Destination destination) {
+    if (_userPosition == null) return '-';
 
-  final distanceInMeters = Geolocator.distanceBetween(
-    _userPosition!.latitude,
-    _userPosition!.longitude,
-    destination.coordinate.latitude,
-    destination.coordinate.longitude,
-  );
+    final distanceInMeters = Geolocator.distanceBetween(
+      _userPosition!.latitude,
+      _userPosition!.longitude,
+      destination.coordinate.latitude,
+      destination.coordinate.longitude,
+    );
 
-  return '${(distanceInMeters / 1000).toStringAsFixed(1)} km';
-}
+    return '${(distanceInMeters / 1000).toStringAsFixed(1)} km';
+  }
 
+  Future<List<Destination>> _getRecommendedDestinations() async {
+    final destinations = await _destinationsFuture;
+    final preferences = await _userPreferenceService.getUserPreferences();
+
+    final recommended = _recommendationService.rankDestinations(
+      destinations: destinations,
+      preferredCategoryIds: preferences.categoryIds,
+      preferredDistrictIds: preferences.districtIds,
+      favoriteDestinationIds: preferences.favoriteDestinationIds,
+      userLatitude: _userPosition?.latitude,
+      userLongitude: _userPosition?.longitude,
+    );
+
+    debugPrint('PREFERRED CATEGORY: ${preferences.categoryIds}');
+    debugPrint('PREFERRED DISTRICT: ${preferences.districtIds}');
+    debugPrint(
+      'FAVORITE DESTINATION IDS: '
+      '${preferences.favoriteDestinationIds}',
+    );
+    debugPrint('TOTAL DESTINATIONS: ${destinations.length}');
+    debugPrint('TOTAL RECOMMENDATIONS: ${recommended.length}');
+
+    return recommended;
+  }
+
+  //UI
   @override
   Widget build(BuildContext context) {
     return Stack(
@@ -743,7 +800,7 @@ String getDistance(Destination destination) {
                 ),
               ),
 
-              SizedBox(height: 24), 
+              const SizedBox(height: 24), 
 
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -767,12 +824,13 @@ String getDistance(Destination destination) {
                 ],
               ),
 
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
 
               SizedBox(
                 height: 160,
                 child: FutureBuilder<List<Destination>>(
-                  future: _destinationsFuture,
+                  // Menggunakan _recommendedDestinationsFuture dari branch main
+                  future: _recommendedDestinationsFuture,
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return const Center(child: CircularProgressIndicator());
@@ -793,7 +851,9 @@ String getDistance(Destination destination) {
                         ),
                       );
                     }
-                    final destinations = _applyFilter(snapshot.data ?? []);
+                    
+                    // Tidak menggunakan _applyFilter lagi karena data sudah di-rank oleh RecommendationService
+                    final destinations = snapshot.data ?? [];
 
                     if (destinations.isEmpty) {
                       return Center(
@@ -836,7 +896,7 @@ String getDistance(Destination destination) {
           ),
         ),
 
-        // Floating AI icon
+        // Floating AI icon (Tetap dipertahankan dari branch ai)
         Positioned(
           right: 20,
           bottom: 100,

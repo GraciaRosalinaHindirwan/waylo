@@ -1,4 +1,3 @@
-
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest_all.dart' as tz_data;
@@ -34,17 +33,14 @@ class NotificationService {
 
     final timezoneInfo = await FlutterTimezone.getLocalTimezone();
 
-    tz.setLocalLocation(
-      tz.getLocation(timezoneInfo.identifier),
+    tz.setLocalLocation(tz.getLocation(timezoneInfo.identifier));
+
+    const androidSettings = AndroidInitializationSettings(
+      '@mipmap/ic_launcher',
     );
 
-    const androidSettings =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
-
     await plugin.initialize(
-      settings: const InitializationSettings(
-        android: androidSettings,
-      ),
+      settings: const InitializationSettings(android: androidSettings),
     );
 
     _initialized = true;
@@ -53,10 +49,10 @@ class NotificationService {
   Future<bool> requestPermission() async {
     final androidPlugin = plugin
         .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>();
+          AndroidFlutterLocalNotificationsPlugin
+        >();
 
-    final granted =
-        await androidPlugin?.requestNotificationsPermission();
+    final granted = await androidPlugin?.requestNotificationsPermission();
 
     // Android versi lama bisa mengembalikan null karena
     // tidak memerlukan dialog izin notifikasi.
@@ -65,10 +61,7 @@ class NotificationService {
 
   Future<bool> _isEnabled(String key) async {
     final prefs = await SharedPreferences.getInstance();
-
-    // Semua preferensi OFF secara default agar konsisten
-    // dengan toggle pada halaman Notification.
-    return prefs.getBool(key) ?? false;
+    return prefs.getBool(key) ?? true;
   }
 
   Future<String> _createChannel({
@@ -87,7 +80,8 @@ class NotificationService {
 
     final androidPlugin = plugin
         .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>();
+          AndroidFlutterLocalNotificationsPlugin
+        >();
 
     await androidPlugin?.createNotificationChannel(
       AndroidNotificationChannel(
@@ -142,8 +136,7 @@ class NotificationService {
       hour: 11,
       minute: 30,
       title: 'Lunch inspiration',
-      body:
-          'Waktunya istirahat! Yuk, temukan tempat menarik di WAYLO.',
+      body: 'Waktunya istirahat! Yuk, temukan tempat menarik di WAYLO.',
     );
 
     await _scheduleDaily(
@@ -151,8 +144,7 @@ class NotificationService {
       hour: 19,
       minute: 30,
       title: 'Time to explore new places',
-      body:
-          'Punya rencana untuk besok? Temukan destinasi baru bersama WAYLO!',
+      body: 'Punya rencana untuk besok? Temukan destinasi baru bersama WAYLO!',
     );
   }
 
@@ -190,8 +182,7 @@ class NotificationService {
       body: body,
       scheduledDate: scheduled,
       notificationDetails: details,
-      androidScheduleMode:
-          AndroidScheduleMode.inexactAllowWhileIdle,
+      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
       matchDateTimeComponents: DateTimeComponents.time,
     );
   }
@@ -203,8 +194,7 @@ class NotificationService {
   }) async {
     await initialize();
 
-    if (!await _isEnabled(_generalKey) ||
-        !await _isEnabled(_updateKey)) {
+    if (!await _isEnabled(_generalKey) || !await _isEnabled(_updateKey)) {
       return;
     }
 
@@ -230,8 +220,7 @@ class NotificationService {
   }) async {
     await initialize();
 
-    if (!await _isEnabled(_generalKey) ||
-        !await _isEnabled(_serviceKey)) {
+    if (!await _isEnabled(_generalKey) || !await _isEnabled(_serviceKey)) {
       return;
     }
 
@@ -277,4 +266,30 @@ class NotificationService {
       notificationDetails: details,
     );
   }
+
+  // Pengujian notifikasi saat aplikasi ditutup.
+  // Future<void> scheduleTestInOneMinute() async {
+  //   await initialize();
+
+  //   if (!await _isEnabled(_generalKey)) {
+  //     throw Exception('Aktifkan General Notification terlebih dahulu.');
+  //   }
+
+  //   final details = await _notificationDetails(
+  //     category: 'background_test',
+  //     name: 'WAYLO Background Test',
+  //     description: 'Pengujian notifikasi saat aplikasi ditutup',
+  //   );
+
+  //   await plugin.zonedSchedule(
+  //     id: 777,
+  //     title: 'WAYLO Background Test ✈️',
+  //     body: 'Berhasil! Notifikasi tetap berjalan saat aplikasi ditutup.',
+  //     scheduledDate: tz.TZDateTime.now(
+  //       tz.local,
+  //     ).add(const Duration(minutes: 1)),
+  //     notificationDetails: details,
+  //     androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+  //   );
+  //}
 }

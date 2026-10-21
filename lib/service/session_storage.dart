@@ -4,6 +4,7 @@ class SessionStorage {
   static const String _userIdKey = 'logged_in_user_id';
   static const String _lastActivityKey = 'last_activity';
   static const String _biometricUserIdKey = 'biometric_user_id';
+  static const String _sessionTokenKey = 'session_token';
 
   //simpan UserId setelah login 
   Future<void> saveUserId(int userId) async {
@@ -15,6 +16,18 @@ class SessionStorage {
   Future<int?> getUserId() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getInt(_userIdKey);
+  }
+
+  // Simpan token dari Edge Function setelah login.
+  Future<void> saveSessionToken(String token) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_sessionTokenKey, token);
+  }
+
+  // Ambil token untuk request ke Edge Function.
+  Future<String?> getSessionToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_sessionTokenKey);
   }
 
   //catat waktu terakhir 
@@ -43,6 +56,7 @@ class SessionStorage {
 
     await prefs.remove(_userIdKey);
     await prefs.remove(_lastActivityKey);
+    await prefs.remove(_sessionTokenKey);
   }
 
   //biometric 

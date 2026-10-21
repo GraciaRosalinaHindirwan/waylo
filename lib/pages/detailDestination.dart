@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:waylo/service/auth_service.dart';
+
 import 'package:waylo/components/buttomNav.dart';
 import 'package:waylo/components/enteranceFeeCard.dart';
 import 'package:waylo/components/favoriteButton.dart';
@@ -9,7 +12,7 @@ import 'package:waylo/pages/home.dart';
 import 'package:waylo/pages/profile.dart';
 import 'package:waylo/theme/appColors.dart';
 import 'package:waylo/theme/app_text_styles.dart';
-import 'package:waylo/repositories/favorite_repository_factory.dart';
+import 'package:waylo/repositories/favorite/favorite_repository_factory.dart';
 
 class Detaildestination extends StatefulWidget{
   final Destination destination; 
@@ -31,6 +34,35 @@ class _DetaildestinationState extends State<Detaildestination> {
   void dispose() {
     _pageController.dispose();
     super.dispose();
+  }
+
+  late Future<bool> _favoriteStatusFuture;
+
+  @override
+  void initState() {
+    super.initState();
+
+    final authService = Provider.of<AuthService>(
+      context,
+      listen: false,
+    );
+
+    final userId = authService.currentUser?.id;
+
+    if (userId == null) {
+      _favoriteStatusFuture = Future.error(
+        Exception('Sesi user tidak ditemukan.'),
+      );
+      return;
+    }
+
+    final favoriteRepository = FavoriteRepositoryFactory.create(
+      userId: userId,
+    );
+
+    _favoriteStatusFuture = favoriteRepository.isFavorite(
+      widget.destination.id,
+    );
   }
 
   @override
@@ -138,14 +170,48 @@ class _DetaildestinationState extends State<Detaildestination> {
                           ),
             
                           // Button Favorite
-                          FavoriteButton(
-                            //cek status awal true or false 
-                            initialFavorite: FavoriteRepositoryFactory.create().isFavorite(widget.destination.id), 
-                            onChanged: (isFavorite) {
-                              FavoriteRepositoryFactory.create().toggleFavorite(widget.destination);
-                              debugPrint('Favorite: $isFavorite');
+                          FutureBuilder<bool>(
+                            future: _favoriteStatusFuture,
+                            builder: (context, snapshot) {
+                              return FavoriteButton(
+                                initialFavorite: snapshot.data ?? false,
+                                onChanged: (isFavorite) async {
+                                  final authService = Provider.of<AuthService>(
+                                    context,
+                                    listen: false,
+                                  );
+
+                                  final userId = authService.currentUser?.id;
+
+                                  if (userId == null) {
+                                    throw Exception('Sesi user tidak ditemukan.');
+                                  }
+
+                                  final repository = FavoriteRepositoryFactory.create(
+                                    userId: userId,
+                                  );
+
+                                  try {
+                                    if (isFavorite) {
+                                      await repository.addFavorite(widget.destination.id);
+                                    } else {
+                                      await repository.removeFavorite(widget.destination.id);
+                                    }
+                                  } catch (error) {
+                                    if (!context.mounted) return;
+
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text('Gagal memperbarui favorite: $error'),
+                                      ),
+                                    );
+
+                                    rethrow;
+                                  }
+                                },
+                              );
                             },
-                          ),
+                          )
                         ],
                       ),
                     ),

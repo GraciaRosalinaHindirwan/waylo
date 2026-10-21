@@ -1,9 +1,6 @@
-import 'package:http/http.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:flutter/foundation.dart' hide Category;
 
 import 'package:waylo/repositories/category/category_repository.dart';
-import 'package:waylo/repositories/category/category_repository_factory.dart';
 import 'package:waylo/models/category.dart';
 
 class CategorySupabaseRepository implements CategoryRepository{
