@@ -21,6 +21,10 @@ import 'package:waylo/repositories/destination/destination_repository_factory.da
 import 'package:waylo/theme/appColors.dart';
 import 'package:waylo/theme/app_text_styles.dart';
 import 'package:waylo/pages/profile.dart';
+import 'package:waylo/service/user_preference_service.dart';
+import 'package:waylo/service/recommendation_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:waylo/service/session_storage.dart';
 
 import 'package:waylo/pages/seeAllPage.dart';
 
@@ -33,10 +37,22 @@ class Explorepage extends StatefulWidget {
 
 class _ExplorepageState extends State<Explorepage> {
   late final Future<List<Destination>> _destinationsFuture;
+  
   final CategoryRepository _categoryRepository = CategoryRepositoryFactory.create();
   final DestinationFilterService _filterService = DestinationFilterService();
   Position? _userPosition;
   bool _loadingNearby = true;
+
+  final UserPreferenceService _userPreferenceService =
+    UserPreferenceService(
+    Supabase.instance.client,
+    SessionStorage(),
+  );
+
+  final RecommendationService _recommendationService =
+      RecommendationService();
+
+  late final Future<List<Destination>> _recommendedDestinationsFuture;
 
   final TextEditingController _minController = TextEditingController();
   final TextEditingController _maxController = TextEditingController();
@@ -65,19 +81,25 @@ class _ExplorepageState extends State<Explorepage> {
 
     final repository = DestinationRepositoryFactory.create();
 
+    // 1. Inisialisasi daftar destinasi terlebih dahulu
     _destinationsFuture = repository.getAllDestinations();
-    _destinationsFuture.then((destinations) {
-  debugPrint('Jumlah destinasi dari Supabase: ${destinations.length}');
-      for (final destination in destinations) {
-        debugPrint('Destinasi: ${destination.name}');
-      }
-    }).catchError((error) {
-      debugPrint('Error Supabase: $error');
-    });
-    _loadCurrentCity(); 
+
+    // 2. Baru ambil rekomendasi berdasarkan preferensi
+    _recommendedDestinationsFuture = _getRecommendedDestinations();
+
+    // Inisialisasi lainnya tetap seperti kode kamu
+    _destinationsFuture
+        .then((destinations) {
+          // Pertahankan kode debug yang sudah ada di sini
+        })
+        .catchError((e) {
+          // Pertahankan penanganan error yang sudah ada di sini
+        });
+
+    _loadCurrentCity();
     _loadCategories();
     _loadUserPosition();
-    _loadDistricts(); 
+    _loadDistricts();
   }
 
   @override
@@ -139,10 +161,11 @@ Future<void> _openExploreNearbySeeAll() async {
   }
 }
 
+
 Future<void> _openInspiringSeeAll() async {
   try {
-    final allDestinations = await _destinationsFuture;
-    final filteredDestinations = _applyFilter(allDestinations);
+    final recommendedDestinations =
+        await _recommendedDestinationsFuture;
 
     if (!mounted) return;
 
@@ -150,12 +173,20 @@ Future<void> _openInspiringSeeAll() async {
       context,
       MaterialPageRoute(
         builder: (context) => InspiringSeeAllPage(
-          destinations: filteredDestinations,
+          destinations: recommendedDestinations,
         ),
       ),
     );
   } catch (e) {
     debugPrint('Gagal membuka Inspiring Destination: $e');
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Gagal memuat rekomendasi destinasi.'),
+      ),
+    );
   }
 }
 
@@ -576,6 +607,33 @@ String getDistance(Destination destination) {
   return '${(distanceInMeters / 1000).toStringAsFixed(1)} km';
 }
 
+Future<List<Destination>> _getRecommendedDestinations() async {
+  final destinations = await _destinationsFuture;
+  final preferences =
+      await _userPreferenceService.getUserPreferences();
+
+  final recommended = _recommendationService.rankDestinations(
+    destinations: destinations,
+    preferredCategoryIds: preferences.categoryIds,
+    preferredDistrictIds: preferences.districtIds,
+    favoriteDestinationIds: preferences.favoriteDestinationIds,
+    userLatitude: _userPosition?.latitude,
+    userLongitude: _userPosition?.longitude,
+  );
+
+  debugPrint('PREFERRED CATEGORY: ${preferences.categoryIds}');
+  debugPrint('PREFERRED DISTRICT: ${preferences.districtIds}');
+  debugPrint(
+    'FAVORITE DESTINATION IDS: '
+    '${preferences.favoriteDestinationIds}',
+  );
+  debugPrint('TOTAL DESTINATIONS: ${destinations.length}');
+  debugPrint('TOTAL RECOMMENDATIONS: ${recommended.length}');
+
+  return recommended;
+}
+
+//UI
   @override
   Widget build(BuildContext context) {
     return Homelayout(
@@ -769,7 +827,7 @@ String getDistance(Destination destination) {
           SizedBox(
             height: 160,
             child: FutureBuilder<List<Destination>>(
-              future: _destinationsFuture,
+              future: _recommendedDestinationsFuture,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
@@ -790,7 +848,7 @@ String getDistance(Destination destination) {
                     ),
                   );
                 }
-                final destinations = _applyFilter(snapshot.data ?? []);
+                final destinations = snapshot.data ?? [];
 
                 if (destinations.isEmpty) {
                   return Center(
