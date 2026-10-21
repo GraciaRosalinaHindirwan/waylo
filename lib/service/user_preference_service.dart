@@ -11,7 +11,7 @@ class UserPreferenceService {
     this._sessionStorage,
   );
 
-  Future<({List<int> categoryIds, List<int> districtIds})>
+  Future<({List<int> categoryIds, List<int> districtIds, List<int> favoriteDestinationIds,})>
       getUserPreferences() async {
     final token = await _sessionStorage.getSessionToken();
 
@@ -48,9 +48,15 @@ class UserPreferenceService {
         .map((id) => (id as num).toInt())
         .toList();
 
+    final favoriteDestinationIds =
+    (data['favoriteDestinationIds'] as List)
+        .map((id) => (id as num).toInt())
+        .toList();
+
     return (
       categoryIds: categoryIds,
       districtIds: districtIds,
+      favoriteDestinationIds: favoriteDestinationIds,
     );
   }
 }

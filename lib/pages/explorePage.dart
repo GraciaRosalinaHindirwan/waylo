@@ -612,16 +612,22 @@ Future<List<Destination>> _getRecommendedDestinations() async {
   final preferences =
       await _userPreferenceService.getUserPreferences();
 
-  debugPrint('PREFERRED CATEGORY: ${preferences.categoryIds}');
-  debugPrint('PREFERRED DISTRICT: ${preferences.districtIds}');
-  debugPrint('TOTAL DESTINATIONS: ${destinations.length}');
-
   final recommended = _recommendationService.rankDestinations(
     destinations: destinations,
     preferredCategoryIds: preferences.categoryIds,
     preferredDistrictIds: preferences.districtIds,
+    favoriteDestinationIds: preferences.favoriteDestinationIds,
+    userLatitude: _userPosition?.latitude,
+    userLongitude: _userPosition?.longitude,
   );
 
+  debugPrint('PREFERRED CATEGORY: ${preferences.categoryIds}');
+  debugPrint('PREFERRED DISTRICT: ${preferences.districtIds}');
+  debugPrint(
+    'FAVORITE DESTINATION IDS: '
+    '${preferences.favoriteDestinationIds}',
+  );
+  debugPrint('TOTAL DESTINATIONS: ${destinations.length}');
   debugPrint('TOTAL RECOMMENDATIONS: ${recommended.length}');
 
   return recommended;

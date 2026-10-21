@@ -121,6 +121,12 @@ Deno.serve(async (req) => {
       .eq("id_user", userId);
 
     if (districtError) throw districtError;
+    const { data: favorites, error: favoritesError } = await supabase
+      .from("favorites")
+      .select("destination_id")
+      .eq("user_id", userId);
+
+    if (favoritesError) throw favoritesError;
 
     return Response.json(
       {
@@ -130,6 +136,9 @@ Deno.serve(async (req) => {
         ),
         districtIds: (districts ?? []).map(
           (row) => Number(row.id_district),
+        ),
+        favoriteDestinationIds: (favorites ?? []).map(
+          (row) => Number(row.destination_id),
         ),
       },
       { status: 200, headers: corsHeaders },
