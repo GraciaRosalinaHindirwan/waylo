@@ -76,7 +76,6 @@ Future<void> _openBiometricLogin() async {
     super.dispose();
   }
 
-  
 Future<void> _login() async {
   if (!_formKey.currentState!.validate()) return;
 
@@ -87,6 +86,10 @@ Future<void> _login() async {
       _usernameController.text.trim(),
       _passwordController.text,
     );
+
+    // Update akun yang terhubung ke fingerprint.
+    await authService.sessionStorage
+        .saveBiometricUserId(user.id);
 
     if (!mounted) return;
 
@@ -107,7 +110,6 @@ Future<void> _login() async {
     );
   }
 }
-
 
   @override
   Widget build(BuildContext context) {

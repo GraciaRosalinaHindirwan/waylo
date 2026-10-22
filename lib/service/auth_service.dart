@@ -163,6 +163,14 @@ class AuthService extends ChangeNotifier {
     await sessionStorage.saveUserId(user.id);
     await sessionStorage.saveLastActivity();
 
+    // Perbarui akun yang digunakan oleh fingerprint.
+    await biometricCredentials.saveCredentials(
+      username: username,
+      password: password,
+    );
+
+    await sessionStorage.saveBiometricUserId(user.id);
+
     _currentUser = user;
     startSessionTimer();
     notifyListeners();
