@@ -1,8 +1,7 @@
+
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:waylo/repositories/user/user_repository_factory.dart';
-
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
@@ -125,15 +124,22 @@ class _EditProfilePageState extends State<EditProfilePage> {
       if (!mounted) return;
 
       await context.read<AuthService>().setProfileImage(bytes);
-    } catch (e) {
+
       if (!mounted) return;
-      showMessage('Gagal memilih foto profil');
+
+      showMessage('Foto profil berhasil diperbarui');
+    } catch (e, stackTrace) {
+      debugPrint('Gagal menyimpan foto profil: $e');
+      debugPrintStack(stackTrace: stackTrace);
+
+      if (!mounted) return;
+
+      showMessage('Gagal menyimpan foto profil');
     }
   }
 
   Future<void> save() async {
     final authService = context.read<AuthService>();
-    final repository = await UserRepositoryFactory.create();
     final user = authService.currentUser;
 
     if (user == null) {
@@ -166,33 +172,23 @@ class _EditProfilePageState extends State<EditProfilePage> {
     setState(() => isSaving = true);
 
     try {
-      // Periksa apakah username sudah digunakan.
       if (username != user.username) {
-        final existing = await repository.getUserByUsername(username);
+        final existing =
+            await authService.repository.getUserByUsername(username);
 
         if (existing != null && existing.id != user.id) {
           if (!mounted) return;
-          setState(() => isSaving = false);
+
           showMessage('Username sudah digunakan');
           return;
         }
       }
 
-      // Pertahankan password lama jika tidak diganti.
       final passwordToSave = newPassword.isEmpty
           ? user.password
           : await PasswordHasher.hashPassword(newPassword);
 
-      // ngambil foto terbaru dari AuthService
-      final currentImageBytes = authService.profileImageBytes;
-
-      // Jika foto tersedia, simpan sebagai Base64 pada data user.
-      // Jika tidak, pertahankan foto yang sudah tersimpan.
-      final profileImageBase64 = currentImageBytes != null
-          ? base64Encode(currentImageBytes)
-          : user.profileImageBase64;
-
-      final updatedUser = await repository.updateUser(
+      final updatedUser = await authService.repository.updateUser(
         User(
           id: user.id,
           fullname: fullname,
@@ -203,36 +199,23 @@ class _EditProfilePageState extends State<EditProfilePage> {
           hasCompletedPreference: user.hasCompletedPreference,
           createdAt: user.createdAt,
           updatedAt: DateTime.now(),
-          profileImageBase64: profileImageBase64,
+          profileImageBase64: user.profileImageBase64,
         ),
       );
 
-      // Perbarui user aktif setelah database berhasil di-update.
-      debugPrint(
-        'BEFORE: ${authService.currentUser?.hasCompletedPreference}',
-      );
-      debugPrint(
-        'UPDATED USER: ${updatedUser.hasCompletedPreference}',
-      );
-
       authService.setCurrentUser(updatedUser);
-
-      debugPrint(
-        'AFTER: ${authService.currentUser?.hasCompletedPreference}',
-      );
 
       if (!mounted) return;
 
       showMessage('Profile berhasil diperbarui');
       Navigator.pop(context);
-      
     } catch (e, stackTrace) {
       debugPrint('Gagal memperbarui profile: $e');
       debugPrintStack(stackTrace: stackTrace);
 
       if (!mounted) return;
 
-      showMessage('Gagal memperbarui profile: $e');
+      showMessage('Gagal memperbarui profile');
     } finally {
       if (mounted) {
         setState(() => isSaving = false);
@@ -432,17 +415,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
   }
 
   Widget buildAvatar() {
-    final authService = context.watch<AuthService>();
-    final user = authService.currentUser;
-    final profileImageBytes = authService.profileImageBytes;
-
-    // Gunakan foto terbaru, atau foto Base64 yang tersimpan.
-    final savedImage = user?.profileImageBase64;
-
-    final imageBytes = profileImageBytes ??
-        (savedImage != null && savedImage.isNotEmpty
-            ? base64Decode(savedImage)
-            : null);
+    final profileImageBytes =
+        context.watch<AuthService>().profileImageBytes;
 
     return Center(
       child: SizedBox(
@@ -470,9 +444,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   width: 92,
                   height: 92,
                   child: ClipOval(
-                    child: imageBytes != null
+                    child: profileImageBytes != null
                         ? Image.memory(
-                            imageBytes,
+                            profileImageBytes,
                             fit: BoxFit.cover,
                             width: 92,
                             height: 92,
