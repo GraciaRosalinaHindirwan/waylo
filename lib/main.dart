@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
+import 'package:waylo/local/hive_cache_test.dart';
 import 'package:waylo/pages/regist.dart';
 import 'package:waylo/service/auth_service.dart';
 import 'package:timezone/data/latest.dart' as tzdata;
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
 import 'package:waylo/pages/home.dart';
 import 'package:waylo/pages/login_page.dart';
@@ -12,111 +14,117 @@ import 'package:waylo/service/session_storage.dart';
 import 'package:waylo/repositories/user/user_repository_factory.dart';
 import 'package:waylo/pages/userPreference.dart';
 
-Future<void> main() async{
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  //jangan dihapus 
-   // Inisialisasi database zona waktu sebelum aplikasi berjalan.
+
+  // Inisialisasi database zona waktu sebelum aplikasi berjalan.
   tzdata.initializeTimeZones();
 
-  
-try {
-  await Supabase.initialize(
-    url: 'https://hardbbxlyzwdunrfaaib.supabase.co',
-    publishableKey: 'sb_publishable_LWGQD8hLHrvS2q2cbm2vMA_jxmXsVZE',
-  );
+  // Inisialisasi database lokal Hive.
+  await Hive.initFlutter();
+  debugPrint('Hive berhasil diinisialisasi');
 
-  final supabase = Supabase.instance.client;
-  
-  final repository = await UserRepositoryFactory.create();
-  debugPrint('Repository aktif: ${repository.runtimeType}');
+  await testHiveCache();
 
-  final authService = AuthService(
-    repository,
-    SessionStorage(),
-  );
+  try {
+    await Supabase.initialize(
+      url: 'https://hardbbxlyzwdunrfaaib.supabase.co',
+      publishableKey:
+          'sb_publishable_LWGQD8hLHrvS2q2cbm2vMA_jxmXsVZE',
+    );
 
-  await authService.restoreSession();
+    final supabase = Supabase.instance.client;
 
-  final router = GoRouter(
-    initialLocation: '/login',
-    refreshListenable: authService,
-    redirect: (context, state) {
-      final user = authService.currentUser;
-      final location = state.matchedLocation;
+    final repository = await UserRepositoryFactory.create();
+    debugPrint('Repository aktif: ${repository.runtimeType}');
 
-      final isLoginPage = location == '/login';
-      final isRegisterPage = location == '/register';
-      final isPreferencePage = location == '/preference';
+    final authService = AuthService(
+      repository,
+      SessionStorage(),
+    );
 
-      debugPrint('=== ROUTER REDIRECT ===');
-      debugPrint('Current location: $location');
-      debugPrint('User ID: ${user?.id}');
-      debugPrint('hasCompletedPreference: ${user?.hasCompletedPreference}');
+    await authService.restoreSession();
 
-      // Belum login: hanya boleh membuka login dan register.
-      if (user == null) {
-        return (isLoginPage || isRegisterPage) ? null : '/login';
-      }
+    final router = GoRouter(
+      initialLocation: '/login',
+      refreshListenable: authService,
+      redirect: (context, state) {
+        final user = authService.currentUser;
+        final location = state.matchedLocation;
 
-      // Sudah login, tetapi belum mengisi preferensi.
-      if (user.hasCompletedPreference == false) {
-        return isPreferencePage ? null : '/preference';
-      }
+        final isLoginPage = location == '/login';
+        final isRegisterPage = location == '/register';
+        final isPreferencePage = location == '/preference';
 
-      // Sudah login dan preferensi selesai.
-      // Jangan arahkan ulang jika sedang membuka halaman lain.
-      if (isLoginPage || isPreferencePage) {
-        return '/home';
-      }
+        debugPrint('=== ROUTER REDIRECT ===');
+        debugPrint('Current location: $location');
+        debugPrint('User ID: ${user?.id}');
+        debugPrint(
+          'hasCompletedPreference: ${user?.hasCompletedPreference}',
+        );
 
-      return null;
-    },
-    routes: [
-      GoRoute(
-        path: '/register',
-        builder: (context, state) => const RegisterPage(),
-      ),
-      GoRoute(
-        path: '/login',
-        builder: (context, state) {
-          debugPrint('LOGIN PAGE BUILDER DIPANGGIL');
-          return const LoginPage();
-        },
-      ),
-      GoRoute(
-        path: '/home',
-        builder: (context, state) => HomePage(),
-      ),
-      GoRoute(
-        path: '/preference',
-        builder: (context, state) {
-          final user = authService.currentUser!;
-          return UserPreferencePage(
-            user: user,
-            userRepository: repository,
-          );
+        // Belum login: hanya boleh membuka login dan register.
+        if (user == null) {
+          return (isLoginPage || isRegisterPage) ? null : '/login';
         }
+
+        // Sudah login, tetapi belum mengisi preferensi.
+        if (user.hasCompletedPreference == false) {
+          return isPreferencePage ? null : '/preference';
+        }
+
+        // Sudah login dan preferensi selesai.
+        if (isLoginPage || isPreferencePage) {
+          return '/home';
+        }
+
+        return null;
+      },
+      routes: [
+        GoRoute(
+          path: '/register',
+          builder: (context, state) => const RegisterPage(),
+        ),
+        GoRoute(
+          path: '/login',
+          builder: (context, state) {
+            debugPrint('LOGIN PAGE BUILDER DIPANGGIL');
+            return const LoginPage();
+          },
+        ),
+        GoRoute(
+          path: '/home',
+          builder: (context, state) => HomePage(),
+        ),
+        GoRoute(
+          path: '/preference',
+          builder: (context, state) {
+            final user = authService.currentUser!;
+            return UserPreferencePage(
+              user: user,
+              userRepository: repository,
+            );
+          },
+        ),
+      ],
+    );
+
+    runApp(
+      ChangeNotifierProvider<AuthService>.value(
+        value: authService,
+        child: MyApp(router: router),
       ),
-    ],
-  );
-
-  runApp(
-    ChangeNotifierProvider<AuthService>.value(
-      value: authService,
-      child: MyApp(router: router),
-    ),
-  );
-
-} catch (e, stackTrace) {
-  debugPrint('Gagal menjalankan aplikasi: $e');
-  debugPrintStack(stackTrace: stackTrace);
-  rethrow;
-}
-
+    );
+  } catch (e, stackTrace) {
+    debugPrint('Gagal menjalankan aplikasi: $e');
+    debugPrintStack(stackTrace: stackTrace);
+    rethrow;
+  }
 }
 
 class MyApp extends StatelessWidget {
-  final GoRouter router; 
+  final GoRouter router;
+
   const MyApp({super.key, required this.router});
 
   @override
