@@ -1,5 +1,8 @@
 {
   "devDependencies": {
     "supabase": "^2.121.0"
+  },
+  "dependencies": {
+    "ethers": "^6.17.0"
   }
 }

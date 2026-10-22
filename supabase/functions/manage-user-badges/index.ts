@@ -1,6 +1,6 @@
-
 import "@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { ethers } from "npm:ethers@6";
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const serviceRoleKey = Deno.env.get("WAYLO_SERVICE_ROLE_KEY")!;
@@ -12,6 +12,60 @@ const supabase = createClient(supabaseUrl, serviceRoleKey, {
     autoRefreshToken: false,
   },
 });
+
+
+const BADGE_CONTRACT_ABI = [
+  "function recordBadge(bytes32 userHash, bytes32 badgeHash) external",
+  "function hasBadge(bytes32 userHash, bytes32 badgeHash) external view returns (bool)",
+];
+
+async function recordBadgeOnBlockchain(
+  userId: number,
+  badgeId: string,
+): Promise<string | null> {
+  const privateKey = Deno.env.get("WAYLO_BADGE_PRIVATE_KEY");
+  const contractAddress = Deno.env.get("WAYLO_BADGE_CONTRACT_ADDRESS");
+  const rpcUrl = Deno.env.get("WAYLO_SEPOLIA_RPC_URL");
+
+  if (!privateKey || !contractAddress || !rpcUrl) {
+    throw new Error("Konfigurasi blockchain belum lengkap");
+  }
+
+  const provider = new ethers.JsonRpcProvider(rpcUrl);
+  const wallet = new ethers.Wallet(privateKey, provider);
+
+  const contract = new ethers.Contract(
+    contractAddress,
+    BADGE_CONTRACT_ABI,
+    wallet,
+  );
+
+  // Hash ID pengguna dan ID badge agar tidak mengirim identitas asli
+  // ke blockchain.
+  const userHash = ethers.keccak256(
+    ethers.toUtf8Bytes(`waylo-user:${userId}`),
+  );
+  const badgeHash = ethers.keccak256(
+    ethers.toUtf8Bytes(`waylo-badge:${badgeId}`),
+  );
+
+  // Jangan kirim transaksi jika badge sudah tercatat.
+  const alreadyRecorded = await contract.hasBadge(userHash, badgeHash);
+
+  if (alreadyRecorded) {
+    return null;
+  }
+
+  const tx = await contract.recordBadge(userHash, badgeHash);
+  const receipt = await tx.wait();
+
+  if (!receipt || receipt.status !== 1) {
+    throw new Error("Transaksi pencatatan badge gagal");
+  }
+
+  return tx.hash;
+}
+
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -90,6 +144,7 @@ type BadgeProgress = {
   targetCount: number;
 };
 
+
 async function saveCalculatedProgress(
   userId: number,
   badgeId: string,
@@ -113,7 +168,6 @@ async function saveCalculatedProgress(
 
   if (previousError) throw previousError;
 
-  // Jangan menurunkan progres atau mengunci ulang badge.
   const finalProgress = Math.min(
     badge.target_count,
     Math.max(progress, previous?.progress ?? 0),
@@ -122,6 +176,9 @@ async function saveCalculatedProgress(
   const isUnlocked =
     previous?.is_unlocked === true ||
     finalProgress >= badge.target_count;
+
+  const newlyUnlocked =
+    isUnlocked && previous?.is_unlocked !== true;
 
   const unlockedAt = isUnlocked
     ? previous?.unlocked_at ?? new Date().toISOString()
@@ -141,8 +198,41 @@ async function saveCalculatedProgress(
     );
 
   if (error) throw error;
-}
 
+  // Catat ke blockchain hanya ketika badge baru terbuka.
+  if (newlyUnlocked) {
+    try {
+      const txHash = await recordBadgeOnBlockchain(userId, badgeId);
+
+      if (txHash) {
+        const { error: recordError } = await supabase
+          .from("user_badge_blockchain_records")
+          .upsert(
+            {
+              user_id: userId,
+              badge_id: badgeId,
+              tx_hash: txHash,
+              chain_id: 11155111,
+            },
+            { onConflict: "user_id,badge_id" },
+          );
+
+        if (recordError) {
+          console.error(
+            "Gagal menyimpan hash transaksi badge:",
+            recordError,
+          );
+        }
+      }
+    } catch (blockchainError) {
+      // Kegagalan blockchain tidak menghapus progres badge di Supabase.
+      console.error(
+        `Gagal mencatat badge ${badgeId} ke blockchain:`,
+        blockchainError,
+      );
+    }
+  }
+}
 
 function categoryMatches(
   categoryName: string,
