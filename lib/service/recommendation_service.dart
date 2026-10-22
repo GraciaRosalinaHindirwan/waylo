@@ -117,7 +117,5 @@ class RecommendationService {
     }
 
 return filtered;
-
-    return filtered;
   }
 }

@@ -1,6 +1,6 @@
 import '../models/travel_badge.dart';
 import '../models/user_badge.dart';
-import '../repositories/travel_badge_repository.dart';
+import '../repositories/badge/travel_badge_repository.dart';
 
 class TravelBadgeService {
   final TravelBadgeRepository repository;

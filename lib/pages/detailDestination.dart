@@ -13,6 +13,10 @@ import 'package:waylo/pages/profile.dart';
 import 'package:waylo/theme/appColors.dart';
 import 'package:waylo/theme/app_text_styles.dart';
 import 'package:waylo/repositories/favorite/favorite_repository_factory.dart';
+import 'package:waylo/repositories/badge/travel_badge_repository_factory.dart';
+import 'package:waylo/service/travel_badge_service.dart';
+import 'package:waylo/service/session_storage.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class Detaildestination extends StatefulWidget{
   final Destination destination; 
@@ -63,6 +67,40 @@ class _DetaildestinationState extends State<Detaildestination> {
     _favoriteStatusFuture = favoriteRepository.isFavorite(
       widget.destination.id,
     );
+
+    _recordBadgeVisit();
+  }
+
+  //badge 
+  Future<void> _recordBadgeVisit() async {
+    final authService = context.read<AuthService>();
+    final userId = authService.currentUser?.id;
+
+    if (userId == null) return;
+
+    final repository = TravelBadgeRepositoryFactory.create(
+      Supabase.instance.client,
+      SessionStorage(),
+    );
+
+    final badgeService = TravelBadgeService(repository);
+
+    debugPrint(
+      'Badge visit tercatat: ${widget.destination.name}',
+    );
+
+    try {
+      await badgeService.recordDestinationVisit(
+        userId: userId,
+        destinationId: widget.destination.id.toString(),
+        destinationName: widget.destination.name,
+        category: widget.destination.categories.isNotEmpty
+            ? widget.destination.categories.first.name
+            : null,
+      );
+    } catch (e) {
+      debugPrint('Gagal mencatat progres badge: $e');
+    }
   }
 
   @override

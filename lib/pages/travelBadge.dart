@@ -6,11 +6,13 @@ import 'package:waylo/models/travel_badge.dart';
 import 'package:waylo/models/user_badge.dart';
 import 'package:waylo/pages/explorePage.dart';
 import 'package:waylo/pages/home.dart';
-import 'package:waylo/factories/travel_badge_repository_factory.dart';
+import 'package:waylo/repositories/badge/travel_badge_repository_factory.dart';
 import 'package:waylo/service/auth_service.dart';
 import 'package:waylo/service/travel_badge_service.dart';
 import 'package:waylo/theme/appColors.dart';
 import 'package:waylo/theme/app_text_styles.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:waylo/service/session_storage.dart';
 
 class TravelBadgePage extends StatefulWidget {
   const TravelBadgePage({super.key});
@@ -29,25 +31,48 @@ class _TravelBadgePageState extends State<TravelBadgePage> {
   @override
   void initState() {
     super.initState();
-    final repository = TravelBadgeRepositoryFactory.create();
+    final repository = TravelBadgeRepositoryFactory.create(
+      Supabase.instance.client,
+      SessionStorage(),
+    );
+
     _travelBadgeService = TravelBadgeService(repository);
     loadBadges();
   }
 
   Future<void> loadBadges() async {
-    final userId = context.read<AuthService>().currentUser?.id;
+    try {
+      final userId = context.read<AuthService>().currentUser?.id;
 
-    final allBadges = await _travelBadgeService.getAllBadges();
-    final allUserBadges = userId != null
-        ? await _travelBadgeService.getUserBadges(userId)
-        : <UserBadge>[];
+      final allBadges = await _travelBadgeService.getAllBadges();
+      debugPrint('TOTAL BADGES: ${allBadges.length}');
 
-    if (!mounted) return;
-    setState(() {
-      badges = allBadges;
-      userBadges = allUserBadges;
-      isLoading = false;
-    });
+      final allUserBadges = userId != null
+          ? await _travelBadgeService.getUserBadges(userId)
+          : <UserBadge>[];
+
+      debugPrint('TOTAL USER BADGES: ${allUserBadges.length}');
+
+      if (!mounted) return;
+
+      setState(() {
+        badges = allBadges;
+        userBadges = allUserBadges;
+        isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        isLoading = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Gagal memuat badge: $e'),
+        ),
+      );
+    }
   }
 
   UserBadge? findUserBadge(String badgeId) {
@@ -141,7 +166,7 @@ class _TravelBadgePageState extends State<TravelBadgePage> {
                                     crossAxisCount: 3,
                                     mainAxisSpacing: 16,
                                     crossAxisSpacing: 10,
-                                    childAspectRatio: 108 / 110,
+                                    mainAxisExtent: 145,
                                   ),
                                   itemCount: badges.length,
                                   itemBuilder: (context, index) {
@@ -150,6 +175,13 @@ class _TravelBadgePageState extends State<TravelBadgePage> {
                                     final isUnlocked =
                                         userBadge?.isUnlocked ?? false;
                                     final progress = userBadge?.progress ?? 0;
+
+                                    debugPrint(
+                                      'BADGE: ${badge.name} | '
+                                      'ICON: ${badge.icon} | '
+                                      'UNLOCKED: $isUnlocked | '
+                                      'PROGRESS: $progress/${badge.targetCount}',
+                                    );
 
                                     return BadgeCard(
                                       icon: badge.icon,

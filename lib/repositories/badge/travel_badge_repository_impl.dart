@@ -1,6 +1,6 @@
-import '../models/travel_badge.dart';
-import '../models/user_badge.dart';
-import 'package:waylo/repositories/travel_badge_repository.dart';
+import '../../models/travel_badge.dart';
+import '../../models/user_badge.dart';
+import 'package:waylo/repositories/badge/travel_badge_repository.dart';
 
 
 class TravelBadgeRepositoryImpl implements TravelBadgeRepository {

@@ -1,5 +1,5 @@
-import '../models/travel_badge.dart';
-import '../models/user_badge.dart';
+import '../../models/travel_badge.dart';
+import '../../models/user_badge.dart';
 
 abstract class TravelBadgeRepository {
   // Mengambil semua badge yang tersedia di WAYLO.
