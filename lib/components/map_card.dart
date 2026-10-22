@@ -1,8 +1,8 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:waylo/components/smart_compass.dart';
 
 import '../theme/appColors.dart';
 
@@ -29,8 +29,7 @@ class _MapCardState extends State<MapCard> {
   double? _distanceKm;
   bool _loadingLocation = true;
 
-  LatLng get _destination =>
-      LatLng(widget.latitude, widget.longitude);
+  LatLng get _destination => LatLng(widget.latitude, widget.longitude);
 
   @override
   void initState() {
@@ -40,8 +39,7 @@ class _MapCardState extends State<MapCard> {
 
   Future<void> _getUserLocation() async {
     try {
-      final serviceEnabled =
-          await Geolocator.isLocationServiceEnabled();
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
 
       if (!serviceEnabled) {
         if (mounted) {
@@ -66,10 +64,7 @@ class _MapCardState extends State<MapCard> {
 
       final position = await Geolocator.getCurrentPosition();
 
-      final user = LatLng(
-        position.latitude,
-        position.longitude,
-      );
+      final user = LatLng(position.latitude, position.longitude);
 
       final distance = Geolocator.distanceBetween(
         user.latitude,
@@ -115,59 +110,62 @@ class _MapCardState extends State<MapCard> {
           SizedBox(
             height: 245,
             width: double.infinity,
-            child: FlutterMap(
-              mapController: _mapController,
-              options: MapOptions(
-                initialCenter: destination,
-                initialZoom: 14,
-              ),
+            child: Stack(
               children: [
-                TileLayer(
-                  urlTemplate:
-                      'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                  userAgentPackageName: 'com.example.waylo',
-                ),
-                MarkerLayer(
-                  markers: [
-                    Marker(
-                      point: destination,
-                      width: 45,
-                      height: 45,
-                      child: const Icon(
-                        Icons.location_on,
-                        color: AppColors.accent,
-                        size: 42,
-                      ),
+                FlutterMap(
+                  mapController: _mapController,
+                  options: MapOptions(
+                    initialCenter: destination,
+                    initialZoom: 14,
+                  ),
+                  children: [
+                    TileLayer(
+                      urlTemplate:
+                          'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                      userAgentPackageName: 'com.example.waylo',
                     ),
-                    if (_userLocation != null)
-                      Marker(
-                        point: _userLocation!,
-                        width: 30,
-                        height: 30,
-                        child: const Icon(
-                          Icons.my_location,
-                          color: Colors.blue,
-                          size: 24,
+                    MarkerLayer(
+                      markers: [
+                        Marker(
+                          point: destination,
+                          width: 45,
+                          height: 45,
+                          child: const Icon(
+                            Icons.location_on,
+                            color: AppColors.accent,
+                            size: 42,
+                          ),
                         ),
-                      ),
-                  ],
-                ),
-                RichAttributionWidget(
-                  attributions: [
-                    TextSourceAttribution(
-                      'OpenStreetMap contributors',
-                      onTap: () {},
+                        if (_userLocation != null)
+                          Marker(
+                            point: _userLocation!,
+                            width: 30,
+                            height: 30,
+                            child: const Icon(
+                              Icons.my_location,
+                              color: Colors.blue,
+                              size: 24,
+                            ),
+                          ),
+                      ],
+                    ),
+                    RichAttributionWidget(
+                      attributions: [
+                        TextSourceAttribution(
+                          'OpenStreetMap contributors',
+                          onTap: () {},
+                        ),
+                      ],
                     ),
                   ],
                 ),
+
+                Positioned(top: 12, right: 12, child: SmartCompass()),
               ],
             ),
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 15,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
             child: Row(
               children: [
                 const Icon(
@@ -181,8 +179,8 @@ class _MapCardState extends State<MapCard> {
                     _loadingLocation
                         ? 'Finding your location...'
                         : _distanceKm != null
-                            ? '${_distanceKm!.toStringAsFixed(1)} km from your location'
-                            : 'Location unavailable',
+                        ? '${_distanceKm!.toStringAsFixed(1)} km from your location'
+                        : 'Location unavailable',
                     style: const TextStyle(
                       fontSize: 13,
                       color: AppColors.textSecondary,

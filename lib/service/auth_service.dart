@@ -1,3 +1,4 @@
+
 import 'package:supabase_flutter/supabase_flutter.dart' hide User;
 import 'package:flutter/foundation.dart';
 import 'dart:async';
@@ -12,42 +13,46 @@ import 'package:waylo/service/biometric_credentials.dart';
 
 class AuthService extends ChangeNotifier {
   final UserRepository repository;
-  final SessionStorage sessionStorage; 
-  final BiometricCredentials biometricCredentials =
-    BiometricCredentials();
+  final SessionStorage sessionStorage;
 
-  // User yang sedang login pada aplikasi.
+  final BiometricCredentials biometricCredentials =
+      BiometricCredentials();
+
   User? _currentUser;
 
-  // Akses untuk membaca session dari halaman lain.
   User? get currentUser => _currentUser;
 
-  // Foto profil diturunkan dari data user yang sedang login (tersimpan di repository).
   Uint8List? get profileImageBytes {
     final base64Image = _currentUser?.profileImageBase64;
-    if (base64Image == null) return null;
-    return base64Decode(base64Image);
+
+    if (base64Image == null || base64Image.isEmpty) {
+      return null;
+    }
+
+    try {
+      return base64Decode(base64Image);
+    } catch (e) {
+      debugPrint('Gagal membaca foto profil: $e');
+      return null;
+    }
   }
 
   bool get isLoggedIn => _currentUser != null;
 
-  AuthService(
-    this.repository, 
-    this.sessionStorage,
-  );
+  AuthService(this.repository, this.sessionStorage);
 
-  // Dipanggil setelah autentikasi berhasil.
   void setCurrentUser(User user) {
     _currentUser = user;
-    notifyListeners(); //changeNotifer supaya kasih tau state udah berubah 
+    notifyListeners();
   }
 
-  // Dipanggil saat user ganti foto profil di EditProfilePage
+  // Simpan foto profil ke database dan perbarui user aktif.
   Future<void> setProfileImage(Uint8List bytes) async {
     final user = _currentUser;
-    if (user == null) return;
 
-    final base64Image = base64Encode(bytes);
+    if (user == null) {
+      throw Exception('Silakan login terlebih dahulu.');
+    }
 
     final updatedUser = await repository.updateUser(
       User(
@@ -60,7 +65,7 @@ class AuthService extends ChangeNotifier {
         hasCompletedPreference: user.hasCompletedPreference,
         createdAt: user.createdAt,
         updatedAt: DateTime.now(),
-        profileImageBase64: base64Image,
+        profileImageBase64: base64Encode(bytes),
       ),
     );
 
@@ -68,7 +73,6 @@ class AuthService extends ChangeNotifier {
     notifyListeners();
   }
 
-  
   Future<User> register(User user) async {
     final response = await Supabase.instance.client.functions.invoke(
       'auth-user',
@@ -82,19 +86,20 @@ class AuthService extends ChangeNotifier {
 
     final data = response.data;
 
-    if (response.status != 201 || data is! Map || data['user'] is! Map) {
-      final message = data is Map && data['error'] is String
-          ? data['error'] as String
-          : 'Registrasi gagal';
+    if (response.status != 201 ||
+        data is! Map ||
+        data['user'] is! Map) {
+      final message =
+          data is Map && data['error'] is String
+              ? data['error'] as String
+              : 'Registrasi gagal';
 
       throw Exception(message);
     }
 
     final row = Map<String, dynamic>.from(data['user'] as Map);
-
     return _mapFunctionUser(row);
   }
-
 
   Future<void> enableBiometricLogin({
     required int userId,
@@ -107,27 +112,25 @@ class AuthService extends ChangeNotifier {
     );
 
     await sessionStorage.saveBiometricUserId(userId);
-  } 
+  }
 
   Future<User> loginWithBiometric() async {
-  final credentials =
-      await biometricCredentials.readCredentials();
+    final credentials =
+        await biometricCredentials.readCredentials();
 
-  if (credentials == null) {
-    throw Exception(
-      'Login fingerprint belum diaktifkan. '
-      'Silakan login menggunakan username dan password.',
+    if (credentials == null) {
+      throw Exception(
+        'Login fingerprint belum diaktifkan. '
+        'Silakan login menggunakan username dan password.',
+      );
+    }
+
+    return login(
+      credentials['username']!,
+      credentials['password']!,
     );
   }
 
-  // Memanggil login biasa akan meminta token JWT baru dari server.
-  return login(
-    credentials['username']!,
-    credentials['password']!,
-  );
-}
-
-  
   Future<User> login(String username, String password) async {
     final response = await Supabase.instance.client.functions.invoke(
       'auth-user',
@@ -140,16 +143,16 @@ class AuthService extends ChangeNotifier {
 
     final data = response.data;
 
-    print('LOGIN STATUS: ${response.status}');
-    print('LOGIN RESPONSE: $data');
+    debugPrint('LOGIN STATUS: ${response.status}');
 
     if (response.status != 200 ||
         data is! Map ||
         data['user'] is! Map ||
         data['sessionToken'] is! String) {
-      final message = data is Map && data['error'] is String
-          ? data['error'] as String
-          : 'Login gagal: respons user atau sessionToken tidak valid';
+      final message =
+          data is Map && data['error'] is String
+              ? data['error'] as String
+              : 'Login gagal: respons user atau sessionToken tidak valid';
 
       throw Exception(message);
     }
@@ -158,7 +161,12 @@ class AuthService extends ChangeNotifier {
     await sessionStorage.saveSessionToken(sessionToken);
 
     final row = Map<String, dynamic>.from(data['user'] as Map);
-    final user = _mapFunctionUser(row);
+    final functionUser = _mapFunctionUser(row);
+
+    // Ambil data terbaru dari database, termasuk foto profil.
+    final savedUser = await repository.getUserById(functionUser.id);
+
+    final user = savedUser ?? functionUser;
 
     await sessionStorage.saveUserId(user.id);
     await sessionStorage.saveLastActivity();
@@ -199,6 +207,7 @@ class AuthService extends ChangeNotifier {
       return;
     }
 
+    // Repository mengambil foto dari kolom profile_image_url.
     final user = await repository.getUserById(userId);
 
     if (user == null) {
@@ -240,7 +249,6 @@ class AuthService extends ChangeNotifier {
     );
   }
 
-  // Mengakhiri session.
   Future<void> logout() async {
     _sessionTimer?.cancel();
     _sessionTimer = null;
@@ -259,7 +267,6 @@ class AuthService extends ChangeNotifier {
     }
   }
 
-  //preference
   Future<void> savePreferences({
     required List<int> districtIds,
     required List<int> categoryIds,
@@ -276,17 +283,22 @@ class AuthService extends ChangeNotifier {
       categoryIds: categoryIds,
     );
 
-    _currentUser = User(
-      id: user.id,
-      fullname: user.fullname,
-      username: user.username,
-      password: user.password,
-      districts: user.districts,
-      categories: user.categories,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
-      hasCompletedPreference: true,
-    );
+    // Pertahankan foto profil dan data user lainnya.
+    final refreshedUser = await repository.getUserById(user.id);
+
+    _currentUser = refreshedUser ??
+        User(
+          id: user.id,
+          fullname: user.fullname,
+          username: user.username,
+          password: user.password,
+          districts: user.districts,
+          categories: user.categories,
+          createdAt: user.createdAt,
+          updatedAt: user.updatedAt,
+          hasCompletedPreference: true,
+          profileImageBase64: user.profileImageBase64,
+        );
 
     notifyListeners();
   }
@@ -301,9 +313,9 @@ class AuthService extends ChangeNotifier {
       categories: const [],
       createdAt: DateTime.parse(row['created_at'] as String),
       updatedAt: DateTime.parse(row['updated_at'] as String),
-      hasCompletedPreference: row['has_completed_preference'] as bool? ?? false,
-      profileImageBase64: null,
+      hasCompletedPreference:
+          row['has_completed_preference'] as bool? ?? false,
+      profileImageBase64: row['profile_image_url'] as String?,
     );
   }
-
 }
