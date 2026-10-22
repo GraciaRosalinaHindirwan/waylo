@@ -14,7 +14,6 @@ import 'package:waylo/theme/appColors.dart';
 import 'package:waylo/theme/app_text_styles.dart';
 import 'package:waylo/repositories/favorite/favorite_repository_factory.dart';
 import 'package:waylo/repositories/badge/travel_badge_repository_factory.dart';
-import 'package:waylo/service/travel_badge_service.dart';
 import 'package:waylo/service/session_storage.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -73,35 +72,40 @@ class _DetaildestinationState extends State<Detaildestination> {
 
   //badge 
   Future<void> _recordBadgeVisit() async {
+    debugPrint('=== RECORD BADGE VISIT DIPANGGIL ===');
     final authService = context.read<AuthService>();
     final userId = authService.currentUser?.id;
 
-    if (userId == null) return;
+      debugPrint('USER ID: $userId');
+
+    if (userId == null) {
+      debugPrint('Badge visit dilewati: user belum login.');
+      return;
+    }
 
     final repository = TravelBadgeRepositoryFactory.create(
       Supabase.instance.client,
       SessionStorage(),
     );
 
-    final badgeService = TravelBadgeService(repository);
-
-    debugPrint(
-      'Badge visit tercatat: ${widget.destination.name}',
-    );
-
     try {
-      await badgeService.recordDestinationVisit(
-        userId: userId,
+       debugPrint('MULAI: mencatat ${widget.destination.name}');
+
+      await repository.recordDestinationVisit(
         destinationId: widget.destination.id.toString(),
-        destinationName: widget.destination.name,
-        category: widget.destination.categories.isNotEmpty
-            ? widget.destination.categories.first.name
-            : null,
       );
-    } catch (e) {
-      debugPrint('Gagal mencatat progres badge: $e');
+
+      debugPrint(
+        'Badge visit berhasil dicatat: ${widget.destination.name}',
+      );
+    } catch (e, stackTrace) {
+      debugPrint(
+        'Gagal mencatat badge visit: $e',
+      );
+      debugPrintStack(stackTrace: stackTrace);
     }
   }
+
 
   @override
   Widget build(BuildContext context) {

@@ -87,5 +87,13 @@ class TravelBadgeRepositoryImpl implements TravelBadgeRepository {
     );
 
     userBadges[userBadge.badgeId] = userBadge;
+
+  }
+
+    @override
+  Future<void> recordDestinationVisit({
+    required String destinationId,
+  }) async {
+    // TODO: implement recordDestinationVisit
   }
 }

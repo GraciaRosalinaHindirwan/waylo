@@ -24,16 +24,12 @@ function jsonResponse(
   body: Record<string, unknown>,
   status = 200,
 ) {
-  return Response.json(body, {
-    status,
-    headers: corsHeaders,
-  });
+  return Response.json(body, { status, headers: corsHeaders });
 }
 
 function base64UrlToBytes(value: string): Uint8Array {
   const base64 = value.replace(/-/g, "+").replace(/_/g, "/");
   const padded = base64 + "=".repeat((4 - base64.length % 4) % 4);
-
   return Uint8Array.from(atob(padded), (c) => c.charCodeAt(0));
 }
 
@@ -80,7 +76,6 @@ async function verifyToken(token: string): Promise<number | null> {
     if (!valid) return null;
 
     const userId = Number(payload.sub);
-
     return Number.isSafeInteger(userId) && userId > 0
       ? userId
       : null;
@@ -89,13 +84,95 @@ async function verifyToken(token: string): Promise<number | null> {
   }
 }
 
+type BadgeProgress = {
+  badgeId: string;
+  progress: number;
+  targetCount: number;
+};
+
+async function saveCalculatedProgress(
+  userId: number,
+  badgeId: string,
+  progress: number,
+) {
+  const { data: badge, error: badgeError } = await supabase
+    .from("travel_badges")
+    .select("id, target_count")
+    .eq("id", badgeId)
+    .maybeSingle();
+
+  if (badgeError) throw badgeError;
+  if (!badge) return;
+
+  const { data: previous, error: previousError } = await supabase
+    .from("user_badges")
+    .select("progress, is_unlocked, unlocked_at")
+    .eq("user_id", userId)
+    .eq("badge_id", badgeId)
+    .maybeSingle();
+
+  if (previousError) throw previousError;
+
+  // Jangan menurunkan progres atau mengunci ulang badge.
+  const finalProgress = Math.min(
+    badge.target_count,
+    Math.max(progress, previous?.progress ?? 0),
+  );
+
+  const isUnlocked =
+    previous?.is_unlocked === true ||
+    finalProgress >= badge.target_count;
+
+  const unlockedAt = isUnlocked
+    ? previous?.unlocked_at ?? new Date().toISOString()
+    : null;
+
+  const { error } = await supabase
+    .from("user_badges")
+    .upsert(
+      {
+        user_id: userId,
+        badge_id: badgeId,
+        progress: finalProgress,
+        is_unlocked: isUnlocked,
+        unlocked_at: unlockedAt,
+      },
+      { onConflict: "user_id,badge_id" },
+    );
+
+  if (error) throw error;
+}
+
+
+function categoryMatches(
+  categoryName: string,
+  type: "culture" | "food",
+): boolean {
+  const name = categoryName.trim().toLowerCase();
+
+  if (type === "culture") {
+    return name === "cultural" ||
+      name === "culture" ||
+      name === "historical" ||
+      name === "history";
+  }
+
+  return name === "culinary" ||
+    name === "food" ||
+    name === "cuisine" ||
+    name === "kuliner";
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
   if (req.method !== "POST") {
-    return jsonResponse({ success: false, error: "Method not allowed" }, 405);
+    return jsonResponse(
+      { success: false, error: "Method not allowed" },
+      405,
+    );
   }
 
   try {
@@ -107,17 +184,19 @@ Deno.serve(async (req) => {
     const userId = token ? await verifyToken(token) : null;
 
     if (!userId) {
-      return jsonResponse({
-        success: false,
-        error: "Token sesi tidak valid atau kedaluwarsa",
-      }, 401);
+      return jsonResponse(
+        {
+          success: false,
+          error: "Token sesi tidak valid atau kedaluwarsa",
+        },
+        401,
+      );
     }
 
     const body = await req.json();
     const action = body?.action;
 
-    // Ambil progres badge milik user dari token,
-    // bukan dari user_id yang dikirim Flutter.
+    // Mengambil progres hanya untuk pengguna dari token.
     if (action === "list") {
       const { data, error } = await supabase
         .from("user_badges")
@@ -126,99 +205,206 @@ Deno.serve(async (req) => {
 
       if (error) throw error;
 
-      return jsonResponse({
-        success: true,
-        badges: data ?? [],
-      });
+      return jsonResponse({ success: true, badges: data ?? [] });
     }
 
-    if (action === "save") {
-      const badgeId = body?.badgeId;
-      const progress = body?.progress;
+    // Mencatat kunjungan dan menghitung progres di backend.
+    if (action === "record_visit") {
+      const destinationId = body?.destinationId;
 
       if (
-        typeof badgeId !== "string" ||
-        !Number.isSafeInteger(progress) ||
-        progress < 0
+        typeof destinationId !== "string" ||
+        !/^\d+$/.test(destinationId) ||
+        !Number.isSafeInteger(Number(destinationId)) ||
+        Number(destinationId) <= 0
       ) {
-        return jsonResponse({
-          success: false,
-          error: "Badge ID atau progress tidak valid",
-        }, 400);
+        return jsonResponse(
+          { success: false, error: "Destination ID tidak valid" },
+          400,
+        );
       }
 
-      // Ambil target dari definisi badge di database.
-      const { data: badge, error: badgeError } = await supabase
-        .from("travel_badges")
-        .select("id, target_count")
-        .eq("id", badgeId)
-        .maybeSingle();
+      const numericDestinationId = Number(destinationId);
 
-      if (badgeError) throw badgeError;
+      // Pastikan destinasi memang ada di database.
+      const { data: destination, error: destinationError } =
+        await supabase
+          .from("destinations")
+          .select("id, name")
+          .eq("id", numericDestinationId)
+          .maybeSingle();
 
-      if (!badge) {
-        return jsonResponse({
-          success: false,
-          error: "Badge tidak ditemukan",
-        }, 404);
+      if (destinationError) throw destinationError;
+
+      if (!destination) {
+        return jsonResponse(
+          { success: false, error: "Destinasi tidak ditemukan" },
+          404,
+        );
       }
 
-      // Batasan ini mencegah nilai di atas target,
-      // tetapi belum membuktikan aktivitas benar-benar dilakukan.
-      const safeProgress = Math.min(progress, badge.target_count);
-      const isUnlocked = safeProgress >= badge.target_count;
+      // PRIMARY KEY user_id + destination_id mencegah kunjungan
+      // destinasi yang sama dihitung berulang kali.
+      const { error: visitError } = await supabase
+        .from("user_destination_visits")
+        .upsert(
+          {
+            user_id: userId,
+            destination_id: numericDestinationId,
+          },
+          {
+            onConflict: "user_id,destination_id",
+            ignoreDuplicates: true,
+          },
+        );
 
-      const { data: previous, error: previousError } = await supabase
-        .from("user_badges")
-        .select("is_unlocked, unlocked_at, progress")
-        .eq("user_id", userId)
-        .eq("badge_id", badgeId)
-        .maybeSingle();
+      if (visitError) throw visitError;
 
-      if (previousError) throw previousError;
+      // Ambil semua destinasi unik yang pernah dicatat untuk user ini.
+      const { data: visits, error: visitsError } = await supabase
+        .from("user_destination_visits")
+        .select("destination_id")
+        .eq("user_id", userId);
 
-      // Pertahankan progres dan status unlock yang sudah tercapai.
-      const finalProgress = Math.max(
-        safeProgress,
-        previous?.progress ?? 0,
+      if (visitsError) throw visitsError;
+
+      const destinationIds = [
+        ...new Set((visits ?? []).map((visit) => visit.destination_id)),
+      ];
+
+      const totalVisited = destinationIds.length;
+
+      const normalizedName = destination.name.toLowerCase();
+
+      // China Starter: setidaknya satu destinasi dikunjungi.
+      await saveCalculatedProgress(userId, "china_starter", totalVisited > 0 ? 1 : 0);
+
+      // Curious Explorer: lima destinasi unik.
+      await saveCalculatedProgress(
+        userId,
+        "curious_explorer",
+        totalVisited,
       );
-      const finalUnlocked =
-        previous?.is_unlocked === true || isUnlocked;
 
-      const unlockedAt = finalUnlocked
-        ? previous?.unlocked_at ?? new Date().toISOString()
-        : null;
+      // Badge khusus berdasarkan nama destinasi di database.
+      const { data: greatWallDestinations, error: greatWallError } =
+        await supabase
+          .from("destinations")
+          .select("id")
+          .or("name.ilike.%great wall%,name.ilike.%mutianyu%");
 
-      const { error: saveError } = await supabase
-        .from("user_badges")
-        .upsert({
-          user_id: userId,
-          badge_id: badgeId,
-          progress: finalProgress,
-          is_unlocked: finalUnlocked,
-          unlocked_at: unlockedAt,
-        }, {
-          onConflict: "user_id,badge_id",
-        });
+      if (greatWallError) throw greatWallError;
 
-      if (saveError) throw saveError;
+      const visitedGreatWall = (greatWallDestinations ?? []).some(
+        (item) => destinationIds.includes(item.id),
+      );
+
+      if (visitedGreatWall) {
+        await saveCalculatedProgress(userId, "great_wall_dreamer", 1);
+      }
+
+      const { data: pandaDestinations, error: pandaError } =
+        await supabase
+          .from("destinations")
+          .select("id")
+          .or("name.ilike.%panda%,name.ilike.%chengdu%");
+
+      if (pandaError) throw pandaError;
+
+      const visitedPandaDestination = (pandaDestinations ?? []).some(
+        (item) => destinationIds.includes(item.id),
+      );
+
+      if (
+        normalizedName.includes("panda") ||
+        normalizedName.includes("chengdu") ||
+        visitedPandaDestination
+      ) {
+        await saveCalculatedProgress(userId, "panda_fan", 1);
+      }
+
+      
+      // Ambil kategori semua destinasi yang sudah dikunjungi.
+      if (destinationIds.length > 0) {
+        const { data: categoryRows, error: categoryError } =
+          await supabase
+            .from("destination_category")
+            .select(`
+              id_destination,
+              category:category!destination_category_id_category_fkey (
+                name
+              )
+            `)
+            .in("id_destination", destinationIds);
+
+        if (categoryError) throw categoryError;
+
+        // Deklarasikan sebelum digunakan.
+        const cultureIds = new Set<number>();
+        const foodIds = new Set<number>();
+
+        for (const row of categoryRows ?? []) {
+          const category = Array.isArray(row.category)
+            ? row.category[0]
+            : row.category;
+
+          const categoryName = category?.name;
+
+          if (typeof categoryName !== "string") continue;
+
+          if (categoryMatches(categoryName, "culture")) {
+            cultureIds.add(row.id_destination);
+          }
+
+          if (categoryMatches(categoryName, "food")) {
+            foodIds.add(row.id_destination);
+          }
+        }
+
+        await saveCalculatedProgress(
+          userId,
+          "culture_seeker",
+          cultureIds.size,
+        );
+
+        await saveCalculatedProgress(
+          userId,
+          "food_hunter",
+          foodIds.size,
+        );
+      }
 
       return jsonResponse({
         success: true,
-        message: "Progres badge berhasil disimpan",
+        message: "Kunjungan berhasil dicatat",
+        totalVisited,
       });
     }
 
-    return jsonResponse({
-      success: false,
-      error: "Action tidak dikenal",
-    }, 400);
+    // Jangan menerima progres badge yang ditentukan Flutter.
+    if (action === "save") {
+      return jsonResponse(
+        {
+          success: false,
+          error: "Progres harus dihitung oleh backend",
+        },
+        403,
+      );
+    }
+
+    return jsonResponse(
+      { success: false, error: "Action tidak dikenal" },
+      400,
+    );
   } catch (error) {
     console.error("manage-user-badges:", error);
 
-    return jsonResponse({
-      success: false,
-      error: "Gagal memproses badge pengguna",
-    }, 500);
+    return jsonResponse(
+      {
+        success: false,
+        error: "Gagal memproses badge pengguna",
+      },
+      500,
+    );
   }
 });

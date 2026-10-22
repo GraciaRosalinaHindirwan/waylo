@@ -110,12 +110,21 @@ class TravelBadgeSupabaseRepository implements TravelBadgeRepository {
     }).toList();
   }
 
+  /// Mencatat kunjungan destinasi melalui Edge Function.
+  /// Progres badge dihitung oleh backend, bukan Flutter.
+  Future<void> recordDestinationVisit({
+    required String destinationId,
+  }) async {
+    await _invokeBadgeFunction({
+      'action': 'record_visit',
+      'destinationId': destinationId,
+    });
+  }
+
   @override
   Future<void> saveUserBadge(UserBadge userBadge) async {
-    await _invokeBadgeFunction({
-      'action': 'save',
-      'badgeId': userBadge.badgeId,
-      'progress': userBadge.progress,
-    });
+    throw UnsupportedError(
+      'Progres badge dihitung oleh backend melalui recordDestinationVisit().',
+    );
   }
 }
