@@ -73,6 +73,13 @@ class _DetaildestinationState extends State<Detaildestination> {
       _currentIndex < images.length &&
       images[_currentIndex].isBanner;
 
+      debugPrint(
+  'LOKASI DETAIL: '
+  '${destination.name} | '
+  '${destination.location.districtName} | '
+  '${destination.location.provinceName}',
+);
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -245,7 +252,8 @@ class _DetaildestinationState extends State<Detaildestination> {
                               size: 24,
                               color: AppColors.secondaryLight,
                             ),
-                            value: 'Yogyakarta, Indonesia',
+                            value: '${destination.location.districtName}, '
+                                  '${destination.location.provinceName}',
                             textColor: AppColors.textSecondary,
                           ),
             

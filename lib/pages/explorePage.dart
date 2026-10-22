@@ -904,7 +904,7 @@ class _ExplorepageState extends State<Explorepage> {
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const AiRecommendationPage()),
+                // MaterialPageRoute(builder: (context) => const AiRecommendationPage()),
               );
             },
             child: Image.asset(
