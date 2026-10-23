@@ -22,7 +22,6 @@ class _SmartCompassState extends State<SmartCompass> {
   double? _heading;
   String? _sensorError;
 
-  // Mengurangi perubahan sudut yang terlalu mendadak.
   static const double _smoothFactor = 0.2;
 
   @override
@@ -37,13 +36,13 @@ class _SmartCompassState extends State<SmartCompass> {
         _acceleration = event;
       },
       onError: (Object error) {
-        debugPrint('Accelerometer error: $error');
+        debugPrint('SmartCompass - Accelerometer error: $error');
 
-        if (mounted) {
-          setState(() {
-            _sensorError = 'Accelerometer tidak tersedia';
-          });
-        }
+        if (!mounted) return;
+
+        setState(() {
+          _sensorError = 'Accelerometer tidak tersedia';
+        });
       },
     );
 
@@ -60,6 +59,17 @@ class _SmartCompassState extends State<SmartCompass> {
           event.x,
           event.y,
           event.z,
+        );
+
+        debugPrint(
+          'SmartCompass | '
+          'ACC: (${acc.x.toStringAsFixed(2)}, '
+          '${acc.y.toStringAsFixed(2)}, '
+          '${acc.z.toStringAsFixed(2)}) | '
+          'MAG: (${event.x.toStringAsFixed(2)}, '
+          '${event.y.toStringAsFixed(2)}, '
+          '${event.z.toStringAsFixed(2)}) | '
+          'HEADING: $calculatedHeading',
         );
 
         if (calculatedHeading == null || !mounted) return;
@@ -79,18 +89,18 @@ class _SmartCompassState extends State<SmartCompass> {
         });
       },
       onError: (Object error) {
-        debugPrint('Magnetometer error: $error');
+        debugPrint('SmartCompass - Magnetometer error: $error');
 
-        if (mounted) {
-          setState(() {
-            _sensorError = 'Magnetometer tidak tersedia';
-          });
-        }
+        if (!mounted) return;
+
+        setState(() {
+          _sensorError = 'Magnetometer tidak tersedia';
+        });
       },
     );
   }
 
-  /// Menghitung heading dengan accelerometer dan magnetometer.
+  /// Menghitung heading dari accelerometer dan magnetometer.
   double? _calculateHeading(
     double ax,
     double ay,
@@ -108,46 +118,29 @@ class _SmartCompassState extends State<SmartCompass> {
     ay /= gravityMagnitude;
     az /= gravityMagnitude;
 
-    // H = magnetic field x gravity.
-    var hx = my * az - mz * ay;
-    var hy = mz * ax - mx * az;
-    var hz = mx * ay - my * ax;
+    // Proyeksikan medan magnet ke bidang horizontal.
+    final dot = mx * ax + my * ay + mz * az;
 
-    // Normalisasi komponen horizontal medan magnet.
-    final horizontalMagnitude = math.sqrt(
-      hx * hx + hy * hy + hz * hz,
-    );
+    final hx = mx - dot * ax;
+    final hy = my - dot * ay;
+    final hz = mz - dot * az;
 
-    // Jika medan magnet terlalu kecil atau sejajar dengan gravitasi,
-    // arah kompas tidak dapat dihitung dengan andal.
+    final horizontalMagnitude = math.sqrt(hx * hx + hy * hy + hz * hz);
+
     if (horizontalMagnitude < 0.000001) return null;
 
-    hx /= horizontalMagnitude;
-    hy /= horizontalMagnitude;
-    hz /= horizontalMagnitude;
+    // Heading awal berdasarkan medan magnet horizontal.
+    final azimuth = math.atan2(hy, hx);
 
-    // M = gravity x H.
-    final mx2 = ay * hz - az * hy;
-    final my2 = az * hx - ax * hz;
-
-    // Sudut azimuth dalam radian.
-    final azimuth = math.atan2(-hx, hy);
-
-    // Konversi menjadi derajat 0–360.
     final degrees = (azimuth * 180 / math.pi + 360) % 360;
 
-    // Pastikan hasil valid.
     if (!degrees.isFinite) return null;
 
     return degrees;
   }
 
-  /// Menghaluskan perubahan heading, termasuk saat melewati 0°/360°.
-  double _smoothHeading(
-    double previous,
-    double current,
-    double factor,
-  ) {
+  /// Menghaluskan perubahan sudut, termasuk melewati 0°/360°.
+  double _smoothHeading(double previous, double current, double factor) {
     final difference = ((current - previous + 540) % 360) - 180;
 
     return (previous + difference * factor + 360) % 360;
@@ -164,7 +157,8 @@ class _SmartCompassState extends State<SmartCompass> {
   Widget build(BuildContext context) {
     final heading = _heading;
 
-    final tooltipMessage = _sensorError ??
+    final tooltipMessage =
+        _sensorError ??
         (heading == null
             ? 'Membaca sensor kompas...'
             : 'Arah: ${heading.toStringAsFixed(0)}°');
@@ -197,7 +191,6 @@ class _SmartCompassState extends State<SmartCompass> {
                   size: 28,
                 )
               : Transform.rotate(
-                  // Panah mengikuti arah hadap perangkat.
                   angle: heading * math.pi / 180,
                   child: const Icon(
                     Icons.navigation_rounded,
