@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:google_generative_ai/google_generative_ai.dart';
-import 'package:waylo/constants/gemini_config.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:waylo/models/destination.dart';
 import 'package:waylo/repositories/destination/destination_repository.dart';
 import 'package:waylo/repositories/destination/destination_repository_factory.dart';
-import 'dart:convert';
 import 'package:intl/intl.dart';
 
 class ChatMessage {
@@ -29,7 +27,6 @@ class AiRecommendationPage extends StatefulWidget {
 class _AiRecommendationPageState extends State<AiRecommendationPage> {
   final DestinationRepository _destinationRepository =
       DestinationRepositoryFactory.create();
-  late final GenerativeModel _model;
 
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
@@ -43,15 +40,6 @@ class _AiRecommendationPageState extends State<AiRecommendationPage> {
   ];
 
   bool isSending = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _model = GenerativeModel(
-      model: GeminiConfig.model,
-      apiKey: GeminiConfig.apiKey,
-    );
-  }
 
   @override
   void dispose() {
@@ -85,7 +73,7 @@ class _AiRecommendationPageState extends State<AiRecommendationPage> {
 
     try {
       final allDestinations = await _destinationRepository.getAllDestinations();
-      final reply = await _askGemini(userMessage: text, destinations: allDestinations);
+      final reply = await _askAi(userMessage: text, destinations: allDestinations);
 
       if (!mounted) return;
       setState(() {
@@ -109,7 +97,7 @@ class _AiRecommendationPageState extends State<AiRecommendationPage> {
     }
   }
 
-  Future<String> _askGemini({
+  Future<String> _askAi({
     required String userMessage,
     required List<Destination> destinations,
   }) async {
@@ -125,27 +113,28 @@ class _AiRecommendationPageState extends State<AiRecommendationPage> {
       };
     }).toList();
 
-    final buffer = StringBuffer();
-    buffer.writeln(
-      'You are a travel recommendation assistant for the WAYLO app. '
-      'Here is the list of destinations available in the WAYLO database (JSON):',
-    );
-    buffer.writeln(jsonEncode(destinationData));
-    buffer.writeln();
-    buffer.writeln(
-      'The user said: "$userMessage"\n'
-      'From that message, understand if there is a preference for a destination/country/area, '
-      'travel category (e.g. beach, mountain, culture), budget, or minimum rating. '
-      'Reply in a friendly and concise way (max 4 sentences) in English, '
-      'and recommend destinations from the list above that fit best. '
-      'If none of the destinations truly match the requested area, '
-      'be honest about the destinations currently available and offer the closest '
-      'alternative based on the requested category/budget/rating. '
-      'Do not reply in JSON format, reply like a normal chat message.',
-    );
+    final response = await Supabase.instance.client.functions
+        .invoke(
+          'ai-recommendation',
+          body: {
+            'message': userMessage,
+            'destinations': destinationData,
+          },
+        )
+        .timeout(
+          const Duration(seconds: 300),
+          onTimeout: () {
+            throw Exception('Request timed out. Check your internet connection.');
+          },
+        );
 
-    final response = await _model.generateContent([Content.text(buffer.toString())]);
-    return response.text?.trim() ?? 'Sorry, I don\'t have a recommendation for that yet.';
+    final data = response.data;
+
+    if (response.status != 200 || data is! Map || data['reply'] is! String) {
+      throw Exception('status=${response.status} data=$data');
+    }
+
+    return data['reply'] as String;
   }
 
   String formatTime(DateTime time) {

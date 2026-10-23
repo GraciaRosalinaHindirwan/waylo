@@ -896,7 +896,6 @@ class _ExplorepageState extends State<Explorepage> {
           ),
         ),
 
-        // Floating AI icon (Tetap dipertahankan dari branch ai)
         Positioned(
           right: 20,
           bottom: 100,
@@ -904,7 +903,7 @@ class _ExplorepageState extends State<Explorepage> {
             onTap: () {
               Navigator.push(
                 context,
-                // MaterialPageRoute(builder: (context) => const AiRecommendationPage()),
+                MaterialPageRoute(builder: (context) => const AiRecommendationPage()),
               );
             },
             child: Image.asset(
