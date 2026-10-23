@@ -23,6 +23,11 @@ import 'package:waylo/theme/app_text_styles.dart';
 import 'package:waylo/pages/profile.dart';
 import 'package:waylo/pages/aiRecommendation.dart';
 
+//import untuk choose location map 
+import 'package:waylo/pages/chooseLocationMap.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:waylo/models/selected_location.dart';
+
 // Import dari branch main
 import 'package:waylo/service/user_preference_service.dart';
 import 'package:waylo/service/recommendation_service.dart';
@@ -61,6 +66,17 @@ class _ExplorepageState extends State<Explorepage> {
   final TextEditingController _maxController = TextEditingController();
 
   List<String> _districts = <String>[];
+
+  SelectedLocation? _selectedExploreLocation;
+
+  double? get _activeLatitude =>
+    _selectedExploreLocation?.coordinates.latitude ??
+    _userPosition?.latitude;
+
+  double? get _activeLongitude =>
+      _selectedExploreLocation?.coordinates.longitude ??
+      _userPosition?.longitude;
+
 
   static const List<(String, int?, int?)> budgetOptions = [
     ('Free', 0, 0),
@@ -139,16 +155,17 @@ class _ExplorepageState extends State<Explorepage> {
       final filteredDestinations = _applyFilter(allDestinations);
 
       // Jika lokasi belum tersedia, tampilkan halaman dengan list kosong.
-      final position = _userPosition;
+      final latitude = _activeLatitude;
+      final longitude = _activeLongitude;
 
-      final nearbyDestinations = position == null
-          ? <Destination>[]
-          : _filterService.getNearbyDestinations(
-              destinations: filteredDestinations,
-              userLatitude: position.latitude,
-              userLongitude: position.longitude,
-            );
-
+      final nearbyDestinations =
+        latitude == null || longitude == null
+            ? <Destination>[]
+            : _filterService.getNearbyDestinations(
+                destinations: filteredDestinations,
+                userLatitude: latitude,
+                userLongitude: longitude,
+              );
       if (!mounted) return;
 
       Navigator.push(
@@ -596,11 +613,16 @@ class _ExplorepageState extends State<Explorepage> {
   }
 
   String getDistance(Destination destination) {
-    if (_userPosition == null) return '-';
+    final latitude = _activeLatitude;
+    final longitude = _activeLongitude;
+
+    if (latitude == null || longitude == null) {
+      return '-';
+    }
 
     final distanceInMeters = Geolocator.distanceBetween(
-      _userPosition!.latitude,
-      _userPosition!.longitude,
+      latitude,
+      longitude,
       destination.coordinate.latitude,
       destination.coordinate.longitude,
     );
@@ -700,14 +722,42 @@ class _ExplorepageState extends State<Explorepage> {
 
               Align(
                 alignment: Alignment.centerLeft,
-                child: Infochip(
-                  icon: const Icon(
-                    Icons.near_me_rounded,
-                    size: 18,
-                    color: AppColors.secondaryLight,
+                child: GestureDetector(
+                  onTap: () async {
+                  final result = await Navigator.push<SelectedLocation>(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ChooseLocationMap(
+                        initialLocation: _selectedExploreLocation ??
+                            (_activeLatitude != null && _activeLongitude != null
+                                ? SelectedLocation(
+                                    coordinates: LatLng(
+                                      _activeLatitude!,
+                                      _activeLongitude!,
+                                    ),
+                                    name: _currentCity,
+                                  )
+                                : null),
+                      ),
+                    ),
+                  );
+
+                  if (result != null && mounted) {
+                    setState(() {
+                      _selectedExploreLocation = result;
+                      _currentCity = result.name;
+                    });
+                  }
+                },
+                  child: Infochip(
+                    icon: const Icon(
+                      Icons.near_me_rounded,
+                      size: 18,
+                      color: AppColors.secondaryLight,
+                    ),
+                    value: _currentCity,
+                    textColor: AppColors.textSecondary,
                   ),
-                  value: _currentCity,
-                  textColor: AppColors.textSecondary,
                 ),
               ),
 
@@ -740,7 +790,7 @@ class _ExplorepageState extends State<Explorepage> {
                       );
                     }
 
-                    if (_userPosition == null) {
+                    if (_activeLatitude == null || _activeLongitude == null) {
                       return const Center(
                         child: Text('Lokasi pengguna tidak tersedia'),
                       );
@@ -751,8 +801,8 @@ class _ExplorepageState extends State<Explorepage> {
                     final nearbyDestinations =
                         _filterService.getNearbyDestinations(
                       destinations: destinations,
-                      userLatitude: _userPosition!.latitude,
-                      userLongitude: _userPosition!.longitude,
+                      userLatitude: _activeLatitude!,
+                      userLongitude: _activeLongitude!,
                     );
 
                     if (nearbyDestinations.isEmpty) {

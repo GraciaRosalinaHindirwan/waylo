@@ -18,6 +18,9 @@ class Infochip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      constraints: BoxConstraints(
+        maxWidth: MediaQuery.of(context).size.width - 100,
+      ),
       padding: const EdgeInsets.symmetric(
         horizontal: 8, 
         vertical: 8, 
@@ -37,17 +40,21 @@ class Infochip extends StatelessWidget {
       ),
 
       child: Row(
-        mainAxisSize: MainAxisSize.min, 
+        mainAxisSize: MainAxisSize.min,
         children: [
-           if (icon != null) ...[
+          if (icon != null) ...[
             icon!,
             const SizedBox(width: 4),
           ],
-
-          Text(
-            value, 
-            style: AppTextStyles.body.copyWith(
-              color: textColor, 
+          Flexible(
+            child: Text(
+              value,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              softWrap: false,
+              style: AppTextStyles.body.copyWith(
+                color: textColor,
+              ),
             ),
           ),
         ],
