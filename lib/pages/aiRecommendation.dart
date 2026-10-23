@@ -122,7 +122,7 @@ class _AiRecommendationPageState extends State<AiRecommendationPage> {
           },
         )
         .timeout(
-          const Duration(seconds: 20),
+          const Duration(seconds: 300),
           onTimeout: () {
             throw Exception('Request timed out. Check your internet connection.');
           },
@@ -131,10 +131,7 @@ class _AiRecommendationPageState extends State<AiRecommendationPage> {
     final data = response.data;
 
     if (response.status != 200 || data is! Map || data['reply'] is! String) {
-      final message = data is Map && data['error'] is String
-          ? data['error'] as String
-          : 'Failed to get a recommendation';
-      throw Exception(message);
+      throw Exception('status=${response.status} data=$data');
     }
 
     return data['reply'] as String;
