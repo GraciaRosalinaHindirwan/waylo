@@ -21,6 +21,7 @@ import 'package:waylo/service/auth_service.dart';
 
 import 'package:waylo/pages/seeAllPage.dart';
 import 'package:waylo/pages/game_intro.dart';
+import 'package:waylo/pages/aiRecommendation.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -433,11 +434,19 @@ class _HomePageState extends State<HomePage> {
                 Positioned(
                   right: 20,
                   bottom: 16,
-                  child: Image.asset(
-                    'assets/img/waylo_AI.png',
-                    width: 103,
-                    height: 103,
-                    fit: BoxFit.cover,
+                  child: GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const AiRecommendationPage()),
+                      );
+                    },
+                    child: Image.asset(
+                      'assets/img/waylo_AI.png',
+                      width: 103,
+                      height: 103,
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 ),
               ],

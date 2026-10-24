@@ -20,7 +20,8 @@ class UserSupabaseRepository implements UserRepository {
     final response = await _supabase
         .from('users')
         .select(
-          'id, fullname, username, created_at, updated_at, profile_image_url',
+          'id, fullname, username, created_at, updated_at, '
+          'profile_image_url, has_completed_preference',
         )
         .eq('id', id)
         .maybeSingle();
@@ -37,7 +38,8 @@ class UserSupabaseRepository implements UserRepository {
     final response = await _supabase
         .from('users')
         .select(
-          'id, fullname, username, created_at, updated_at, profile_image_url',
+          'id, fullname, username, created_at, updated_at, '
+          'profile_image_url, has_completed_preference',
         )
         .ilike('username', username)
         .maybeSingle();
@@ -65,17 +67,27 @@ class UserSupabaseRepository implements UserRepository {
     if (response.status != 201 ||
         data is! Map ||
         data['user'] is! Map) {
-      final message = data is Map && data['error'] is String
-          ? data['error'] as String
-          : 'Registrasi gagal';
+      final message =
+          data is Map && data['error'] is String
+              ? data['error'] as String
+              : 'Registrasi gagal';
 
       throw Exception(message);
     }
 
     final row = Map<String, dynamic>.from(data['user'] as Map);
-    return _mapUser(row);
+
+    // Ambil data terbaru langsung dari tabel users.
+    final savedUser = await getUserById((row['id'] as num).toInt());
+
+    if (savedUser == null) {
+      return _mapUser(row);
+    }
+
+    return savedUser;
   }
 
+  // Memperbarui profil termasuk foto.
   @override
   Future<User> updateUser(User user) async {
     final response = await _supabase
@@ -83,6 +95,7 @@ class UserSupabaseRepository implements UserRepository {
         .update({
           'fullname': user.fullname,
           'username': user.username,
+          'profile_image_url': user.profileImageBase64,
         })
         .eq('id', user.id)
         .select(
@@ -135,7 +148,6 @@ class UserSupabaseRepository implements UserRepository {
     }
   }
 
-
   @override
   Future<void> deleteUser(int id) async {
     await _supabase.from('users').delete().eq('id', id);
@@ -144,15 +156,16 @@ class UserSupabaseRepository implements UserRepository {
   User _mapUser(Map<String, dynamic> row) {
     return User(
       id: (row['id'] as num).toInt(),
-      fullname: row['fullname'] as String,
-      username: row['username'] as String,
+      fullname: row['fullname'] as String? ?? '',
+      username: row['username'] as String? ?? '',
       password: '',
       districts: const <String>[],
       categories: const <Category>[],
       createdAt: DateTime.parse(row['created_at'] as String),
       updatedAt: DateTime.parse(row['updated_at'] as String),
-      hasCompletedPreference: row['has_completed_preference'] as bool? ?? false,
-      profileImageBase64: null,
+      hasCompletedPreference:
+          row['has_completed_preference'] as bool? ?? false,
+      profileImageBase64: row['profile_image_url'] as String?,
     );
   }
 }

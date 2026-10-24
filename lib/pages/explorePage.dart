@@ -21,6 +21,14 @@ import 'package:waylo/repositories/destination/destination_repository_factory.da
 import 'package:waylo/theme/appColors.dart';
 import 'package:waylo/theme/app_text_styles.dart';
 import 'package:waylo/pages/profile.dart';
+import 'package:waylo/pages/aiRecommendation.dart';
+
+//import untuk choose location map 
+import 'package:waylo/pages/chooseLocationMap.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:waylo/models/selected_location.dart';
+
+// Import dari branch main
 import 'package:waylo/service/user_preference_service.dart';
 import 'package:waylo/service/recommendation_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -58,6 +66,17 @@ class _ExplorepageState extends State<Explorepage> {
   final TextEditingController _maxController = TextEditingController();
 
   List<String> _districts = <String>[];
+
+  SelectedLocation? _selectedExploreLocation;
+
+  double? get _activeLatitude =>
+    _selectedExploreLocation?.coordinates.latitude ??
+    _userPosition?.latitude;
+
+  double? get _activeLongitude =>
+      _selectedExploreLocation?.coordinates.longitude ??
+      _userPosition?.longitude;
+
 
   static const List<(String, int?, int?)> budgetOptions = [
     ('Free', 0, 0),
@@ -116,79 +135,79 @@ class _ExplorepageState extends State<Explorepage> {
   }
 
   Future<void> _loadDistricts() async {
-  try {
-    final destinations = await _destinationsFuture;
-    final districts = _filterService.getDistricts(destinations);
+    try {
+      final destinations = await _destinationsFuture;
+      final districts = _filterService.getDistricts(destinations);
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-    setState(() {
-      _districts = districts;
-    });
-  } catch (e) {
-    debugPrint('Gagal memuat distrik: $e');
+      setState(() {
+        _districts = districts;
+      });
+    } catch (e) {
+      debugPrint('Gagal memuat distrik: $e');
+    }
   }
-}
 
-Future<void> _openExploreNearbySeeAll() async {
-  try {
-    final allDestinations = await _destinationsFuture;
-    final filteredDestinations = _applyFilter(allDestinations);
+  Future<void> _openExploreNearbySeeAll() async {
+    try {
+      final allDestinations = await _destinationsFuture;
+      final filteredDestinations = _applyFilter(allDestinations);
 
-    // Jika lokasi belum tersedia, tampilkan halaman dengan list kosong.
-    final position = _userPosition;
+      // Jika lokasi belum tersedia, tampilkan halaman dengan list kosong.
+      final latitude = _activeLatitude;
+      final longitude = _activeLongitude;
 
-    final nearbyDestinations = position == null
-        ? <Destination>[]
-        : _filterService.getNearbyDestinations(
-            destinations: filteredDestinations,
-            userLatitude: position.latitude,
-            userLongitude: position.longitude,
-          );
+      final nearbyDestinations =
+        latitude == null || longitude == null
+            ? <Destination>[]
+            : _filterService.getNearbyDestinations(
+                destinations: filteredDestinations,
+                userLatitude: latitude,
+                userLongitude: longitude,
+              );
+      if (!mounted) return;
 
-    if (!mounted) return;
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ExploreNearbySeeAllPage(
-          destinations: nearbyDestinations,
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ExploreNearbySeeAllPage(
+            destinations: nearbyDestinations,
+          ),
         ),
-      ),
-    );
-  } catch (e) {
-    debugPrint('Gagal membuka Destination Near You: $e');
+      );
+    } catch (e) {
+      debugPrint('Gagal membuka Destination Near You: $e');
+    }
   }
-}
 
+  Future<void> _openInspiringSeeAll() async {
+    try {
+      final recommendedDestinations =
+          await _recommendedDestinationsFuture;
 
-Future<void> _openInspiringSeeAll() async {
-  try {
-    final recommendedDestinations =
-        await _recommendedDestinationsFuture;
+      if (!mounted) return;
 
-    if (!mounted) return;
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => InspiringSeeAllPage(
-          destinations: recommendedDestinations,
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => InspiringSeeAllPage(
+            destinations: recommendedDestinations,
+          ),
         ),
-      ),
-    );
-  } catch (e) {
-    debugPrint('Gagal membuka Inspiring Destination: $e');
+      );
+    } catch (e) {
+      debugPrint('Gagal membuka Inspiring Destination: $e');
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Gagal memuat rekomendasi destinasi.'),
-      ),
-    );
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Gagal memuat rekomendasi destinasi.'),
+        ),
+      );
+    }
   }
-}
 
   bool get _filterActive =>
       _selectedCategoryIds.isNotEmpty ||
@@ -550,345 +569,402 @@ Future<void> _openInspiringSeeAll() async {
   }
 
   Future<void> _loadUserPosition() async {
-  try {
-    final serviceEnabled =
-        await Geolocator.isLocationServiceEnabled();
+    try {
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
 
-    if (!serviceEnabled) {
-      debugPrint('GPS/location service tidak aktif');
-      return;
-    }
+      if (!serviceEnabled) {
+        debugPrint('GPS/location service tidak aktif');
+        return;
+      }
 
-    var permission = await Geolocator.checkPermission();
+      var permission = await Geolocator.checkPermission();
 
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-    }
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
 
-    if (permission == LocationPermission.denied ||
-        permission == LocationPermission.deniedForever) {
-      debugPrint('Izin lokasi ditolak: $permission');
-      return;
-    }
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        debugPrint('Izin lokasi ditolak: $permission');
+        return;
+      }
 
-    final position = await Geolocator.getCurrentPosition();
+      final position = await Geolocator.getCurrentPosition();
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-    setState(() {
-      _userPosition = position;
-    });
-
-    debugPrint(
-      'Koordinat pengguna: '
-      '${position.latitude}, ${position.longitude}',
-    );
-  } catch (e) {
-    debugPrint('Gagal mengambil koordinat pengguna: $e');
-  } finally {
-    if (mounted) {
       setState(() {
-        _loadingNearby = false;
+        _userPosition = position;
       });
+
+      debugPrint(
+        'Koordinat pengguna: '
+        '${position.latitude}, ${position.longitude}',
+      );
+    } catch (e) {
+      debugPrint('Gagal mengambil koordinat pengguna: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _loadingNearby = false;
+        });
+      }
     }
   }
-}
 
-String getDistance(Destination destination) {
-  if (_userPosition == null) return '-';
+  String getDistance(Destination destination) {
+    final latitude = _activeLatitude;
+    final longitude = _activeLongitude;
 
-  final distanceInMeters = Geolocator.distanceBetween(
-    _userPosition!.latitude,
-    _userPosition!.longitude,
-    destination.coordinate.latitude,
-    destination.coordinate.longitude,
-  );
+    if (latitude == null || longitude == null) {
+      return '-';
+    }
 
-  return '${(distanceInMeters / 1000).toStringAsFixed(1)} km';
-}
+    final distanceInMeters = Geolocator.distanceBetween(
+      latitude,
+      longitude,
+      destination.coordinate.latitude,
+      destination.coordinate.longitude,
+    );
 
-Future<List<Destination>> _getRecommendedDestinations() async {
-  final destinations = await _destinationsFuture;
-  final preferences =
-      await _userPreferenceService.getUserPreferences();
+    return '${(distanceInMeters / 1000).toStringAsFixed(1)} km';
+  }
 
-  final recommended = _recommendationService.rankDestinations(
-    destinations: destinations,
-    preferredCategoryIds: preferences.categoryIds,
-    preferredDistrictIds: preferences.districtIds,
-    favoriteDestinationIds: preferences.favoriteDestinationIds,
-    userLatitude: _userPosition?.latitude,
-    userLongitude: _userPosition?.longitude,
-  );
+  Future<List<Destination>> _getRecommendedDestinations() async {
+    final destinations = await _destinationsFuture;
+    final preferences = await _userPreferenceService.getUserPreferences();
 
-  debugPrint('PREFERRED CATEGORY: ${preferences.categoryIds}');
-  debugPrint('PREFERRED DISTRICT: ${preferences.districtIds}');
-  debugPrint(
-    'FAVORITE DESTINATION IDS: '
-    '${preferences.favoriteDestinationIds}',
-  );
-  debugPrint('TOTAL DESTINATIONS: ${destinations.length}');
-  debugPrint('TOTAL RECOMMENDATIONS: ${recommended.length}');
+    final recommended = _recommendationService.rankDestinations(
+      destinations: destinations,
+      preferredCategoryIds: preferences.categoryIds,
+      preferredDistrictIds: preferences.districtIds,
+      favoriteDestinationIds: preferences.favoriteDestinationIds,
+      userLatitude: _userPosition?.latitude,
+      userLongitude: _userPosition?.longitude,
+    );
 
-  return recommended;
-}
+    debugPrint('PREFERRED CATEGORY: ${preferences.categoryIds}');
+    debugPrint('PREFERRED DISTRICT: ${preferences.districtIds}');
+    debugPrint(
+      'FAVORITE DESTINATION IDS: '
+      '${preferences.favoriteDestinationIds}',
+    );
+    debugPrint('TOTAL DESTINATIONS: ${destinations.length}');
+    debugPrint('TOTAL RECOMMENDATIONS: ${recommended.length}');
 
-//UI
+    return recommended;
+  }
+
+  //UI
   @override
   Widget build(BuildContext context) {
-    return Homelayout(
-      greeting: "Let's Find a Place",
-      title: 'Explore',
-      subtitle: 'Discover your next destination',
-      bottomNavigationBar: CustomBottomNavBar(
-        currentIndex: 1,
-        onTap: (index) {
-          switch (index) {
-            case 0:
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => HomePage()),
-              );
-              break;
-            case 1:
-              // Sudah berada di Explore
-              break;
-            case 2:
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => ProfilePage()),
-              );
-              break;
-          }
-        },
-      ),
+    return Stack(
+      children: [
+        Homelayout(
+          greeting: "Let's Find a Place",
+          title: 'Explore',
+          subtitle: 'Discover your next destination',
+          bottomNavigationBar: CustomBottomNavBar(
+            currentIndex: 1,
+            onTap: (index) {
+              switch (index) {
+                case 0:
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => HomePage()),
+                  );
+                  break;
+                case 1:
+                  // Sudah berada di Explore
+                  break;
+                case 2:
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => ProfilePage()),
+                  );
+                  break;
+              }
+            },
+          ),
 
-      // Bagian ini saja yang menimpa gambar
-      searchBar: Row(
-        children: [
-          const Expanded(child: CustomSearchBar()),
-          const SizedBox(width: 8),
-          _buildFilterButton(),
-        ],
-      ),
-
-      content: Column(
-        children: [
-          //destination near you
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          // Bagian ini saja yang menimpa gambar
+          searchBar: Row(
             children: [
-              Text(
-                'Destination Near You',
-                style: AppTextStyles.heading4.copyWith(
-                  color: AppColors.textPrimary,
-                  fontSize: 18,
+              const Expanded(child: CustomSearchBar()),
+              const SizedBox(width: 8),
+              _buildFilterButton(),
+            ],
+          ),
+
+          content: Column(
+            children: [
+              //destination near you
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Destination Near You',
+                    style: AppTextStyles.heading4.copyWith(
+                      color: AppColors.textPrimary,
+                      fontSize: 18,
+                    ),
+                  ),
+
+                  TextButton(
+                    onPressed: _openExploreNearbySeeAll,
+                    child: Text(
+                      'See All',
+                      style: AppTextStyles.body.copyWith(color: AppColors.accent),
+                    ),
+                  ),
+                ],
+              ),
+
+              Align(
+                alignment: Alignment.centerLeft,
+                child: GestureDetector(
+                  onTap: () async {
+                  final result = await Navigator.push<SelectedLocation>(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ChooseLocationMap(
+                        initialLocation: _selectedExploreLocation ??
+                            (_activeLatitude != null && _activeLongitude != null
+                                ? SelectedLocation(
+                                    coordinates: LatLng(
+                                      _activeLatitude!,
+                                      _activeLongitude!,
+                                    ),
+                                    name: _currentCity,
+                                  )
+                                : null),
+                      ),
+                    ),
+                  );
+
+                  if (result != null && mounted) {
+                    setState(() {
+                      _selectedExploreLocation = result;
+                      _currentCity = result.name;
+                    });
+                  }
+                },
+                  child: Infochip(
+                    icon: const Icon(
+                      Icons.near_me_rounded,
+                      size: 18,
+                      color: AppColors.secondaryLight,
+                    ),
+                    value: _currentCity,
+                    textColor: AppColors.textSecondary,
+                  ),
                 ),
               ),
 
-              TextButton(
-                onPressed: _openExploreNearbySeeAll,
-                child: Text(
-                  'See All',
-                  style: AppTextStyles.body.copyWith(color: AppColors.accent),
+              const SizedBox(height: 20),
+
+              SizedBox(
+                height: 225,
+                child: FutureBuilder<List<Destination>>(
+                  future: _destinationsFuture,
+                  builder: ((context, snapshot) {
+                    //loading
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+
+                    //error
+                    if (snapshot.hasError) {
+                      return const Center(child: Text("Gagal memuat destinasi"));
+                    }
+
+                    if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                      return const Center(
+                        child: Text('Belum ada destinasi'),
+                      );
+                    }
+
+                    if (_loadingNearby) {
+                      return const Center(
+                        child: CircularProgressIndicator(),
+                      );
+                    }
+
+                    if (_activeLatitude == null || _activeLongitude == null) {
+                      return const Center(
+                        child: Text('Lokasi pengguna tidak tersedia'),
+                      );
+                    }
+
+                    final destinations = _applyFilter(snapshot.data ?? []);
+
+                    final nearbyDestinations =
+                        _filterService.getNearbyDestinations(
+                      destinations: destinations,
+                      userLatitude: _activeLatitude!,
+                      userLongitude: _activeLongitude!,
+                    );
+
+                    if (nearbyDestinations.isEmpty) {
+                      return const Center(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 16),
+                          child: Text(
+                            'Tidak ada destinasi dalam radius 10 km',
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      );
+                    }
+
+                    return ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: nearbyDestinations.length,
+                      separatorBuilder: (context, index) =>
+                          const SizedBox(width: 16),
+                      itemBuilder: (context, index) {
+                        final destination = nearbyDestinations[index];
+                        final bannerImages = destination.images
+                            .where((image) => image.isBanner)
+                            .toList();
+
+                        final imageUrl = bannerImages.isNotEmpty
+                            ? bannerImages.first.imageUrl
+                            : null;
+
+                        return SizedBox(
+                          width: 196,
+                          height: 225,
+                          child: RecommendCard(
+                            image: imageUrl,
+                            name: destination.name,
+                            city: destination.location.districtName,
+                            rating: destination.rating,
+                            distance: getDistance(destination),
+                            page: Detaildestination(destination: destination),
+                          ),
+                        );
+                      },
+                    );
+                  }),
+                ),
+              ),
+
+              const SizedBox(height: 24), 
+
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+
+                children: [
+                  Text(
+                    'Inspiring Destination',
+                    style: AppTextStyles.heading4.copyWith(
+                      color: AppColors.textPrimary,
+                      fontSize: 18,
+                    ),
+                  ),
+
+                  TextButton(
+                    onPressed: _openInspiringSeeAll,
+                    child: Text(
+                      'See All',
+                      style: AppTextStyles.body.copyWith(color: AppColors.accent),
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 16),
+
+              SizedBox(
+                height: 160,
+                child: FutureBuilder<List<Destination>>(
+                  // Menggunakan _recommendedDestinationsFuture dari branch main
+                  future: _recommendedDestinationsFuture,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+
+                    if (snapshot.hasError) {
+                      debugPrint(
+                        'Error Inspiring Destination: ${snapshot.error}',
+                      );
+                      debugPrint(
+                        'Stack trace: ${snapshot.stackTrace}',
+                      );
+
+                      return Center(
+                        child: Text(
+                          'Gagal memuat: ${snapshot.error}',
+                          textAlign: TextAlign.center,
+                        ),
+                      );
+                    }
+                    
+                    // Tidak menggunakan _applyFilter lagi karena data sudah di-rank oleh RecommendationService
+                    final destinations = snapshot.data ?? [];
+
+                    if (destinations.isEmpty) {
+                      return Center(
+                        child: Text(
+                          _filterActive
+                              ? 'Tidak ada destinasi yang cocok'
+                              : 'Belum ada destinasi',
+                        ),
+                      );
+                    }
+
+                    return ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      clipBehavior: Clip.none,
+                      itemCount: destinations.length,
+                      separatorBuilder: (context, index) =>
+                          const SizedBox(width: 16),
+                      itemBuilder: (context, index) {
+                        final destination = destinations[index];
+
+                        final bannerImages = destination.images
+                            .where((image) => image.isBanner)
+                            .toList();
+
+                        final imageUrl = bannerImages.isNotEmpty
+                            ? bannerImages.first.imageUrl
+                            : null;
+
+                        return Inspiringcard(
+                          destination: destination,
+                          image: imageUrl,
+                          location: destination.location.subdistrictName,
+                        );
+                      },
+                    );
+                  },
                 ),
               ),
             ],
           ),
+        ),
 
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Infochip(
-              icon: const Icon(
-                Icons.near_me_rounded,
-                size: 18,
-                color: AppColors.secondaryLight,
-              ),
-              value: _currentCity,
-              textColor: AppColors.textSecondary,
+        Positioned(
+          right: 20,
+          bottom: 100,
+          child: GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const AiRecommendationPage()),
+              );
+            },
+            child: Image.asset(
+              'assets/img/waylo_AI.png',
+              width: 103,
+              height: 103,
+              fit: BoxFit.cover,
             ),
           ),
-
-          const SizedBox(height: 20),
-
-          SizedBox(
-            height: 225,
-            child: FutureBuilder<List<Destination>>(
-              future: _destinationsFuture,
-              builder: ((context, snapshot) {
-                //loading
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                //error
-                if (snapshot.hasError) {
-                  return const Center(child: Text("Gagal memuat destinasi"));
-                }
-
-                if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return const Center(
-                    child: Text('Belum ada destinasi'),
-                  );
-                }
-
-                if (_loadingNearby) {
-                  return const Center(
-                    child: CircularProgressIndicator(),
-                  );
-                }
-
-                if (_userPosition == null) {
-                  return const Center(
-                    child: Text('Lokasi pengguna tidak tersedia'),
-                  );
-                }
-
-                final destinations = _applyFilter(snapshot.data ?? []);
-
-                final nearbyDestinations =
-                    _filterService.getNearbyDestinations(
-                  destinations: destinations,
-                  userLatitude: _userPosition!.latitude,
-                  userLongitude: _userPosition!.longitude,
-                );
-
-                if (nearbyDestinations.isEmpty) {
-                  return const Center(
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 16),
-                      child: Text(
-                        'Tidak ada destinasi dalam radius 10 km',
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  );
-                }
-
-                return ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: nearbyDestinations.length,
-                  separatorBuilder: (context, index) =>
-                      const SizedBox(width: 16),
-                  itemBuilder: (context, index) {
-                    final destination = nearbyDestinations[index];
-                    final bannerImages = destination.images
-                        .where((image) => image.isBanner)
-                        .toList();
-
-                    final imageUrl = bannerImages.isNotEmpty
-                        ? bannerImages.first.imageUrl
-                        : null;
-
-                    return SizedBox(
-                      width: 196,
-                      height: 225,
-                      child: RecommendCard(
-                        image: imageUrl,
-                        name: destination.name,
-                        city: destination.location.districtName,
-                        rating: destination.rating,
-                        distance: getDistance(destination),
-                        page: Detaildestination(destination: destination),
-                      ),
-                    );
-                  },
-                );
-              }),
-            ),
-          ),
-
-          SizedBox(height: 24), 
-
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-
-            children: [
-              Text(
-                'Inspiring Destination',
-                style: AppTextStyles.heading4.copyWith(
-                  color: AppColors.textPrimary,
-                  fontSize: 18,
-                ),
-              ),
-
-              TextButton(
-                onPressed: _openInspiringSeeAll,
-                child: Text(
-                  'See All',
-                  style: AppTextStyles.body.copyWith(color: AppColors.accent),
-                ),
-              ),
-            ],
-          ),
-
-          SizedBox(height: 16),
-
-          SizedBox(
-            height: 160,
-            child: FutureBuilder<List<Destination>>(
-              future: _recommendedDestinationsFuture,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                if (snapshot.hasError) {
-                  debugPrint(
-                    'Error Inspiring Destination: ${snapshot.error}',
-                  );
-                  debugPrint(
-                    'Stack trace: ${snapshot.stackTrace}',
-                  );
-
-                  return Center(
-                    child: Text(
-                      'Gagal memuat: ${snapshot.error}',
-                      textAlign: TextAlign.center,
-                    ),
-                  );
-                }
-                final destinations = snapshot.data ?? [];
-
-                if (destinations.isEmpty) {
-                  return Center(
-                    child: Text(
-                      _filterActive
-                          ? 'Tidak ada destinasi yang cocok'
-                          : 'Belum ada destinasi',
-                    ),
-                  );
-                }
-
-                return ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  clipBehavior: Clip.none,
-                  itemCount: destinations.length,
-                  separatorBuilder: (context, index) =>
-                      const SizedBox(width: 16),
-                  itemBuilder: (context, index) {
-                    final destination = destinations[index];
-
-                    final bannerImages = destination.images
-                        .where((image) => image.isBanner)
-                        .toList();
-
-                    final imageUrl = bannerImages.isNotEmpty
-                        ? bannerImages.first.imageUrl
-                        : null;
-
-                    return Inspiringcard(
-                      destination: destination,
-                      image: imageUrl,
-                      location: destination.location.subdistrictName,
-                    );
-                  },
-                );
-              },
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
