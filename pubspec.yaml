@@ -90,6 +90,7 @@ flutter:
     - assets/game/(1)Across_the_Jade_Ridge.mp3
     - assets/img/WayBi.png
     - assets/img/
+    - assets/img/logo.png
 
   fonts:
     - family: Fraunces

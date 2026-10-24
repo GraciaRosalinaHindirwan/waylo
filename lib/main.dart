@@ -13,6 +13,7 @@ import 'package:waylo/pages/login_page.dart';
 import 'package:waylo/service/session_storage.dart';
 import 'package:waylo/repositories/user/user_repository_factory.dart';
 import 'package:waylo/pages/userPreference.dart';
+import 'package:waylo/pages/splashScreen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -46,22 +47,21 @@ Future<void> main() async {
     await authService.restoreSession();
 
     final router = GoRouter(
-      initialLocation: '/login',
+      initialLocation: '/splash',
       refreshListenable: authService,
+
       redirect: (context, state) {
         final user = authService.currentUser;
         final location = state.matchedLocation;
 
+        final isSplashPage = location == '/splash';
         final isLoginPage = location == '/login';
         final isRegisterPage = location == '/register';
         final isPreferencePage = location == '/preference';
 
-        debugPrint('=== ROUTER REDIRECT ===');
-        debugPrint('Current location: $location');
-        debugPrint('User ID: ${user?.id}');
-        debugPrint(
-          'hasCompletedPreference: ${user?.hasCompletedPreference}',
-        );
+        // Splash diberi kesempatan untuk menentukan halaman berikutnya.
+        if (isSplashPage) return null;
+
 
         // Belum login: hanya boleh membuka login dan register.
         if (user == null) {
@@ -81,6 +81,10 @@ Future<void> main() async {
         return null;
       },
       routes: [
+        GoRoute(
+          path: '/splash',
+          builder: (context, state) => const SplashScreen(),
+        ),
         GoRoute(
           path: '/register',
           builder: (context, state) => const RegisterPage(),
