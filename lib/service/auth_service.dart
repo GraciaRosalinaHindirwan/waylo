@@ -10,12 +10,19 @@ import 'package:waylo/repositories/user/user_repository.dart';
 import 'package:waylo/service/session_storage.dart';
 import 'package:waylo/service/biometric_credentials.dart';
 
+import 'package:waylo/service/offline_auth_storage.dart';
+import 'package:waylo/service/offline_user_storage.dart';
+
+
 class AuthService extends ChangeNotifier {
   final UserRepository repository;
   final SessionStorage sessionStorage;
 
   final BiometricCredentials biometricCredentials =
       BiometricCredentials();
+
+  final OfflineAuthStorage offlineAuthStorage = OfflineAuthStorage();
+  final OfflineUserStorage offlineUserStorage = OfflineUserStorage();
 
   User? _currentUser;
 
@@ -167,6 +174,14 @@ class AuthService extends ChangeNotifier {
 
     final user = savedUser ?? functionUser;
 
+    await offlineAuthStorage.saveCredentials(
+      userId: user.id,
+      username: username,
+      password: password,
+    );
+
+    await offlineUserStorage.saveUser(user);
+
     await sessionStorage.saveUserId(user.id);
     await sessionStorage.saveLastActivity();
 
@@ -184,7 +199,41 @@ class AuthService extends ChangeNotifier {
 
     return user;
   }
+  
+  Future<User> loginOffline(
+    String username,
+    String password,
+  ) async {
+    final userId = await offlineAuthStorage.verifyCredentials(
+      username: username,
+      password: password,
+    );
 
+    if (userId == null) {
+      throw Exception(
+        'Username atau password salah, atau login offline '
+        'belum pernah disiapkan pada perangkat ini.',
+      );
+    }
+
+    final user = await offlineUserStorage.getUser();
+
+    if (user == null || user.id != userId) {
+      throw Exception(
+        'Data akun tidak tersedia di perangkat. '
+        'Silakan login saat online terlebih dahulu.',
+      );
+    }
+
+    await sessionStorage.saveUserId(user.id);
+    await sessionStorage.saveLastActivity();
+
+    _currentUser = user;
+    startSessionTimer();
+    notifyListeners();
+
+    return user;
+  }
 
   //Fungsi ini akan memulihkan pengguna jika ID masih ditemukan dan waktu tidak aktif belum mencapai satu menit. 
   //Jika tidak valid, session dihapus.
@@ -195,7 +244,8 @@ class AuthService extends ChangeNotifier {
     final lastActivity = await sessionStorage.getLastActivity();
 
     if (userId == null || lastActivity == null) {
-      await logout();
+      _currentUser = null;
+      notifyListeners();
       return;
     }
 
@@ -206,11 +256,27 @@ class AuthService extends ChangeNotifier {
       return;
     }
 
-    // Repository mengambil foto dari kolom profile_image_url.
-    final user = await repository.getUserById(userId);
+    User? user;
 
-    if (user == null) {
-      await logout();
+    try {
+      // Coba ambil profil terbaru ketika internet tersedia.
+      user = await repository.getUserById(userId);
+
+      // Perbarui cache lokal jika profil berhasil diperoleh.
+      if (user != null) {
+        await offlineUserStorage.saveUser(user);
+      }
+    } catch (e) {
+      // Jika server tidak bisa diakses, gunakan cache lokal.
+      debugPrint('Tidak bisa mengambil profil online: $e');
+    }
+
+    // Fallback ke profil lokal jika request online gagal.
+    user ??= await offlineUserStorage.getUser();
+
+    if (user == null || user.id != userId) {
+      _currentUser = null;
+      notifyListeners();
       return;
     }
 
@@ -218,6 +284,7 @@ class AuthService extends ChangeNotifier {
     startSessionTimer();
     notifyListeners();
   }
+
 
   Future<void> updateLastActivity() async {
     if (!isLoggedIn) return;

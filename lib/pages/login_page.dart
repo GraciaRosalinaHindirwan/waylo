@@ -6,6 +6,7 @@ import 'package:waylo/components/button.dart';
 import 'package:waylo/pages/biometric.dart';
 import 'package:provider/provider.dart';
 import 'package:waylo/service/auth_service.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -76,27 +77,54 @@ Future<void> _openBiometricLogin() async {
     super.dispose();
   }
 
+
 Future<void> _login() async {
   if (!_formKey.currentState!.validate()) return;
 
+  final authService = context.read<AuthService>();
+
   try {
-    final authService = context.read<AuthService>();
+    final connectivityResults =
+        await Connectivity().checkConnectivity();
+
+    final isOffline =
+        connectivityResults.contains(ConnectivityResult.none);
+
+    if (!mounted) return;
+
+    if (isOffline) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Kamu sedang offline. Login akan diverifikasi '
+            'menggunakan data lokal yang sudah disiapkan.',
+          ),
+        ),
+      );
+
+      final user = await authService.loginOffline(
+        _usernameController.text.trim(),
+        _passwordController.text,
+      );
+
+      if (!mounted) return;
+
+      context.go(
+        user.hasCompletedPreference ? '/home' : '/preference',
+      );
+
+      return;
+    }
 
     final user = await authService.login(
       _usernameController.text.trim(),
       _passwordController.text,
     );
 
-    // Update akun yang terhubung ke fingerprint.
-    await authService.sessionStorage
-        .saveBiometricUserId(user.id);
-
     if (!mounted) return;
 
     context.go(
-      user.hasCompletedPreference
-          ? '/home'
-          : '/preferance',
+      user.hasCompletedPreference ? '/home' : '/preference',
     );
   } catch (e) {
     if (!mounted) return;
