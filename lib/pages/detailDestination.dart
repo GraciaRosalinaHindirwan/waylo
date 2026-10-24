@@ -13,6 +13,9 @@ import 'package:waylo/pages/profile.dart';
 import 'package:waylo/theme/appColors.dart';
 import 'package:waylo/theme/app_text_styles.dart';
 import 'package:waylo/repositories/favorite/favorite_repository_factory.dart';
+import 'package:waylo/repositories/badge/travel_badge_repository_factory.dart';
+import 'package:waylo/service/session_storage.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class Detaildestination extends StatefulWidget{
   final Destination destination; 
@@ -63,7 +66,46 @@ class _DetaildestinationState extends State<Detaildestination> {
     _favoriteStatusFuture = favoriteRepository.isFavorite(
       widget.destination.id,
     );
+
+    _recordBadgeVisit();
   }
+
+  //badge 
+  Future<void> _recordBadgeVisit() async {
+    debugPrint('=== RECORD BADGE VISIT DIPANGGIL ===');
+    final authService = context.read<AuthService>();
+    final userId = authService.currentUser?.id;
+
+      debugPrint('USER ID: $userId');
+
+    if (userId == null) {
+      debugPrint('Badge visit dilewati: user belum login.');
+      return;
+    }
+
+    final repository = TravelBadgeRepositoryFactory.create(
+      Supabase.instance.client,
+      SessionStorage(),
+    );
+
+    try {
+       debugPrint('MULAI: mencatat ${widget.destination.name}');
+
+      await repository.recordDestinationVisit(
+        destinationId: widget.destination.id.toString(),
+      );
+
+      debugPrint(
+        'Badge visit berhasil dicatat: ${widget.destination.name}',
+      );
+    } catch (e, stackTrace) {
+      debugPrint(
+        'Gagal mencatat badge visit: $e',
+      );
+      debugPrintStack(stackTrace: stackTrace);
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {

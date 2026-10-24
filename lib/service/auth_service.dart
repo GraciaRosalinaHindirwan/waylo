@@ -7,7 +7,6 @@ import 'dart:typed_data';
 
 import 'package:waylo/models/user.dart';
 import 'package:waylo/repositories/user/user_repository.dart';
-import 'package:waylo/service/password_hasher.dart';
 import 'package:waylo/service/session_storage.dart';
 import 'package:waylo/service/biometric_credentials.dart';
 

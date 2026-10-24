@@ -1,5 +1,5 @@
-import '../models/travel_badge.dart';
-import '../models/user_badge.dart';
+import '../../models/travel_badge.dart';
+import '../../models/user_badge.dart';
 
 abstract class TravelBadgeRepository {
   // Mengambil semua badge yang tersedia di WAYLO.
@@ -10,4 +10,8 @@ abstract class TravelBadgeRepository {
 
   // Menyimpan atau memperbarui progres badge milik user.
   Future<void> saveUserBadge(UserBadge userBadge);
+
+  Future<void> recordDestinationVisit({
+    required String destinationId,
+  });
 }

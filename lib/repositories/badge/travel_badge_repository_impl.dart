@@ -1,6 +1,6 @@
-import '../models/travel_badge.dart';
-import '../models/user_badge.dart';
-import 'package:waylo/repositories/travel_badge_repository.dart';
+import '../../models/travel_badge.dart';
+import '../../models/user_badge.dart';
+import 'package:waylo/repositories/badge/travel_badge_repository.dart';
 
 
 class TravelBadgeRepositoryImpl implements TravelBadgeRepository {
@@ -87,5 +87,13 @@ class TravelBadgeRepositoryImpl implements TravelBadgeRepository {
     );
 
     userBadges[userBadge.badgeId] = userBadge;
+
+  }
+
+    @override
+  Future<void> recordDestinationVisit({
+    required String destinationId,
+  }) async {
+    // TODO: implement recordDestinationVisit
   }
 }
