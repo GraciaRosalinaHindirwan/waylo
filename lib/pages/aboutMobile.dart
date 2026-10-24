@@ -120,9 +120,12 @@ class AboutMobilePage extends StatelessWidget {
                       AboutSection(
                         title: 'Feedback Mata Kuliah PAM',
                         content:
-                            'terus terang saya tidak diberitahu, saya tidak '
-                            'tahu, dan saya bahkan bertanya-tanya, kenapa '
-                            'kok saya tidak diberitahu sampai hari ini',
+    'Mata kuliah Pemrograman Aplikasi Mobile cukup menguras tenaga, pikiran, dan dompet. '
+    'Hidup jadi kurang tenang karena setiap kali menjalankan aplikasi, selalu ada saja hal yang perlu diperbaiki. '
+    'Laptop juga ikut berjuang sampai kipasnya berisik banget setiap kali aplikasi dijalankan. '
+    'Belum lagi waktu istirahat yang berkurang karena harus menyelesaikan tugas, sehingga perawatan wajah pun perlu mendapat perhatian ekstra. '
+    'Semoga ke depannya tugas dan tenggat waktu bisa lebih bersahabat, kesalahan program berkurang, dan laptop kami tidak perlu bekerja sekeras itu. '
+    'Terima kasih atas pembelajaran dan pengalaman yang diberikan, sekaligus bonus pengeluaran perawatan diri dan suara kipas laptop yang hampir lepas landas.',
                       ),
                     ],
                   ),
